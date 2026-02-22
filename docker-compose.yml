@@ -1,0 +1,114 @@
+services:
+  auth-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auth-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Integration__PostgreSql__ConnectionString: ${POSTGRES_CONNECTION_STRING}
+      Integration__OpenSearch__Url: ${OPENSEARCH_URL}
+      Integration__OpenSearch__IndexPrefix: ${OPENSEARCH_INDEX_PREFIX}
+      Integration__OpenSearch__EnsureIndicesOnStartup: ${OPENSEARCH_ENSURE_INDICES_ON_STARTUP}
+      Integration__OpenSearch__ReindexOnStartup: ${OPENSEARCH_REINDEX_ON_STARTUP}
+      Integration__OpenSearch__Username: ${OPENSEARCH_USERNAME}
+      Integration__OpenSearch__Password: ${OPENSEARCH_PASSWORD}
+      Integration__Kafka__Enabled: ${KAFKA_ENABLED}
+      Integration__Kafka__BootstrapServers: ${KAFKA_BOOTSTRAP_SERVERS}
+      Integration__Jwt__Secret: ${JWT_SECRET}
+      Integration__Jwt__Issuer: ${JWT_ISSUER}
+      Integration__Jwt__Audience: ${JWT_AUDIENCE}
+      Integration__Jwt__AccessTokenExpirationMinutes: ${JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
+      Integration__Jwt__RefreshTokenExpirationDays: ${JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
+      Integration__Smtp__Enabled: ${SMTP_ENABLED}
+      Integration__Smtp__Host: ${SMTP_HOST}
+      Integration__Smtp__Port: ${SMTP_PORT}
+      Integration__Smtp__UseSsl: ${SMTP_USE_SSL}
+      Integration__Smtp__Username: ${SMTP_USERNAME}
+      Integration__Smtp__Password: ${SMTP_PASSWORD}
+      Integration__Smtp__FromEmail: ${SMTP_FROM_EMAIL}
+      Integration__Smtp__FromName: ${SMTP_FROM_NAME}
+    ports:
+      - "${AUTH_API_PORT}:8080"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: auth-postgres
+    environment:
+      POSTGRES_DB: auth
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data
+
+  opensearch:
+    image: opensearchproject/opensearch:2.15.0
+    container_name: auth-opensearch
+    profiles: ["local-opensearch"]
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "${OPENSEARCH_PORT}:9200"
+      - "${OPENSEARCH_METRICS_PORT}:9600"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - auth_opensearch_data:/usr/share/opensearch/data
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: auth-zookeeper
+    profiles: ["kafka"]
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: auth-kafka
+    profiles: ["kafka"]
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    ports:
+      - "9092:9092"
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: auth-mailhog
+    profiles: ["mailhog"]
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+
+volumes:
+  auth_postgres_data:
+  auth_opensearch_data:

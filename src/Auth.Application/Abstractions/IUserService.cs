@@ -1,0 +1,12 @@
+namespace Auth.Application;
+
+public interface IUserService
+{
+    Task<IReadOnlyCollection<UserDto>> GetAllAsync(CancellationToken cancellationToken);
+    Task<UserDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+    Task<UserDto> CreateAsync(CreateUserRequest request, CancellationToken cancellationToken);
+    Task<UserDto?> UpdateAsync(Guid id, UpdateUserRequest request, CancellationToken cancellationToken);
+    Task<UserDto?> PatchAsync(Guid id, PatchUserRequest request, CancellationToken cancellationToken);
+    Task<bool> SoftDeleteAsync(Guid id, CancellationToken cancellationToken);
+    Task SetWorkspacesAsync(Guid userId, IReadOnlyCollection<UserWorkspaceRolesItem> workspaces, CancellationToken cancellationToken);
+}

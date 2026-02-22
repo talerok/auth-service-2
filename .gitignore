@@ -1,0 +1,43 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Build artifacts
+**/bin/
+**/obj/
+**/out/
+**/TestResults/
+**/artifacts/
+
+# User-specific IDE files
+*.user
+*.suo
+*.userprefs
+*.sln.docstates
+*.DotSettings.user
+
+# Package/cache folders
+.nuget/
+packages/
+
+# Logs and local runtime files
+*.log
+logs/
+*.pid
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+*.pfx
+*.snk
+secrets.json
+
+# Docker overrides (local only)
+docker-compose.override.yml
+
+# Python leftovers (if used by scripts)
+__pycache__/
+*.py[cod]

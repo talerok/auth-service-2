@@ -1,0 +1,42 @@
+using Auth.Application;
+
+namespace Auth.Api;
+
+public static class AuthProblemDetailsMapper
+{
+    public static AuthProblemDescriptor Map(AuthException exception) => Map(exception.Code);
+
+    public static AuthProblemDescriptor Map(string code)
+    {
+        return code switch
+        {
+            AuthErrorCatalog.AuthenticationRequired => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Authentication is required"),
+            AuthErrorCatalog.AuthenticationFailed => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Authentication failed"),
+            AuthErrorCatalog.AccessDenied => new AuthProblemDescriptor(StatusCodes.Status403Forbidden, "Forbidden", "Access denied"),
+            AuthErrorCatalog.InvalidCredentials => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Invalid credentials"),
+            AuthErrorCatalog.InvalidRefreshToken => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Invalid refresh token"),
+            AuthErrorCatalog.UserInactive => new AuthProblemDescriptor(StatusCodes.Status403Forbidden, "Forbidden", "User inactive"),
+            AuthErrorCatalog.UserNotFound => new AuthProblemDescriptor(StatusCodes.Status404NotFound, "Resource not found", "User not found"),
+            AuthErrorCatalog.InvalidUserContext => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Invalid user context"),
+            AuthErrorCatalog.DuplicateIdentity => new AuthProblemDescriptor(StatusCodes.Status409Conflict, "Conflict", "Username or email already exists"),
+            AuthErrorCatalog.DuplicateIdsNotAllowed => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Duplicate ids are not allowed"),
+            AuthErrorCatalog.SystemWorkspaceDeleteForbidden => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "System workspaces cannot be deleted"),
+            AuthErrorCatalog.SystemPermissionDeleteForbidden => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "System permissions cannot be deleted"),
+            AuthErrorCatalog.InvalidPasswordChangeChallenge => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Invalid or expired password change token"),
+            TwoFactorErrorCatalog.UnsupportedChannel => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Validation error", "Unsupported two-factor channel"),
+            TwoFactorErrorCatalog.ChallengeNotFound => new AuthProblemDescriptor(StatusCodes.Status404NotFound, "Resource not found", "Two-factor challenge not found"),
+            TwoFactorErrorCatalog.ChallengeExpired => new AuthProblemDescriptor(StatusCodes.Status410Gone, "Challenge expired", "Two-factor challenge expired"),
+            TwoFactorErrorCatalog.AttemptsExceeded => new AuthProblemDescriptor(StatusCodes.Status429TooManyRequests, "Too many attempts", "Too many OTP verification attempts"),
+            TwoFactorErrorCatalog.OtpAlreadyUsed => new AuthProblemDescriptor(StatusCodes.Status409Conflict, "Conflict", "OTP is already used"),
+            TwoFactorErrorCatalog.VerificationFailed => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Two-factor verification failed"),
+            TwoFactorErrorCatalog.Required => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Two-factor delivery is not completed"),
+            TwoFactorErrorCatalog.NotRequired => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Two-factor is not required for this account"),
+            TwoFactorErrorCatalog.ActivationNotCompleted => new AuthProblemDescriptor(StatusCodes.Status409Conflict, "Conflict", "Two-factor delivery is not completed"),
+            TwoFactorErrorCatalog.DeliveryFailed => new AuthProblemDescriptor(StatusCodes.Status503ServiceUnavailable, "Service unavailable", "Two-factor delivery failed"),
+            TwoFactorErrorCatalog.ProviderUnavailable => new AuthProblemDescriptor(StatusCodes.Status503ServiceUnavailable, "Service unavailable", "Two-factor provider unavailable"),
+            _ => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Business rule violation")
+        };
+    }
+}
+
+public sealed record AuthProblemDescriptor(int StatusCode, string Title, string Detail);

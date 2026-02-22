@@ -1,0 +1,30 @@
+namespace Auth.Application;
+
+public interface ISearchService
+{
+    Task<SearchResponse<UserDto>> SearchUsersAsync(SearchRequest request, CancellationToken cancellationToken);
+    Task<SearchResponse<RoleDto>> SearchRolesAsync(SearchRequest request, CancellationToken cancellationToken);
+    Task<SearchResponse<PermissionDto>> SearchPermissionsAsync(SearchRequest request, CancellationToken cancellationToken);
+    Task<SearchResponse<WorkspaceDto>> SearchWorkspacesAsync(SearchRequest request, CancellationToken cancellationToken);
+}
+
+public interface ISearchIndexService
+{
+    Task IndexUserAsync(UserDto user, CancellationToken cancellationToken);
+    Task DeleteUserAsync(Guid id, CancellationToken cancellationToken);
+
+    Task IndexRoleAsync(RoleDto role, CancellationToken cancellationToken);
+    Task DeleteRoleAsync(Guid id, CancellationToken cancellationToken);
+
+    Task IndexPermissionAsync(PermissionDto permission, CancellationToken cancellationToken);
+    Task DeletePermissionAsync(Guid id, CancellationToken cancellationToken);
+
+    Task IndexWorkspaceAsync(WorkspaceDto workspace, CancellationToken cancellationToken);
+    Task DeleteWorkspaceAsync(Guid id, CancellationToken cancellationToken);
+}
+
+public interface ISearchMaintenanceService
+{
+    Task EnsureIndicesAsync(CancellationToken cancellationToken);
+    Task ReindexAllAsync(CancellationToken cancellationToken);
+}
