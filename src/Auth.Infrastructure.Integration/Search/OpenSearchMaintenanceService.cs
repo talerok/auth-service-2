@@ -48,6 +48,7 @@ public sealed class OpenSearchMaintenanceService(
             .Properties(p => p
                 .Keyword(k => k.Name(n => n.Id))
                 .Keyword(k => k.Name(n => n.Name))
+                .Keyword(k => k.Name(n => n.Code))
                 .Keyword(k => k.Name(n => n.Description))
                 .Boolean(b => b.Name(n => n.IsSystem))), cancellationToken))
         {
