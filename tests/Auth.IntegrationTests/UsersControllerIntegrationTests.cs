@@ -63,4 +63,89 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
         createdUser.Username.Should().Be(username);
         createdUser.Email.Should().Be($"{username}@example.com");
     }
+
+    [Fact]
+    public async Task GetWorkspaces_WhenUserDoesNotExist_ReturnsNotFound()
+    {
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+
+        var response = await fixture.Client.GetAsync($"/api/users/{Guid.NewGuid()}/workspaces");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetWorkspaces_WhenUserHasNoWorkspaces_ReturnsEmptyArray()
+    {
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var createUserResponse = await fixture.Client.PostAsJsonAsync("/api/users", new
+        {
+            username = $"user_{suffix}",
+            email = $"user_{suffix}@example.com",
+            password = "strong-password",
+            isActive = true
+        });
+        createUserResponse.EnsureSuccessStatusCode();
+        var user = await createUserResponse.Content.ReadFromJsonAsync<UserDto>();
+        user.Should().NotBeNull();
+
+        var response = await fixture.Client.GetAsync($"/api/users/{user!.Id}/workspaces");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<List<UserWorkspaceRolesItem>>();
+        result.Should().NotBeNull();
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetWorkspaces_AfterSettingWorkspaces_ReturnsWorkspacesWithRoleIds()
+    {
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var createUserResponse = await fixture.Client.PostAsJsonAsync("/api/users", new
+        {
+            username = $"user_{suffix}",
+            email = $"user_{suffix}@example.com",
+            password = "strong-password",
+            isActive = true
+        });
+        createUserResponse.EnsureSuccessStatusCode();
+        var user = await createUserResponse.Content.ReadFromJsonAsync<UserDto>();
+        user.Should().NotBeNull();
+
+        var workspacesResponse = await fixture.Client.GetAsync("/api/workspaces");
+        workspacesResponse.EnsureSuccessStatusCode();
+        var workspaces = await workspacesResponse.Content.ReadFromJsonAsync<List<WorkspaceDto>>();
+        workspaces.Should().NotBeNullOrEmpty();
+        var workspace = workspaces!.First();
+
+        var rolesResponse = await fixture.Client.GetAsync("/api/roles");
+        rolesResponse.EnsureSuccessStatusCode();
+        var roles = await rolesResponse.Content.ReadFromJsonAsync<List<RoleDto>>();
+        roles.Should().NotBeNullOrEmpty();
+        var role = roles!.First();
+
+        await fixture.Client.PutAsJsonAsync($"/api/users/{user!.Id}/workspaces", new
+        {
+            workspaces = new[]
+            {
+                new { workSpaceId = workspace.Id, roleIds = new[] { role.Id } }
+            }
+        });
+
+        var response = await fixture.Client.GetAsync($"/api/users/{user.Id}/workspaces");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<List<UserWorkspaceRolesItem>>();
+        result.Should().NotBeNull();
+        result.Should().HaveCount(1);
+        result!.Single().WorkSpaceId.Should().Be(workspace.Id);
+        result.Single().RoleIds.Should().ContainSingle(id => id == role.Id);
+    }
 }

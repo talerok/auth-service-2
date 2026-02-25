@@ -52,6 +52,14 @@ public sealed class RolesController(IRoleService roleService, ISearchService sea
         return deleted ? NoContent() : NotFound();
     }
 
+    [HttpGet("{id:guid}/permissions")]
+    [HasPermission("roles.view")]
+    public async Task<IActionResult> GetPermissions(Guid id, CancellationToken cancellationToken)
+    {
+        var permissions = await roleService.GetPermissionsAsync(id, cancellationToken);
+        return permissions is null ? NotFound() : Ok(permissions);
+    }
+
     [HttpPut("{id:guid}/permissions")]
     [HasPermission("roles.update")]
     public async Task<IActionResult> SetPermissions(Guid id, [FromBody] SetPermissionsRequest request, CancellationToken cancellationToken)

@@ -52,6 +52,14 @@ public sealed class UsersController(IUserService userService, ISearchService sea
         return deleted ? NoContent() : NotFound();
     }
 
+    [HttpGet("{id:guid}/workspaces")]
+    [HasPermission("users.view")]
+    public async Task<IActionResult> GetWorkspaces(Guid id, CancellationToken cancellationToken)
+    {
+        var workspaces = await userService.GetWorkspacesAsync(id, cancellationToken);
+        return workspaces is null ? NotFound() : Ok(workspaces);
+    }
+
     [HttpPut("{id:guid}/workspaces")]
     [HasPermission("users.update")]
     public async Task<IActionResult> SetWorkspaces(Guid id, [FromBody] SetUserWorkspacesRequest request, CancellationToken cancellationToken)

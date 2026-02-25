@@ -85,6 +85,19 @@ public sealed class RoleService(
         return true;
     }
 
+    public async Task<IReadOnlyCollection<PermissionDto>?> GetPermissionsAsync(Guid roleId, CancellationToken cancellationToken)
+    {
+        var exists = await dbContext.Roles.AnyAsync(x => x.Id == roleId, cancellationToken);
+        if (!exists)
+            return null;
+
+        return await dbContext.RolePermissions
+            .AsNoTracking()
+            .Where(x => x.RoleId == roleId)
+            .Select(x => new PermissionDto(x.Permission!.Id, x.Permission.Bit, x.Permission.Code, x.Permission.Description, x.Permission.IsSystem))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task SetPermissionsAsync(Guid roleId, IReadOnlyCollection<PermissionDto> permissions, CancellationToken cancellationToken)
     {
         var permissionIds = permissions.Select(x => x.Id).Distinct().ToArray();

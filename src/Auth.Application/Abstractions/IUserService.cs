@@ -9,4 +9,5 @@ public interface IUserService
     Task<UserDto?> PatchAsync(Guid id, PatchUserRequest request, CancellationToken cancellationToken);
     Task<bool> SoftDeleteAsync(Guid id, CancellationToken cancellationToken);
     Task SetWorkspacesAsync(Guid userId, IReadOnlyCollection<UserWorkspaceRolesItem> workspaces, CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<UserWorkspaceRolesItem>?> GetWorkspacesAsync(Guid userId, CancellationToken cancellationToken);
 }

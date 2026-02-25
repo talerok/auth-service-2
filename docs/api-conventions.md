@@ -20,6 +20,10 @@
 
 Batch-операции выделяем как подресурсы: `PUT /api/roles/{id}/permissions`.
 
+Для чтения связанных коллекций используем GET на подресурс:
+
+- `GET /api/{resource}/{id}/{resource}` — список.
+
 ## Входные параметры
 
 - DTO для body строго типизированы (никаких `object`, `dynamic`).
@@ -56,6 +60,7 @@ Batch-операции выделяем как подресурсы: `PUT /api/r
 ```
 
 Правила:
+
 - `filter` — словарь по имени поля; если не передан, используется `*` (без фильтрации).
 - Внутри поля поддерживаются операции `eq`, `in`, `ts`.
 - `sortOrder` принимает только `ASC` или `DESC`.
@@ -76,6 +81,7 @@ Batch-операции выделяем как подресурсы: `PUT /api/r
 Ошибки бизнес-логики возвращаются в RFC 7807 формате `application/problem+json` через глобальный middleware.
 
 Правила:
+
 - В `AuthException` передаётся только стабильный `code`.
 - Статус (`status`) и заголовок (`title`) определяются централизованно в `AuthProblemDetailsMapper`.
 - Человекочитаемое описание (`detail`) также маппится по `code` в том же месте.
@@ -96,7 +102,7 @@ Batch-операции выделяем как подресурсы: `PUT /api/r
 
 ### Коды ошибок
 
-| code | HTTP status |
-|------|-------------|
-| `AUTH_INVALID_PASSWORD_CHANGE_CHALLENGE` | 401 |
-| `AUTH_SYSTEM_PERMISSION_DELETE_FORBIDDEN` | 400 |
+| code                                      | HTTP status |
+| ----------------------------------------- | ----------- |
+| `AUTH_INVALID_PASSWORD_CHANGE_CHALLENGE`  | 401         |
+| `AUTH_SYSTEM_PERMISSION_DELETE_FORBIDDEN` | 400         |

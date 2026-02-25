@@ -116,6 +116,21 @@ public sealed class UserService(
         return true;
     }
 
+    public async Task<IReadOnlyCollection<UserWorkspaceRolesItem>?> GetWorkspacesAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var exists = await dbContext.Users.AnyAsync(x => x.Id == userId, cancellationToken);
+        if (!exists)
+            return null;
+
+        return await dbContext.UserWorkspaces
+            .AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .Select(x => new UserWorkspaceRolesItem(
+                x.WorkspaceId,
+                x.UserWorkspaceRoles.Select(r => r.RoleId).ToList()))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task SetWorkspacesAsync(
         Guid userId,
         IReadOnlyCollection<UserWorkspaceRolesItem> workspaces,
