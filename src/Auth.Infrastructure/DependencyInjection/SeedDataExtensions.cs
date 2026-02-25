@@ -15,12 +15,18 @@ public static class SeedDataExtensions
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         var permissionCache = scope.ServiceProvider.GetRequiredService<IPermissionBitCache>();
         var jwtOptions = scope.ServiceProvider.GetRequiredService<IOptions<IntegrationOptions>>();
-
         await db.Database.MigrateAsync(cancellationToken);
 
-        if (!await db.Permissions.IgnoreQueryFilters().AnyAsync(cancellationToken))
+        var existingBits = await db.Permissions.IgnoreQueryFilters()
+            .Select(x => x.Bit)
+            .ToListAsync(cancellationToken);
+        var existingBitSet = existingBits.ToHashSet();
+        var missingPermissions = SystemPermissionCatalog.Permissions
+            .Where(x => !existingBitSet.Contains(x.Bit))
+            .ToList();
+        if (missingPermissions.Count > 0)
         {
-            db.Permissions.AddRange(SystemPermissionCatalog.Permissions.Select(x => new Permission
+            db.Permissions.AddRange(missingPermissions.Select(x => new Permission
             {
                 Bit = x.Bit,
                 Code = x.Code,

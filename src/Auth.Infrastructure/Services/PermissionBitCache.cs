@@ -1,9 +1,10 @@
 using Auth.Application;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Auth.Infrastructure;
 
-public sealed class PermissionBitCache(AuthDbContext dbContext) : IPermissionBitCache
+public sealed class PermissionBitCache(IServiceScopeFactory scopeFactory) : IPermissionBitCache
 {
     private readonly Dictionary<string, int> _cache = new(StringComparer.OrdinalIgnoreCase);
 
@@ -14,6 +15,8 @@ public sealed class PermissionBitCache(AuthDbContext dbContext) : IPermissionBit
     public async Task WarmupAsync(CancellationToken cancellationToken)
     {
         _cache.Clear();
+        using var scope = scopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
         var permissions = await dbContext.Permissions.AsNoTracking().ToListAsync(cancellationToken);
         foreach (var permission in permissions)
         {

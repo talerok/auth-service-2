@@ -27,4 +27,8 @@ public interface ISearchMaintenanceService
 {
     Task EnsureIndicesAsync(CancellationToken cancellationToken);
     Task ReindexAllAsync(CancellationToken cancellationToken);
+    Task ReindexUsersAsync(CancellationToken cancellationToken);
+    Task ReindexRolesAsync(CancellationToken cancellationToken);
+    Task ReindexPermissionsAsync(CancellationToken cancellationToken);
+    Task ReindexWorkspacesAsync(CancellationToken cancellationToken);
 }

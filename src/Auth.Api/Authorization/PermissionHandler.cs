@@ -34,27 +34,6 @@ public sealed class PermissionHandler(IPermissionBitCache permissionBitCache) : 
             return Task.CompletedTask;
         }
 
-        if (requirement.InWorkspace)
-        {
-            if (context.Resource is not HttpContext httpContext)
-            {
-                return Task.CompletedTask;
-            }
-
-            var workspaceId = httpContext.Request.RouteValues["workspaceId"]?.ToString();
-            if (workspaceId is null || !workspaceMasks.TryGetValue(workspaceId, out var encoded))
-            {
-                return Task.CompletedTask;
-            }
-
-            if (HasBit(encoded, bit))
-            {
-                context.Succeed(requirement);
-            }
-
-            return Task.CompletedTask;
-        }
-
         foreach (var encoded in workspaceMasks.Values)
         {
             if (HasBit(encoded, bit))

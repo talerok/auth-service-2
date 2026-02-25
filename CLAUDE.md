@@ -37,9 +37,9 @@ python3 run-docker.py --env-file .env --profile local-opensearch
 
 ## Docs
 - [docs/architecture.md](docs/architecture.md) — слои, паттерны, структура зависимостей
-- [docs/api.md](docs/api.md) — REST-контракт, все endpoints, форматы запросов/ответов
-- [docs/routes.md](docs/routes.md) — стандарт нейминга и создания новых endpoint-ов
+- [docs/api-conventions.md](docs/api-conventions.md) — стандарт нейминга роутов, форматы запросов/ответов, обработка ошибок
 - [docs/database.md](docs/database.md) — схема таблиц, связи, миграции
 - [docs/deployment.md](docs/deployment.md) — зависимости, Docker, переменные окружения
 - [docs/code.requirements.md](docs/code.requirements.md) — стандарты написания кода в проекте
 - [docs/tests.requirements.md](docs/tests.requirements.md) — требования к тестам, что и как покрывать
+- [docs/permissions.md](docs/permissions.md) — каталог системных полномочий, bitmask-упаковка

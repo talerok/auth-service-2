@@ -14,22 +14,10 @@ public sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> opti
             var policy = new AuthorizationPolicyBuilder()
                 .AddAuthenticationSchemes("Bearer")
                 .RequireAuthenticatedUser()
-                .AddRequirements(new PermissionRequirement(permission, false))
+                .AddRequirements(new PermissionRequirement(permission))
                 .Build();
             return Task.FromResult<AuthorizationPolicy?>(policy);
         }
-
-        if (policyName.StartsWith("permws:", StringComparison.Ordinal))
-        {
-            var permission = policyName["permws:".Length..];
-            var policy = new AuthorizationPolicyBuilder()
-                .AddAuthenticationSchemes("Bearer")
-                .RequireAuthenticatedUser()
-                .AddRequirements(new PermissionRequirement(permission, true))
-                .Build();
-            return Task.FromResult<AuthorizationPolicy?>(policy);
-        }
-
         return base.GetPolicyAsync(policyName);
     }
 }

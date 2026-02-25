@@ -22,7 +22,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IWorkspaceService, WorkspaceService>();
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IPermissionService, PermissionService>();
-        services.AddScoped<IPermissionBitCache, PermissionBitCache>();
+        services.AddSingleton<IPermissionBitCache, PermissionBitCache>();
         services.AddScoped<ISearchIndexService, NullSearchIndexService>();
         services.AddScoped<IOutboxEventWriter, OutboxEventWriter>();
         if (integration.Smtp.Enabled)
