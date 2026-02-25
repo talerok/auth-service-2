@@ -18,6 +18,8 @@ namespace Auth.Infrastructure.Migrations
                 nullable: false,
                 defaultValue: "");
 
+            migrationBuilder.Sql("UPDATE workspaces SET \"Code\" = \"Name\" WHERE \"Code\" = ''");
+
             migrationBuilder.CreateIndex(
                 name: "IX_workspaces_Code",
                 table: "workspaces",
