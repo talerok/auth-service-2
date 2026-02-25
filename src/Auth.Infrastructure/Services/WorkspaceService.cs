@@ -8,21 +8,21 @@ public sealed class WorkspaceService(AuthDbContext dbContext, ISearchIndexServic
 {
     public async Task<IReadOnlyCollection<WorkspaceDto>> GetAllAsync(CancellationToken cancellationToken) =>
         await dbContext.Workspaces.AsNoTracking()
-            .Select(x => new WorkspaceDto(x.Id, x.Name, x.Description, x.IsSystem))
+            .Select(x => new WorkspaceDto(x.Id, x.Name, x.Code, x.Description, x.IsSystem))
             .ToListAsync(cancellationToken);
 
     public async Task<WorkspaceDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
         await dbContext.Workspaces.AsNoTracking()
             .Where(x => x.Id == id)
-            .Select(x => new WorkspaceDto(x.Id, x.Name, x.Description, x.IsSystem))
+            .Select(x => new WorkspaceDto(x.Id, x.Name, x.Code, x.Description, x.IsSystem))
             .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<WorkspaceDto> CreateAsync(CreateWorkspaceRequest request, CancellationToken cancellationToken)
     {
-        var entity = new Workspace { Name = request.Name, Description = request.Description, IsSystem = request.IsSystem };
+        var entity = new Workspace { Name = request.Name, Code = request.Code, Description = request.Description, IsSystem = request.IsSystem };
         dbContext.Workspaces.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = new WorkspaceDto(entity.Id, entity.Name, entity.Description, entity.IsSystem);
+        var dto = new WorkspaceDto(entity.Id, entity.Name, entity.Code, entity.Description, entity.IsSystem);
         await searchIndexService.IndexWorkspaceAsync(dto, cancellationToken);
         return dto;
     }
@@ -36,10 +36,11 @@ public sealed class WorkspaceService(AuthDbContext dbContext, ISearchIndexServic
         }
 
         entity.Name = request.Name;
+        entity.Code = request.Code;
         entity.Description = request.Description;
         entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = new WorkspaceDto(entity.Id, entity.Name, entity.Description, entity.IsSystem);
+        var dto = new WorkspaceDto(entity.Id, entity.Name, entity.Code, entity.Description, entity.IsSystem);
         await searchIndexService.IndexWorkspaceAsync(dto, cancellationToken);
         return dto;
     }
@@ -57,6 +58,11 @@ public sealed class WorkspaceService(AuthDbContext dbContext, ISearchIndexServic
             entity.Name = request.Name;
         }
 
+        if (request.Code is not null)
+        {
+            entity.Code = request.Code;
+        }
+
         if (request.Description is not null)
         {
             entity.Description = request.Description;
@@ -64,7 +70,7 @@ public sealed class WorkspaceService(AuthDbContext dbContext, ISearchIndexServic
 
         entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = new WorkspaceDto(entity.Id, entity.Name, entity.Description, entity.IsSystem);
+        var dto = new WorkspaceDto(entity.Id, entity.Name, entity.Code, entity.Description, entity.IsSystem);
         await searchIndexService.IndexWorkspaceAsync(dto, cancellationToken);
         return dto;
     }

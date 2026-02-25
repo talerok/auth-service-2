@@ -99,7 +99,7 @@ public sealed class OpenSearchMaintenanceService(
     public async Task ReindexWorkspacesAsync(CancellationToken cancellationToken)
     {
         var workspaces = await dbContext.Workspaces.AsNoTracking()
-            .Select(x => new WorkspaceDto(x.Id, x.Name, x.Description, x.IsSystem))
+            .Select(x => new WorkspaceDto(x.Id, x.Name, x.Code, x.Description, x.IsSystem))
             .ToListAsync(cancellationToken);
         foreach (var workspace in workspaces)
         {
