@@ -9,10 +9,14 @@ public sealed class PermissionInHandler(IPermissionBitCache permissionBitCache) 
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionInRequirement requirement)
     {
         var wsClaim = context.User.FindFirst("ws")?.Value;
-        if (string.IsNullOrWhiteSpace(wsClaim))
-            return Task.CompletedTask;
-
         Dictionary<string, string>? workspaceMasks;
+
+        if (string.IsNullOrWhiteSpace(wsClaim))
+        {
+            return Task.CompletedTask;
+        }
+
+
         try
         {
             workspaceMasks = JsonSerializer.Deserialize<Dictionary<string, string>>(wsClaim);
@@ -22,37 +26,22 @@ public sealed class PermissionInHandler(IPermissionBitCache permissionBitCache) 
             return Task.CompletedTask;
         }
 
-        if (workspaceMasks is null || !workspaceMasks.TryGetValue(requirement.WorkspaceCode, out var encoded))
-            return Task.CompletedTask;
-
-        var bytes = Convert.FromBase64String(encoded);
-
-        foreach (var bit in GetMatchingBits(requirement.PermissionPattern))
+        if (workspaceMasks is null)
         {
-            if (PermissionBitmask.HasBit(bytes, bit))
-            {
-                context.Succeed(requirement);
-                break;
-            }
+            return Task.CompletedTask;
+        }
+
+        if (!workspaceMasks.TryGetValue(requirement.WorkspaceCode, out var encoded))
+        {
+            return Task.CompletedTask;
+        }
+
+        var hasBit = permissionBitCache.TryGetBitByCode(requirement.Permission, out var bit);
+        if (hasBit && PermissionBitmask.HasBit(Convert.FromBase64String(encoded), bit))
+        {
+            context.Succeed(requirement);
         }
 
         return Task.CompletedTask;
-    }
-
-    private IEnumerable<int> GetMatchingBits(string pattern)
-    {
-        if (!pattern.EndsWith(".*", StringComparison.Ordinal))
-        {
-            if (permissionBitCache.TryGetBitByCode(pattern, out var bit))
-                yield return bit;
-            yield break;
-        }
-
-        var prefix = pattern[..^2];
-        foreach (var (code, bit) in permissionBitCache.Snapshot())
-        {
-            if (code == prefix || code.StartsWith(prefix + ".", StringComparison.Ordinal))
-                yield return bit;
-        }
     }
 }
