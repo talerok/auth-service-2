@@ -11,7 +11,7 @@ namespace Auth.Api.Controllers;
 public sealed class SearchController(ISearchMaintenanceService searchMaintenanceService) : ControllerBase
 {
     [HttpPost("reindex")]
-    [HasPermission("search.reindex")]
+    [HasPermissionIn("default", "search.reindex")]
     public async Task<IActionResult> Reindex(CancellationToken cancellationToken)
     {
         await searchMaintenanceService.ReindexAllAsync(cancellationToken);
@@ -19,7 +19,7 @@ public sealed class SearchController(ISearchMaintenanceService searchMaintenance
     }
 
     [HttpPost("reindex/users")]
-    [HasPermission("search.reindex")]
+    [HasPermissionIn("default", "search.reindex")]
     public async Task<IActionResult> ReindexUsers(CancellationToken cancellationToken)
     {
         await searchMaintenanceService.ReindexUsersAsync(cancellationToken);
@@ -27,7 +27,7 @@ public sealed class SearchController(ISearchMaintenanceService searchMaintenance
     }
 
     [HttpPost("reindex/roles")]
-    [HasPermission("search.reindex")]
+    [HasPermissionIn("default", "search.reindex")]
     public async Task<IActionResult> ReindexRoles(CancellationToken cancellationToken)
     {
         await searchMaintenanceService.ReindexRolesAsync(cancellationToken);
@@ -35,7 +35,7 @@ public sealed class SearchController(ISearchMaintenanceService searchMaintenance
     }
 
     [HttpPost("reindex/permissions")]
-    [HasPermission("search.reindex")]
+    [HasPermissionIn("default", "search.reindex")]
     public async Task<IActionResult> ReindexPermissions(CancellationToken cancellationToken)
     {
         await searchMaintenanceService.ReindexPermissionsAsync(cancellationToken);
@@ -43,7 +43,7 @@ public sealed class SearchController(ISearchMaintenanceService searchMaintenance
     }
 
     [HttpPost("reindex/workspaces")]
-    [HasPermission("search.reindex")]
+    [HasPermissionIn("default", "search.reindex")]
     public async Task<IActionResult> ReindexWorkspaces(CancellationToken cancellationToken)
     {
         await searchMaintenanceService.ReindexWorkspacesAsync(cancellationToken);

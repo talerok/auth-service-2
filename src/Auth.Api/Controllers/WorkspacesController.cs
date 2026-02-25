@@ -11,12 +11,12 @@ namespace Auth.Api.Controllers;
 public sealed class WorkspacesController(IWorkspaceService workspaceService, ISearchService searchService) : ControllerBase
 {
     [HttpGet]
-    [HasPermission("workspaces.view")]
+    [HasPermissionIn("default", "workspaces.view")]
     public Task<IReadOnlyCollection<WorkspaceDto>> GetAll(CancellationToken cancellationToken) =>
         workspaceService.GetAllAsync(cancellationToken);
 
     [HttpGet("{id:guid}")]
-    [HasPermission("workspaces.view")]
+    [HasPermissionIn("default", "workspaces.view")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var item = await workspaceService.GetByIdAsync(id, cancellationToken);
@@ -24,12 +24,12 @@ public sealed class WorkspacesController(IWorkspaceService workspaceService, ISe
     }
 
     [HttpPost]
-    [HasPermission("workspaces.create")]
+    [HasPermissionIn("default", "workspaces.create")]
     public Task<WorkspaceDto> Create([FromBody] CreateWorkspaceRequest request, CancellationToken cancellationToken) =>
         workspaceService.CreateAsync(request, cancellationToken);
 
     [HttpPut("{id:guid}")]
-    [HasPermission("workspaces.update")]
+    [HasPermissionIn("default", "workspaces.update")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWorkspaceRequest request, CancellationToken cancellationToken)
     {
         var updated = await workspaceService.UpdateAsync(id, request, cancellationToken);
@@ -37,7 +37,7 @@ public sealed class WorkspacesController(IWorkspaceService workspaceService, ISe
     }
 
     [HttpPatch("{id:guid}")]
-    [HasPermission("workspaces.update")]
+    [HasPermissionIn("default", "workspaces.update")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] PatchWorkspaceRequest request, CancellationToken cancellationToken)
     {
         var updated = await workspaceService.PatchAsync(id, request, cancellationToken);
@@ -45,7 +45,7 @@ public sealed class WorkspacesController(IWorkspaceService workspaceService, ISe
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermission("workspaces.delete")]
+    [HasPermissionIn("default", "workspaces.delete")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var deleted = await workspaceService.SoftDeleteAsync(id, cancellationToken);
@@ -53,7 +53,7 @@ public sealed class WorkspacesController(IWorkspaceService workspaceService, ISe
     }
 
     [HttpPost("search")]
-    [HasPermission("workspaces.view")]
+    [HasPermissionIn("default", "workspaces.view")]
     public Task<SearchResponse<WorkspaceDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
         searchService.SearchWorkspacesAsync(request, cancellationToken);
 }

@@ -11,12 +11,12 @@ namespace Auth.Api.Controllers;
 public sealed class PermissionsController(IPermissionService permissionService, ISearchService searchService) : ControllerBase
 {
     [HttpGet]
-    [HasPermission("permissions.view")]
+    [HasPermissionIn("default", "permissions.view")]
     public Task<IReadOnlyCollection<PermissionDto>> GetAll(CancellationToken cancellationToken) =>
         permissionService.GetAllAsync(cancellationToken);
 
     [HttpGet("{id:guid}")]
-    [HasPermission("permissions.view")]
+    [HasPermissionIn("default", "permissions.view")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var item = await permissionService.GetByIdAsync(id, cancellationToken);
@@ -24,12 +24,12 @@ public sealed class PermissionsController(IPermissionService permissionService, 
     }
 
     [HttpPost]
-    [HasPermission("permissions.create")]
+    [HasPermissionIn("default", "permissions.create")]
     public Task<PermissionDto> Create([FromBody] CreatePermissionRequest request, CancellationToken cancellationToken) =>
         permissionService.CreateAsync(request, cancellationToken);
 
     [HttpPut("{id:guid}")]
-    [HasPermission("permissions.update")]
+    [HasPermissionIn("default", "permissions.update")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePermissionRequest request, CancellationToken cancellationToken)
     {
         var updated = await permissionService.UpdateAsync(id, request, cancellationToken);
@@ -37,7 +37,7 @@ public sealed class PermissionsController(IPermissionService permissionService, 
     }
 
     [HttpPatch("{id:guid}")]
-    [HasPermission("permissions.update")]
+    [HasPermissionIn("default", "permissions.update")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] PatchPermissionRequest request, CancellationToken cancellationToken)
     {
         var updated = await permissionService.PatchAsync(id, request, cancellationToken);
@@ -45,7 +45,7 @@ public sealed class PermissionsController(IPermissionService permissionService, 
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermission("permissions.delete")]
+    [HasPermissionIn("default", "permissions.delete")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var deleted = await permissionService.SoftDeleteAsync(id, cancellationToken);
@@ -53,7 +53,7 @@ public sealed class PermissionsController(IPermissionService permissionService, 
     }
 
     [HttpPost("search")]
-    [HasPermission("permissions.view")]
+    [HasPermissionIn("default", "permissions.view")]
     public Task<SearchResponse<PermissionDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
         searchService.SearchPermissionsAsync(request, cancellationToken);
 }

@@ -8,16 +8,23 @@ public sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> opti
 {
     public override Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
     {
-        if (policyName.StartsWith("perm:", StringComparison.Ordinal))
+        if (policyName.StartsWith("perm-in:", StringComparison.Ordinal))
         {
-            var permission = policyName["perm:".Length..];
-            var policy = new AuthorizationPolicyBuilder()
-                .AddAuthenticationSchemes("Bearer")
-                .RequireAuthenticatedUser()
-                .AddRequirements(new PermissionRequirement(permission))
-                .Build();
-            return Task.FromResult<AuthorizationPolicy?>(policy);
+            var rest = policyName["perm-in:".Length..];
+            var colonIdx = rest.IndexOf(':');
+            if (colonIdx > 0)
+            {
+                var workspaceCode = rest[..colonIdx];
+                var permissionPattern = rest[(colonIdx + 1)..];
+                var policy = new AuthorizationPolicyBuilder()
+                    .AddAuthenticationSchemes("Bearer")
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionInRequirement(workspaceCode, permissionPattern))
+                    .Build();
+                return Task.FromResult<AuthorizationPolicy?>(policy);
+            }
         }
+
         return base.GetPolicyAsync(policyName);
     }
 }
