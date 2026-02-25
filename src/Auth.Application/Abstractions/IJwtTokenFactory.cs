@@ -4,6 +4,6 @@ namespace Auth.Application;
 
 public interface IJwtTokenFactory
 {
-    AuthTokensResponse CreateTokens(User user, Dictionary<Guid, byte[]> workspaceMasks);
+    AuthTokensResponse CreateTokens(User user, Dictionary<string, byte[]> workspaceMasks);
     string CreateRefreshToken();
 }

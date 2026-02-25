@@ -8,7 +8,7 @@
 - `Auth.Infrastructure.Integration` - OpenSearch интеграция
 - `Auth.Api` - контроллеры, middleware, authN/authZ
 
-JWT содержит claim `ws` в формате `workspaceId -> base64(bitmask)`.
+JWT содержит claim `ws` в формате `workspaceCode -> base64(bitmask)`.
 
 ## Error handling
 

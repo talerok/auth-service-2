@@ -146,7 +146,7 @@ public sealed class TwoFactorAuthServiceTests
     {
         var tokenFactory = new Mock<IJwtTokenFactory>();
         tokenFactory
-            .Setup(x => x.CreateTokens(It.IsAny<User>(), It.IsAny<Dictionary<Guid, byte[]>>()))
+            .Setup(x => x.CreateTokens(It.IsAny<User>(), It.IsAny<Dictionary<string, byte[]>>()))
             .Returns(new AuthTokensResponse("access", "refresh", DateTime.UtcNow.AddMinutes(15)));
         var options = CreateOptions(twoFactorStaticOtp);
 
@@ -164,7 +164,7 @@ public sealed class TwoFactorAuthServiceTests
 
         var tokenFactory = new Mock<IJwtTokenFactory>();
         tokenFactory
-            .Setup(x => x.CreateTokens(It.IsAny<User>(), It.IsAny<Dictionary<Guid, byte[]>>()))
+            .Setup(x => x.CreateTokens(It.IsAny<User>(), It.IsAny<Dictionary<string, byte[]>>()))
             .Returns(new AuthTokensResponse("access", "refresh", DateTime.UtcNow.AddMinutes(15)));
 
         var searchIndex = new Mock<ISearchIndexService>();

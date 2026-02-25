@@ -40,7 +40,7 @@ bitmask = [0x11, 0x01]
 
 ## JWT-claim `ws`
 
-Токен содержит claim `ws` — словарь `workspaceId → base64(bitmask)`. Проверка полномочий выполняется в `PermissionHandler` без обращения к БД.
+Токен содержит claim `ws` — словарь `workspaceCode → base64(bitmask)`. Проверка полномочий выполняется в `PermissionHandler` без обращения к БД.
 
 ## Системные ограничения
 

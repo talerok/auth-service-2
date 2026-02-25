@@ -14,12 +14,12 @@ public sealed class JwtTokenFactory(IOptions<IntegrationOptions> options) : IJwt
 {
     private readonly JwtOptions _jwt = options.Value.Jwt;
 
-    public AuthTokensResponse CreateTokens(User user, Dictionary<Guid, byte[]> workspaceMasks)
+    public AuthTokensResponse CreateTokens(User user, Dictionary<string, byte[]> workspaceMasks)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var expiresAt = DateTime.UtcNow.AddMinutes(_jwt.AccessTokenExpirationMinutes);
-        var wsPayload = workspaceMasks.ToDictionary(x => x.Key.ToString(), x => Convert.ToBase64String(x.Value));
+        var wsPayload = workspaceMasks.ToDictionary(x => x.Key, x => Convert.ToBase64String(x.Value));
 
         var claims = new List<Claim>
         {

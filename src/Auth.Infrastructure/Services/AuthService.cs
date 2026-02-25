@@ -216,23 +216,23 @@ public sealed class AuthService(
         }
     }
 
-    private async Task<Dictionary<Guid, byte[]>> BuildWorkspaceMasksAsync(Guid userId, CancellationToken cancellationToken)
+    private async Task<Dictionary<string, byte[]>> BuildWorkspaceMasksAsync(Guid userId, CancellationToken cancellationToken)
     {
         var matrix = await dbContext.UserWorkspaces
             .Where(uw => uw.UserId == userId)
             .Select(uw => new
             {
-                uw.WorkspaceId,
+                uw.Workspace!.Code,
                 Bits = uw.UserWorkspaceRoles
                     .SelectMany(uwr => uwr.Role!.RolePermissions)
                     .Select(rp => rp.Permission!.Bit)
             })
             .ToListAsync(cancellationToken);
 
-        var result = new Dictionary<Guid, byte[]>();
+        var result = new Dictionary<string, byte[]>();
         foreach (var row in matrix)
         {
-            result[row.WorkspaceId] = PermissionBitmask.BuildMask(row.Bits);
+            result[row.Code] = PermissionBitmask.BuildMask(row.Bits);
         }
 
         return result;

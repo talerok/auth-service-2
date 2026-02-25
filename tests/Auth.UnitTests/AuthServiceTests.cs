@@ -91,7 +91,7 @@ public sealed class AuthServiceTests
         hasher.Setup(x => x.Verify("pwd", "hash")).Returns(true);
         var tokenFactory = new Mock<IJwtTokenFactory>();
         tokenFactory
-            .Setup(x => x.CreateTokens(It.IsAny<User>(), It.IsAny<Dictionary<Guid, byte[]>>()))
+            .Setup(x => x.CreateTokens(It.IsAny<User>(), It.IsAny<Dictionary<string, byte[]>>()))
             .Returns(new AuthTokensResponse("access", "refresh-new", DateTime.UtcNow.AddMinutes(15)));
         var service = CreateService(dbContext, hasher: hasher, tokenFactory: tokenFactory);
 
@@ -156,7 +156,7 @@ public sealed class AuthServiceTests
 
         var tokenFactory = new Mock<IJwtTokenFactory>();
         tokenFactory
-            .Setup(x => x.CreateTokens(It.IsAny<User>(), It.IsAny<Dictionary<Guid, byte[]>>()))
+            .Setup(x => x.CreateTokens(It.IsAny<User>(), It.IsAny<Dictionary<string, byte[]>>()))
             .Returns(new AuthTokensResponse("access-new", "refresh-new", DateTime.UtcNow.AddMinutes(15)));
         var service = CreateService(dbContext, tokenFactory: tokenFactory);
 
@@ -342,7 +342,7 @@ public sealed class AuthServiceTests
         await dbContext.SaveChangesAsync();
 
         var tokenFactory = new Mock<IJwtTokenFactory>();
-        tokenFactory.Setup(x => x.CreateTokens(It.IsAny<User>(), It.IsAny<Dictionary<Guid, byte[]>>()))
+        tokenFactory.Setup(x => x.CreateTokens(It.IsAny<User>(), It.IsAny<Dictionary<string, byte[]>>()))
             .Returns(new AuthTokensResponse("access-token", "refresh-token", DateTime.UtcNow.AddMinutes(15)));
         var service = CreateService(dbContext, tokenFactory: tokenFactory);
 
@@ -457,7 +457,7 @@ public sealed class AuthServiceTests
         tokenFactory ??= new Mock<IJwtTokenFactory>();
         if (!hasCustomTokenFactory)
         {
-            tokenFactory.Setup(x => x.CreateTokens(It.IsAny<User>(), It.IsAny<Dictionary<Guid, byte[]>>()))
+            tokenFactory.Setup(x => x.CreateTokens(It.IsAny<User>(), It.IsAny<Dictionary<string, byte[]>>()))
                 .Returns(new AuthTokensResponse("access", "refresh", DateTime.UtcNow.AddMinutes(15)));
         }
 

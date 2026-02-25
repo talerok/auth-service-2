@@ -25,7 +25,7 @@ public sealed class JwtTokenFactoryTests
         });
         var factory = new JwtTokenFactory(options);
 
-        var workspaceId = Guid.NewGuid();
+        const string workspaceCode = "default";
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -34,9 +34,9 @@ public sealed class JwtTokenFactoryTests
             PasswordHash = "hash",
             IsActive = true
         };
-        var masks = new Dictionary<Guid, byte[]>
+        var masks = new Dictionary<string, byte[]>
         {
-            [workspaceId] = [0b_0000_0101]
+            [workspaceCode] = [0b_0000_0101]
         };
 
         var tokens = factory.CreateTokens(user, masks);
@@ -45,8 +45,8 @@ public sealed class JwtTokenFactoryTests
         var wsPayload = JsonSerializer.Deserialize<Dictionary<string, string>>(wsClaim);
 
         wsPayload.Should().NotBeNull();
-        wsPayload!.Should().ContainKey(workspaceId.ToString());
-        wsPayload[workspaceId.ToString()].Should().Be(Convert.ToBase64String([0b_0000_0101]));
+        wsPayload!.Should().ContainKey(workspaceCode);
+        wsPayload[workspaceCode].Should().Be(Convert.ToBase64String([0b_0000_0101]));
         jwt.Issuer.Should().Be("auth-service");
         jwt.Audiences.Should().Contain("auth-service-clients");
         tokens.RefreshToken.Should().NotBeNullOrWhiteSpace();
