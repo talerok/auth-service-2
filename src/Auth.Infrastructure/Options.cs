@@ -65,7 +65,7 @@ public sealed class TwoFactorOptions
     public int DeliveryTimeoutSeconds { get; set; } = 3;
     public int DeliveryRetryCount { get; set; } = 3;
     public int DeliveryRetryBackoffMilliseconds { get; set; } = 200;
-    public int DeliveryPollIntervalMilliseconds { get; set; } = 200;
+    public int DeliveryPollIntervalMilliseconds { get; set; } = 2000;
     public string StaticOtpForTesting { get; set; } = string.Empty;
 }
 
