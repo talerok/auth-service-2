@@ -13,44 +13,40 @@ public sealed class OpenSearchMaintenanceService(
 {
     public async Task EnsureIndicesAsync(CancellationToken cancellationToken)
     {
-        if (await EnsureIndexExistsAsync<UserDto>(indexNames.Users, m => m
-            .Properties(p => p
+        if (await EnsureIndexExistsAsync<UserDto>(indexNames.Users, p => p
                 .Keyword(k => k.Name(n => n.Id))
                 .Keyword(k => k.Name(n => n.Username))
                 .Keyword(k => k.Name(n => n.Email))
                 .Boolean(b => b.Name(n => n.IsActive))
-                .Boolean(b => b.Name(n => n.MustChangePassword))), cancellationToken))
+                .Boolean(b => b.Name(n => n.MustChangePassword)), cancellationToken))
         {
             await ReindexUsersAsync(cancellationToken);
         }
 
-        if (await EnsureIndexExistsAsync<RoleDto>(indexNames.Roles, m => m
-            .Properties(p => p
+        if (await EnsureIndexExistsAsync<RoleDto>(indexNames.Roles, p => p
                 .Keyword(k => k.Name(n => n.Id))
                 .Keyword(k => k.Name(n => n.Name))
-                .Keyword(k => k.Name(n => n.Description))), cancellationToken))
+                .Keyword(k => k.Name(n => n.Description)), cancellationToken))
         {
             await ReindexRolesAsync(cancellationToken);
         }
 
-        if (await EnsureIndexExistsAsync<PermissionDto>(indexNames.Permissions, m => m
-            .Properties(p => p
+        if (await EnsureIndexExistsAsync<PermissionDto>(indexNames.Permissions, p => p
                 .Keyword(k => k.Name(n => n.Id))
                 .Number(n => n.Name(x => x.Bit).Type(NumberType.Integer))
                 .Keyword(k => k.Name(n => n.Code))
                 .Keyword(k => k.Name(n => n.Description))
-                .Boolean(b => b.Name(n => n.IsSystem))), cancellationToken))
+                .Boolean(b => b.Name(n => n.IsSystem)), cancellationToken))
         {
             await ReindexPermissionsAsync(cancellationToken);
         }
 
-        if (await EnsureIndexExistsAsync<WorkspaceDto>(indexNames.Workspaces, m => m
-            .Properties(p => p
+        if (await EnsureIndexExistsAsync<WorkspaceDto>(indexNames.Workspaces, p => p
                 .Keyword(k => k.Name(n => n.Id))
                 .Keyword(k => k.Name(n => n.Name))
                 .Keyword(k => k.Name(n => n.Code))
                 .Keyword(k => k.Name(n => n.Description))
-                .Boolean(b => b.Name(n => n.IsSystem))), cancellationToken))
+                .Boolean(b => b.Name(n => n.IsSystem)), cancellationToken))
         {
             await ReindexWorkspacesAsync(cancellationToken);
         }
@@ -109,18 +105,27 @@ public sealed class OpenSearchMaintenanceService(
     }
 
     // Returns true if the index was created (did not exist before)
-    private async Task<bool> EnsureIndexExistsAsync<TDocument>(string indexName,
-        Func<TypeMappingDescriptor<TDocument>, ITypeMapping> mappingSelector,
+    private async Task<bool> EnsureIndexExistsAsync<TDocument>(
+        string indexName,
+        Func<PropertiesDescriptor<TDocument>, IPromise<IProperties>> propertiesSelector,
         CancellationToken cancellationToken) where TDocument : class
     {
         var existsResponse = await client.Indices.ExistsAsync(indexName, ct: cancellationToken);
         if (existsResponse.Exists)
         {
+            var putMappingResponse = await client.Indices.PutMappingAsync<TDocument>(
+                p => p.Index(indexName).Properties(propertiesSelector), cancellationToken);
+
+            if (!putMappingResponse.IsValid)
+            {
+                throw new InvalidOperationException(putMappingResponse.DebugInformation);
+            }
+
             return false;
         }
 
         var createResponse = await client.Indices.CreateAsync(indexName,
-            c => c.Map(mappingSelector), cancellationToken);
+            c => c.Map(m => m.Properties(propertiesSelector)), cancellationToken);
 
         if (!createResponse.IsValid)
         {
