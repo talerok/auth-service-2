@@ -83,12 +83,10 @@ public sealed class RoleServiceTests
 
     private static RoleService CreateService(
         AuthDbContext dbContext,
-        Mock<ISearchIndexService>? searchIndexService = null,
-        Mock<IOutboxEventWriter>? outboxEventWriter = null)
+        Mock<ISearchIndexService>? searchIndexService = null)
     {
         searchIndexService ??= new Mock<ISearchIndexService>();
-        outboxEventWriter ??= new Mock<IOutboxEventWriter>();
-        return new RoleService(dbContext, searchIndexService.Object, outboxEventWriter.Object);
+        return new RoleService(dbContext, searchIndexService.Object);
     }
 
     private static AuthDbContext CreateDbContext()

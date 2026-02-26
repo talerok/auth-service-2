@@ -24,13 +24,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPermissionService, PermissionService>();
         services.AddSingleton<IPermissionBitCache, PermissionBitCache>();
         services.AddScoped<ISearchIndexService, NullSearchIndexService>();
-        services.AddScoped<IOutboxEventWriter, OutboxEventWriter>();
+
         if (integration.Smtp.Enabled)
             services.AddSingleton<ITwoFactorEmailGateway, SmtpTwoFactorEmailGateway>();
         else
             services.AddSingleton<ITwoFactorEmailGateway, SafeDefaultTwoFactorEmailGateway>();
         services.AddHostedService<TwoFactorDeliveryBackgroundService>();
-        services.AddHostedService<OutboxPublisherBackgroundService>();
+
 
         return services;
     }

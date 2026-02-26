@@ -26,7 +26,7 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
 
     private static readonly IReadOnlyDictionary<string, string> TestEnvironmentVariables = new Dictionary<string, string>
     {
-        ["Integration__Kafka__Enabled"] = "false",
+
         ["Integration__OpenSearch__Url"] = "http://localhost:9200",
         ["Integration__OpenSearch__EnsureIndicesOnStartup"] = "false",
         ["Integration__OpenSearch__ReindexOnStartup"] = "false",
@@ -161,7 +161,7 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
                 configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["Integration:PostgreSql:ConnectionString"] = connectionString,
-                    ["Integration:Kafka:Enabled"] = "false",
+
                     ["Integration:OpenSearch:Url"] = "http://localhost:9200",
                     ["Integration:OpenSearch:EnsureIndicesOnStartup"] = "false",
                     ["Integration:OpenSearch:ReindexOnStartup"] = "false",

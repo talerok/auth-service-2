@@ -6,8 +6,7 @@ namespace Auth.Infrastructure;
 
 public sealed class RoleService(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
-    IOutboxEventWriter outboxEventWriter) : IRoleService
+    ISearchIndexService searchIndexService) : IRoleService
 {
     public async Task<IReadOnlyCollection<RoleDto>> GetAllAsync(CancellationToken cancellationToken) =>
         await dbContext.Roles.AsNoTracking().Select(x => new RoleDto(x.Id, x.Name, x.Description)).ToListAsync(cancellationToken);
@@ -19,7 +18,6 @@ public sealed class RoleService(
     {
         var entity = new Role { Name = request.Name, Description = request.Description };
         dbContext.Roles.Add(entity);
-        outboxEventWriter.AddRoleChanged(entity.Id, "created");
         await dbContext.SaveChangesAsync(cancellationToken);
         var dto = new RoleDto(entity.Id, entity.Name, entity.Description);
         await searchIndexService.IndexRoleAsync(dto, cancellationToken);
@@ -37,7 +35,6 @@ public sealed class RoleService(
         entity.Name = request.Name;
         entity.Description = request.Description;
         entity.UpdatedAt = DateTime.UtcNow;
-        outboxEventWriter.AddRoleChanged(entity.Id, "updated");
         await dbContext.SaveChangesAsync(cancellationToken);
         var dto = new RoleDto(entity.Id, entity.Name, entity.Description);
         await searchIndexService.IndexRoleAsync(dto, cancellationToken);
@@ -63,7 +60,6 @@ public sealed class RoleService(
         }
 
         entity.UpdatedAt = DateTime.UtcNow;
-        outboxEventWriter.AddRoleChanged(entity.Id, "updated");
         await dbContext.SaveChangesAsync(cancellationToken);
         var dto = new RoleDto(entity.Id, entity.Name, entity.Description);
         await searchIndexService.IndexRoleAsync(dto, cancellationToken);
@@ -79,7 +75,6 @@ public sealed class RoleService(
         }
 
         entity.DeletedAt = DateTime.UtcNow;
-        outboxEventWriter.AddRoleChanged(entity.Id, "deleted");
         await dbContext.SaveChangesAsync(cancellationToken);
         await searchIndexService.DeleteRoleAsync(id, cancellationToken);
         return true;
@@ -133,12 +128,10 @@ public sealed class RoleService(
 
             permission.Description = model.Description;
             permission.UpdatedAt = DateTime.UtcNow;
-            outboxEventWriter.AddPermissionChanged(permission.Id, "updated");
             permissionsToReindex.Add(
                 new PermissionDto(permission.Id, permission.Bit, permission.Code, permission.Description, permission.IsSystem));
         }
 
-        outboxEventWriter.AddRoleChanged(roleId, "permissions.updated", permissionIds);
         await dbContext.SaveChangesAsync(cancellationToken);
         foreach (var permission in permissionsToReindex)
         {

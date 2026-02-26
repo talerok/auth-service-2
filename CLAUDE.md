@@ -5,7 +5,7 @@
 ## Stack
 - .NET 8, ASP.NET Core, Entity Framework Core, PostgreSQL
 - Clean Architecture: Api → Application → Domain → Infrastructure → Infrastructure.Integration
-- OpenSearch (full-text search), Kafka (события через outbox), MailKit (SMTP для 2FA)
+- OpenSearch (full-text search), MailKit (SMTP для 2FA)
 
 ## Project Structure
 ```
@@ -14,7 +14,7 @@ src/
   Auth.Application/                 # Use cases: Auth, Users, Roles, Permissions, Workspaces, TwoFactor
   Auth.Domain/                      # Entities, value objects
   Auth.Infrastructure/              # EF Core, PostgreSQL, repositories, migrations
-  Auth.Infrastructure.Integration/  # OpenSearch, Kafka
+  Auth.Infrastructure.Integration/  # OpenSearch
 tests/
   Auth.UnitTests/        # xUnit, Moq, FluentAssertions, EF InMemory
   Auth.IntegrationTests/ # xUnit, Testcontainers (PostgreSQL), WebApplicationFactory
@@ -23,7 +23,7 @@ tests/
 ## Key Patterns
 - Permission bitmask RBAC: права хранятся как битовые флаги
 - Workspace multi-tenancy: пользователь имеет роли в каждом workspace отдельно
-- Outbox pattern: события записываются в OutboxMessage → Kafka
+
 - TOTP/OTP 2FA с доставкой по email
 
 ## Commands

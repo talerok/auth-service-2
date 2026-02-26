@@ -1,6 +1,5 @@
 using Auth.Application;
-using Auth.Infrastructure;
-using Auth.Infrastructure.Integration.Kafka;
+
 using Auth.Infrastructure.Integration.Search;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,15 +30,6 @@ public static class OpenSearchServiceCollectionExtensions
         services.AddScoped<ISearchIndexService, OpenSearchIndexService>();
         services.AddScoped<ISearchMaintenanceService, OpenSearchMaintenanceService>();
         services.AddHostedService<OpenSearchInitializationHostedService>();
-
-        if (integration.Kafka.Enabled)
-        {
-            services.AddSingleton<IKafkaProducer, ConfluentKafkaProducer>();
-        }
-        else
-        {
-            services.AddSingleton<IKafkaProducer, NullKafkaProducer>();
-        }
 
         return services;
     }

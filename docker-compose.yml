@@ -17,8 +17,7 @@ services:
       Integration__OpenSearch__ReindexOnStartup: ${OPENSEARCH_REINDEX_ON_STARTUP}
       Integration__OpenSearch__Username: ${OPENSEARCH_USERNAME}
       Integration__OpenSearch__Password: ${OPENSEARCH_PASSWORD}
-      Integration__Kafka__Enabled: ${KAFKA_ENABLED}
-      Integration__Kafka__BootstrapServers: ${KAFKA_BOOTSTRAP_SERVERS}
+
       Integration__Jwt__Secret: ${JWT_SECRET}
       Integration__Jwt__Issuer: ${JWT_ISSUER}
       Integration__Jwt__Audience: ${JWT_AUDIENCE}
@@ -73,33 +72,6 @@ services:
         hard: 65536
     volumes:
       - auth_opensearch_data:/usr/share/opensearch/data
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.6.1
-    container_name: auth-zookeeper
-    profiles: ["kafka"]
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
-
-  kafka:
-    image: confluentinc/cp-kafka:7.6.1
-    container_name: auth-kafka
-    profiles: ["kafka"]
-    depends_on:
-      - zookeeper
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-    ports:
-      - "9092:9092"
 
   mailhog:
     image: jcalonso/mailhog:latest

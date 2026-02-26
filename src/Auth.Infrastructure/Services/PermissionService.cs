@@ -6,8 +6,7 @@ namespace Auth.Infrastructure;
 
 public sealed class PermissionService(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
-    IOutboxEventWriter outboxEventWriter) : IPermissionService
+    ISearchIndexService searchIndexService) : IPermissionService
 {
     public async Task<IReadOnlyCollection<PermissionDto>> GetAllAsync(CancellationToken cancellationToken) =>
         await dbContext.Permissions.AsNoTracking()
@@ -34,7 +33,6 @@ public sealed class PermissionService(
             IsSystem = false
         };
         dbContext.Permissions.Add(entity);
-        outboxEventWriter.AddPermissionChanged(entity.Id, "created");
         await dbContext.SaveChangesAsync(cancellationToken);
         var dto = new PermissionDto(entity.Id, entity.Bit, entity.Code, entity.Description, entity.IsSystem);
         await searchIndexService.IndexPermissionAsync(dto, cancellationToken);
@@ -51,7 +49,6 @@ public sealed class PermissionService(
 
         entity.Description = request.Description;
         entity.UpdatedAt = DateTime.UtcNow;
-        outboxEventWriter.AddPermissionChanged(entity.Id, "updated");
         await dbContext.SaveChangesAsync(cancellationToken);
         var dto = new PermissionDto(entity.Id, entity.Bit, entity.Code, entity.Description, entity.IsSystem);
         await searchIndexService.IndexPermissionAsync(dto, cancellationToken);
@@ -72,7 +69,6 @@ public sealed class PermissionService(
         }
 
         entity.UpdatedAt = DateTime.UtcNow;
-        outboxEventWriter.AddPermissionChanged(entity.Id, "updated");
         await dbContext.SaveChangesAsync(cancellationToken);
         var dto = new PermissionDto(entity.Id, entity.Bit, entity.Code, entity.Description, entity.IsSystem);
         await searchIndexService.IndexPermissionAsync(dto, cancellationToken);
@@ -92,7 +88,6 @@ public sealed class PermissionService(
         }
 
         entity.DeletedAt = DateTime.UtcNow;
-        outboxEventWriter.AddPermissionChanged(entity.Id, "deleted");
         await dbContext.SaveChangesAsync(cancellationToken);
         await searchIndexService.DeletePermissionAsync(id, cancellationToken);
         return true;

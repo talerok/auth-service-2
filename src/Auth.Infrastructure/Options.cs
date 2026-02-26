@@ -4,7 +4,7 @@ public sealed class IntegrationOptions
 {
     public PostgreSqlOptions PostgreSql { get; set; } = new();
     public OpenSearchOptions OpenSearch { get; set; } = new();
-    public KafkaOptions Kafka { get; set; } = new();
+
     public JwtOptions Jwt { get; set; } = new();
     public TwoFactorOptions TwoFactor { get; set; } = new();
     public PasswordChangeOptions PasswordChange { get; set; } = new();
@@ -26,25 +26,6 @@ public sealed class OpenSearchOptions
     public bool ReindexOnStartup { get; set; }
 }
 
-public sealed class KafkaOptions
-{
-    public bool Enabled { get; set; }
-    public string BootstrapServers { get; set; } = "localhost:9092";
-    public KafkaTopicsOptions Topics { get; set; } = new();
-    public KafkaProducerOptions Producer { get; set; } = new();
-}
-
-public sealed class KafkaTopicsOptions
-{
-    public string RoleChanged { get; set; } = "auth.role.changed";
-    public string PermissionChanged { get; set; } = "auth.permission.changed";
-}
-
-public sealed class KafkaProducerOptions
-{
-    public string Acks { get; set; } = "All";
-    public bool EnableIdempotence { get; set; } = true;
-}
 
 public sealed class JwtOptions
 {

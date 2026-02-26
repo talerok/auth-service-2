@@ -12,7 +12,7 @@
 - `refresh_tokens`
 - `password_change_challenges`
 - `two_factor_challenges`
-- `outbox_messages`
+
 
 Принципы:
 
@@ -183,15 +183,4 @@
 - `IX_two_factor_challenges_UserId`
 - `IX_two_factor_challenges_UserId_Purpose`
 
-
-### Таблица `outbox_messages`
-
-| Колонка        | Тип          | Nullable | Описание                              |
-|----------------|--------------|----------|---------------------------------------|
-| `id`           | uuid         | NO       | PK                                    |
-| `topic`        | varchar(200) | NO       | Топик сообщения (Kafka/MQ)            |
-| `key`          | varchar(200) | NO       | Ключ сообщения для партиционирования  |
-| `payload`      | text         | NO       | JSON-тело события                     |
-| `created_at`   | timestamptz  | NO       |                                       |
-| `processed_at` | timestamptz  | YES      | Время успешной отправки               |
 
