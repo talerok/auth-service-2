@@ -102,7 +102,7 @@ services:
       - "9092:9092"
 
   mailhog:
-    image: mailhog/mailhog:latest
+    image: jcalonso/mailhog:latest
     container_name: auth-mailhog
     profiles: ["mailhog"]
     ports:
