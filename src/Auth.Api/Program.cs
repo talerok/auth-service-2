@@ -88,13 +88,23 @@ builder.Services.AddScoped<IAuthorizationHandler, PermissionInHandler>();
 
 var app = builder.Build();
 
+if (!app.Environment.IsDevelopment()
+    && !string.IsNullOrWhiteSpace(integration.TwoFactor.StaticOtpForTesting))
+{
+    throw new InvalidOperationException(
+        "StaticOtpForTesting must not be set outside the Development environment.");
+}
+
 await app.Services.SeedAsync(CancellationToken.None);
 
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ProblemDetailsMiddleware>();
 
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
