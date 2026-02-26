@@ -105,6 +105,157 @@ public sealed class UserServiceTests
         result!.Select(x => x.WorkSpaceId).Should().BeEquivalentTo(new[] { ws1.Id, ws2.Id });
     }
 
+    [Fact]
+    public async Task CreateAsync_WhenTwoFactorEnabled_SetsEnabledWithChannel()
+    {
+        await using var dbContext = CreateDbContext();
+        var hasher = new Mock<IPasswordHasher>();
+        hasher.Setup(x => x.Hash(It.IsAny<string>())).Returns("hashed");
+        var service = CreateService(dbContext, hasher);
+
+        var result = await service.CreateAsync(
+            new CreateUserRequest("bob", "bob@example.com", "pwd", TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email),
+            CancellationToken.None);
+
+        result.TwoFactorEnabled.Should().BeTrue();
+        result.TwoFactorChannel.Should().Be(TwoFactorChannel.Email);
+
+        var user = await dbContext.Users.FirstAsync(x => x.Id == result.Id);
+        user.TwoFactorEnabled.Should().BeTrue();
+        user.TwoFactorChannel.Should().Be(TwoFactorChannel.Email);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenTwoFactorEnabledWithoutChannel_DefaultsToEmail()
+    {
+        await using var dbContext = CreateDbContext();
+        var hasher = new Mock<IPasswordHasher>();
+        hasher.Setup(x => x.Hash(It.IsAny<string>())).Returns("hashed");
+        var service = CreateService(dbContext, hasher);
+
+        var result = await service.CreateAsync(
+            new CreateUserRequest("bob", "bob@example.com", "pwd", TwoFactorEnabled: true, TwoFactorChannel: null),
+            CancellationToken.None);
+
+        result.TwoFactorEnabled.Should().BeTrue();
+        result.TwoFactorChannel.Should().Be(TwoFactorChannel.Email);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenTwoFactorDisabled_LeavesDisabled()
+    {
+        await using var dbContext = CreateDbContext();
+        var hasher = new Mock<IPasswordHasher>();
+        hasher.Setup(x => x.Hash(It.IsAny<string>())).Returns("hashed");
+        var service = CreateService(dbContext, hasher);
+
+        var result = await service.CreateAsync(
+            new CreateUserRequest("bob", "bob@example.com", "pwd", TwoFactorEnabled: false),
+            CancellationToken.None);
+
+        result.TwoFactorEnabled.Should().BeFalse();
+        result.TwoFactorChannel.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenTwoFactorEnabled_SetsEnabledWithChannel()
+    {
+        await using var dbContext = CreateDbContext();
+        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hash", IsActive = true };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext);
+
+        var result = await service.UpdateAsync(
+            user.Id,
+            new UpdateUserRequest("alice", "alice@example.com", true, TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email),
+            CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.TwoFactorEnabled.Should().BeTrue();
+        result.TwoFactorChannel.Should().Be(TwoFactorChannel.Email);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenTwoFactorDisabled_DisablesTwoFactor()
+    {
+        await using var dbContext = CreateDbContext();
+        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hash", IsActive = true };
+        user.EnableTwoFactor(TwoFactorChannel.Email);
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext);
+
+        var result = await service.UpdateAsync(
+            user.Id,
+            new UpdateUserRequest("alice", "alice@example.com", true, TwoFactorEnabled: false),
+            CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.TwoFactorEnabled.Should().BeFalse();
+        result.TwoFactorChannel.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task PatchAsync_WhenTwoFactorEnabledWithChannel_SetsChannel()
+    {
+        await using var dbContext = CreateDbContext();
+        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hash", IsActive = true };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext);
+
+        var result = await service.PatchAsync(
+            user.Id,
+            new PatchUserRequest(null, null, null, TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email),
+            CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.TwoFactorEnabled.Should().BeTrue();
+        result.TwoFactorChannel.Should().Be(TwoFactorChannel.Email);
+    }
+
+    [Fact]
+    public async Task PatchAsync_WhenTwoFactorDisabled_DisablesTwoFactor()
+    {
+        await using var dbContext = CreateDbContext();
+        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hash", IsActive = true };
+        user.EnableTwoFactor(TwoFactorChannel.Email);
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext);
+
+        var result = await service.PatchAsync(
+            user.Id,
+            new PatchUserRequest(null, null, null, TwoFactorEnabled: false),
+            CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.TwoFactorEnabled.Should().BeFalse();
+        result.TwoFactorChannel.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task PatchAsync_WhenTwoFactorNotSpecified_DoesNotChangeTwoFactor()
+    {
+        await using var dbContext = CreateDbContext();
+        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hash", IsActive = true };
+        user.EnableTwoFactor(TwoFactorChannel.Email);
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext);
+
+        var result = await service.PatchAsync(
+            user.Id,
+            new PatchUserRequest(null, "newemail@example.com", null),
+            CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.Email.Should().Be("newemail@example.com");
+        result.TwoFactorEnabled.Should().BeTrue();
+        result.TwoFactorChannel.Should().Be(TwoFactorChannel.Email);
+    }
+
     private static UserService CreateService(
         AuthDbContext dbContext,
         Mock<IPasswordHasher>? passwordHasher = null,

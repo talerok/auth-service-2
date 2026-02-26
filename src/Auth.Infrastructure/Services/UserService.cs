@@ -12,7 +12,7 @@ public sealed class UserService(
     public async Task<IReadOnlyCollection<UserDto>> GetAllAsync(CancellationToken cancellationToken)
     {
         return await dbContext.Users.AsNoTracking()
-            .Select(x => new UserDto(x.Id, x.Username, x.Email, x.IsActive, x.MustChangePassword))
+            .Select(x => new UserDto(x.Id, x.Username, x.Email, x.IsActive, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel))
             .ToListAsync(cancellationToken);
     }
 
@@ -20,7 +20,7 @@ public sealed class UserService(
     {
         return await dbContext.Users.AsNoTracking()
             .Where(x => x.Id == id)
-            .Select(x => new UserDto(x.Id, x.Username, x.Email, x.IsActive, x.MustChangePassword))
+            .Select(x => new UserDto(x.Id, x.Username, x.Email, x.IsActive, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -35,9 +35,11 @@ public sealed class UserService(
         };
         if (request.MustChangePassword)
             user.MarkMustChangePassword();
+        if (request.TwoFactorEnabled)
+            user.EnableTwoFactor(request.TwoFactorChannel ?? TwoFactorChannel.Email);
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = new UserDto(user.Id, user.Username, user.Email, user.IsActive, user.MustChangePassword);
+        var dto = new UserDto(user.Id, user.Username, user.Email, user.IsActive, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel);
         await searchIndexService.IndexUserAsync(dto, cancellationToken);
         return dto;
     }
@@ -57,9 +59,13 @@ public sealed class UserService(
             user.MarkMustChangePassword();
         else
             user.ClearMustChangePassword();
+        if (request.TwoFactorEnabled)
+            user.EnableTwoFactor(request.TwoFactorChannel ?? TwoFactorChannel.Email);
+        else
+            user.DisableTwoFactor();
         user.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = new UserDto(user.Id, user.Username, user.Email, user.IsActive, user.MustChangePassword);
+        var dto = new UserDto(user.Id, user.Username, user.Email, user.IsActive, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel);
         await searchIndexService.IndexUserAsync(dto, cancellationToken);
         return dto;
     }
@@ -95,9 +101,17 @@ public sealed class UserService(
                 user.ClearMustChangePassword();
         }
 
+        if (request.TwoFactorEnabled.HasValue)
+        {
+            if (request.TwoFactorEnabled.Value)
+                user.EnableTwoFactor(request.TwoFactorChannel ?? TwoFactorChannel.Email);
+            else
+                user.DisableTwoFactor();
+        }
+
         user.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = new UserDto(user.Id, user.Username, user.Email, user.IsActive, user.MustChangePassword);
+        var dto = new UserDto(user.Id, user.Username, user.Email, user.IsActive, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel);
         await searchIndexService.IndexUserAsync(dto, cancellationToken);
         return dto;
     }

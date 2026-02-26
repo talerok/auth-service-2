@@ -1,4 +1,4 @@
-using System.Net;
+using Auth.Domain;
 using FluentAssertions;
 
 namespace Auth.IntegrationTests;
@@ -99,6 +99,103 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
         var result = await response.Content.ReadFromJsonAsync<List<UserWorkspaceRolesItem>>();
         result.Should().NotBeNull();
         result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Create_WithTwoFactorEnabled_ReturnsTwoFactorFields()
+    {
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var username = $"tf_{suffix}";
+
+        var response = await fixture.Client.PostAsJsonAsync("/api/users", new
+        {
+            username,
+            email = $"{username}@example.com",
+            password = "strong-password",
+            isActive = true,
+            twoFactorEnabled = true,
+            twoFactorChannel = "email"
+        });
+
+        response.IsSuccessStatusCode.Should().BeTrue();
+        var createdUser = await response.Content.ReadFromJsonAsync<UserDto>(IntegrationTestFixture.JsonOptions);
+        createdUser.Should().NotBeNull();
+        createdUser!.TwoFactorEnabled.Should().BeTrue();
+        createdUser.TwoFactorChannel.Should().Be(TwoFactorChannel.Email);
+    }
+
+    [Fact]
+    public async Task Patch_Email_UpdatesEmail()
+    {
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var createResponse = await fixture.Client.PostAsJsonAsync("/api/users", new
+        {
+            username = $"user_{suffix}",
+            email = $"user_{suffix}@example.com",
+            password = "strong-password",
+            isActive = true
+        });
+        createResponse.EnsureSuccessStatusCode();
+        var user = await createResponse.Content.ReadFromJsonAsync<UserDto>(IntegrationTestFixture.JsonOptions);
+        user.Should().NotBeNull();
+
+        var newEmail = $"updated_{suffix}@example.com";
+        var patchResponse = await fixture.Client.PatchAsJsonAsync($"/api/users/{user!.Id}", new
+        {
+            email = newEmail
+        });
+
+        patchResponse.IsSuccessStatusCode.Should().BeTrue();
+        var updated = await patchResponse.Content.ReadFromJsonAsync<UserDto>(IntegrationTestFixture.JsonOptions);
+        updated.Should().NotBeNull();
+        updated!.Email.Should().Be(newEmail);
+        updated.TwoFactorEnabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Patch_TwoFactor_EnablesThenDisables()
+    {
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var createResponse = await fixture.Client.PostAsJsonAsync("/api/users", new
+        {
+            username = $"user_{suffix}",
+            email = $"user_{suffix}@example.com",
+            password = "strong-password",
+            isActive = true
+        });
+        createResponse.EnsureSuccessStatusCode();
+        var user = await createResponse.Content.ReadFromJsonAsync<UserDto>(IntegrationTestFixture.JsonOptions);
+        user.Should().NotBeNull();
+
+        var enableResponse = await fixture.Client.PatchAsJsonAsync($"/api/users/{user!.Id}", new
+        {
+            twoFactorEnabled = true,
+            twoFactorChannel = "email"
+        });
+        enableResponse.IsSuccessStatusCode.Should().BeTrue();
+        var enabled = await enableResponse.Content.ReadFromJsonAsync<UserDto>(IntegrationTestFixture.JsonOptions);
+        enabled.Should().NotBeNull();
+        enabled!.TwoFactorEnabled.Should().BeTrue();
+        enabled.TwoFactorChannel.Should().Be(TwoFactorChannel.Email);
+
+        var disableResponse = await fixture.Client.PatchAsJsonAsync($"/api/users/{user.Id}", new
+        {
+            twoFactorEnabled = false
+        });
+        disableResponse.IsSuccessStatusCode.Should().BeTrue();
+        var disabled = await disableResponse.Content.ReadFromJsonAsync<UserDto>(IntegrationTestFixture.JsonOptions);
+        disabled.Should().NotBeNull();
+        disabled!.TwoFactorEnabled.Should().BeFalse();
+        disabled.TwoFactorChannel.Should().BeNull();
     }
 
     [Fact]
