@@ -168,7 +168,7 @@ public sealed class UserServiceTests
 
         var result = await service.UpdateAsync(
             user.Id,
-            new UpdateUserRequest("alice", "alice@example.com", true, TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email),
+            new UpdateUserRequest("alice", "alice@example.com", null, true, TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -188,7 +188,7 @@ public sealed class UserServiceTests
 
         var result = await service.UpdateAsync(
             user.Id,
-            new UpdateUserRequest("alice", "alice@example.com", true, TwoFactorEnabled: false),
+            new UpdateUserRequest("alice", "alice@example.com", null, true, TwoFactorEnabled: false),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -207,7 +207,7 @@ public sealed class UserServiceTests
 
         var result = await service.PatchAsync(
             user.Id,
-            new PatchUserRequest(null, null, null, TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email),
+            new PatchUserRequest(null, null, null, null, TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -227,7 +227,7 @@ public sealed class UserServiceTests
 
         var result = await service.PatchAsync(
             user.Id,
-            new PatchUserRequest(null, null, null, TwoFactorEnabled: false),
+            new PatchUserRequest(null, null, null, null, TwoFactorEnabled: false),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -247,13 +247,68 @@ public sealed class UserServiceTests
 
         var result = await service.PatchAsync(
             user.Id,
-            new PatchUserRequest(null, "newemail@example.com", null),
+            new PatchUserRequest(null, "newemail@example.com", null, null),
             CancellationToken.None);
 
         result.Should().NotBeNull();
         result!.Email.Should().Be("newemail@example.com");
         result.TwoFactorEnabled.Should().BeTrue();
         result.TwoFactorChannel.Should().Be(TwoFactorChannel.Email);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithPhone_SetsPhone()
+    {
+        await using var dbContext = CreateDbContext();
+        var hasher = new Mock<IPasswordHasher>();
+        hasher.Setup(x => x.Hash(It.IsAny<string>())).Returns("hashed");
+        var service = CreateService(dbContext, hasher);
+
+        var result = await service.CreateAsync(
+            new CreateUserRequest("bob", "bob@example.com", "pwd", Phone: "+1234567890"),
+            CancellationToken.None);
+
+        result.Phone.Should().Be("+1234567890");
+
+        var user = await dbContext.Users.FirstAsync(x => x.Id == result.Id);
+        user.Phone.Should().Be("+1234567890");
+    }
+
+    [Fact]
+    public async Task PatchAsync_WithPhone_UpdatesPhone()
+    {
+        await using var dbContext = CreateDbContext();
+        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hash", IsActive = true };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext);
+
+        var result = await service.PatchAsync(
+            user.Id,
+            new PatchUserRequest(null, null, "+9876543210", null),
+            CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.Phone.Should().Be("+9876543210");
+    }
+
+    [Fact]
+    public async Task PatchAsync_WithoutPhone_DoesNotChangePhone()
+    {
+        await using var dbContext = CreateDbContext();
+        var user = new User { Username = "alice", Email = "alice@example.com", Phone = "+1111111111", PasswordHash = "hash", IsActive = true };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext);
+
+        var result = await service.PatchAsync(
+            user.Id,
+            new PatchUserRequest(null, "newemail@example.com", null, null),
+            CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.Email.Should().Be("newemail@example.com");
+        result.Phone.Should().Be("+1111111111");
     }
 
     private static UserService CreateService(

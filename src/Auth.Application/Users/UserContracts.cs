@@ -6,6 +6,7 @@ public sealed record UserDto(
     Guid Id,
     string Username,
     string Email,
+    string? Phone,
     bool IsActive,
     bool MustChangePassword,
     bool TwoFactorEnabled,
@@ -15,6 +16,7 @@ public sealed record CreateUserRequest(
     string Username,
     string Email,
     string Password,
+    string? Phone = null,
     bool IsActive = true,
     bool MustChangePassword = false,
     bool TwoFactorEnabled = false,
@@ -23,6 +25,7 @@ public sealed record CreateUserRequest(
 public sealed record UpdateUserRequest(
     string Username,
     string Email,
+    string? Phone,
     bool IsActive,
     bool MustChangePassword = false,
     bool TwoFactorEnabled = false,
@@ -31,6 +34,7 @@ public sealed record UpdateUserRequest(
 public sealed record PatchUserRequest(
     string? Username,
     string? Email,
+    string? Phone,
     bool? IsActive,
     bool? MustChangePassword = null,
     bool? TwoFactorEnabled = null,

@@ -199,6 +199,60 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
     }
 
     [Fact]
+    public async Task Create_WithPhone_ReturnsPhoneInResponse()
+    {
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var username = $"phone_{suffix}";
+
+        var response = await fixture.Client.PostAsJsonAsync("/api/users", new
+        {
+            username,
+            email = $"{username}@example.com",
+            password = "strong-password",
+            phone = "+1234567890",
+            isActive = true
+        });
+
+        response.IsSuccessStatusCode.Should().BeTrue();
+        var createdUser = await response.Content.ReadFromJsonAsync<UserDto>(IntegrationTestFixture.JsonOptions);
+        createdUser.Should().NotBeNull();
+        createdUser!.Phone.Should().Be("+1234567890");
+    }
+
+    [Fact]
+    public async Task Patch_Phone_UpdatesPhone()
+    {
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var createResponse = await fixture.Client.PostAsJsonAsync("/api/users", new
+        {
+            username = $"user_{suffix}",
+            email = $"user_{suffix}@example.com",
+            password = "strong-password",
+            phone = "+1111111111",
+            isActive = true
+        });
+        createResponse.EnsureSuccessStatusCode();
+        var user = await createResponse.Content.ReadFromJsonAsync<UserDto>(IntegrationTestFixture.JsonOptions);
+        user.Should().NotBeNull();
+
+        var patchResponse = await fixture.Client.PatchAsJsonAsync($"/api/users/{user!.Id}", new
+        {
+            phone = "+9999999999"
+        });
+
+        patchResponse.IsSuccessStatusCode.Should().BeTrue();
+        var updated = await patchResponse.Content.ReadFromJsonAsync<UserDto>(IntegrationTestFixture.JsonOptions);
+        updated.Should().NotBeNull();
+        updated!.Phone.Should().Be("+9999999999");
+    }
+
+    [Fact]
     public async Task GetWorkspaces_AfterSettingWorkspaces_ReturnsWorkspacesWithRoleIds()
     {
         var admin = await fixture.LoginAsync("admin", "admin");
