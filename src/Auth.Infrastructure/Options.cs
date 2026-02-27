@@ -10,6 +10,7 @@ public sealed class IntegrationOptions
     public PasswordChangeOptions PasswordChange { get; set; } = new();
     public SmtpOptions Smtp { get; set; } = new();
     public SmsGatewayOptions SmsGateway { get; set; } = new();
+    public CorsOptions Cors { get; set; } = new();
 }
 
 public sealed class PostgreSqlOptions
@@ -66,6 +67,11 @@ public sealed class SmtpOptions
     public string Password { get; set; } = string.Empty;
     public string FromEmail { get; set; } = "noreply@auth-service";
     public string FromName { get; set; } = "Auth Service";
+}
+
+public sealed class CorsOptions
+{
+    public string[] AllowedOrigins { get; set; } = [];
 }
 
 public sealed class SmsGatewayOptions
