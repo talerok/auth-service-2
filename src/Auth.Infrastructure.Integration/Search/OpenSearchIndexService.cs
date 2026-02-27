@@ -1,5 +1,6 @@
 using Auth.Application;
 using OpenSearch.Client;
+using OpenSearch.Net;
 
 namespace Auth.Infrastructure.Integration.Search;
 
@@ -38,7 +39,7 @@ public sealed class OpenSearchIndexService(
         await retryExecutor.ExecuteAsync(
             async () =>
             {
-                var response = await client.IndexAsync(document, i => i.Index(indexName).Id(id), cancellationToken);
+                var response = await client.IndexAsync(document, i => i.Index(indexName).Id(id).Refresh(Refresh.WaitFor), cancellationToken);
                 if (!response.IsValid)
                 {
                     throw new InvalidOperationException(response.DebugInformation);
@@ -53,7 +54,7 @@ public sealed class OpenSearchIndexService(
         await retryExecutor.ExecuteAsync(
             async () =>
             {
-                var response = await client.DeleteAsync<object>(id.ToString("D"), d => d.Index(indexName), cancellationToken);
+                var response = await client.DeleteAsync<object>(id.ToString("D"), d => d.Index(indexName).Refresh(Refresh.WaitFor), cancellationToken);
                 if (!response.IsValid)
                 {
                     throw new InvalidOperationException(response.DebugInformation);
