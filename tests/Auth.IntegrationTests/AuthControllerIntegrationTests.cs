@@ -167,6 +167,110 @@ public sealed class AuthControllerIntegrationTests(IntegrationTestFixture fixtur
     }
 
     [Fact]
+    public async Task TwoFactor_SmsChannel_EnableConfirmLogin_WorksEndToEnd()
+    {
+        fixture.ClearAuth();
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var username = $"sms_{suffix}";
+        var email = $"{username}@example.com";
+        var password = "password123";
+        var phone = "+71234567890";
+
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+        var createResponse = await fixture.Client.PostAsJsonAsync("/api/users", new
+        {
+            username,
+            email,
+            password,
+            phone,
+            isActive = true
+        });
+        createResponse.EnsureSuccessStatusCode();
+
+        fixture.ClearAuth();
+        var tokens = await fixture.LoginAsync(username, password);
+        fixture.SetBearerToken(tokens.AccessToken);
+
+        var startEnableResponse = await fixture.Client.PostAsJsonAsync("/api/auth/2fa/enable", new
+        {
+            channel = "sms",
+            isHighRisk = false
+        });
+        startEnableResponse.IsSuccessStatusCode.Should().BeTrue();
+        var activationChallenge = await startEnableResponse.Content.ReadFromJsonAsync<EnableTwoFactorResponse>(IntegrationTestFixture.JsonOptions);
+        activationChallenge.Should().NotBeNull();
+        activationChallenge!.Channel.Should().Be(TwoFactorChannel.Sms);
+
+        await fixture.WaitForChallengeDeliveryAsync(activationChallenge.ChallengeId, TimeSpan.FromSeconds(3));
+
+        var confirmResponse = await fixture.Client.PostAsJsonAsync("/api/auth/2fa/confirm", new
+        {
+            challengeId = activationChallenge.ChallengeId,
+            channel = "sms",
+            otp = "123456"
+        });
+        confirmResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        fixture.ClearAuth();
+        var loginResponse = await fixture.Client.PostAsJsonAsync("/api/auth/login", new
+        {
+            username,
+            password
+        });
+        loginResponse.EnsureSuccessStatusCode();
+        var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>(IntegrationTestFixture.JsonOptions);
+        login.Should().NotBeNull();
+        login!.RequiresTwoFactor.Should().BeTrue();
+        login.Channel.Should().Be(TwoFactorChannel.Sms);
+
+        await fixture.WaitForChallengeDeliveryAsync(login.ChallengeId!.Value, TimeSpan.FromSeconds(3));
+
+        var verifyResponse = await fixture.Client.PostAsJsonAsync("/api/auth/2fa/login/verify", new
+        {
+            challengeId = login.ChallengeId,
+            channel = "sms",
+            otp = "123456"
+        });
+        verifyResponse.EnsureSuccessStatusCode();
+        var verifiedTokens = await verifyResponse.Content.ReadFromJsonAsync<AuthTokensResponse>(IntegrationTestFixture.JsonOptions);
+        verifiedTokens.Should().NotBeNull();
+        verifiedTokens!.AccessToken.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task TwoFactor_SmsChannel_WhenUserHasNoPhone_Returns400PhoneRequired()
+    {
+        fixture.ClearAuth();
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var username = $"nophone_{suffix}";
+        var email = $"{username}@example.com";
+        var password = "password123";
+
+        var registerResponse = await fixture.Client.PostAsJsonAsync("/api/auth/register", new
+        {
+            username,
+            email,
+            password
+        });
+        registerResponse.EnsureSuccessStatusCode();
+
+        var tokens = await fixture.LoginAsync(username, password);
+        fixture.SetBearerToken(tokens.AccessToken);
+
+        var startEnableResponse = await fixture.Client.PostAsJsonAsync("/api/auth/2fa/enable", new
+        {
+            channel = "sms",
+            isHighRisk = false
+        });
+
+        startEnableResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await startEnableResponse.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Extensions["code"]?.ToString().Should().Be(TwoFactorErrorCatalog.PhoneRequired);
+    }
+
+    [Fact]
     public async Task TwoFactor_EnableWithUnsupportedChannel_ReturnsValidationError()
     {
         fixture.ClearAuth();

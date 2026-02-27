@@ -34,6 +34,7 @@ public static class AuthProblemDetailsMapper
             TwoFactorErrorCatalog.ActivationNotCompleted => new AuthProblemDescriptor(StatusCodes.Status409Conflict, "Conflict", "Two-factor delivery is not completed"),
             TwoFactorErrorCatalog.DeliveryFailed => new AuthProblemDescriptor(StatusCodes.Status503ServiceUnavailable, "Service unavailable", "Two-factor delivery failed"),
             TwoFactorErrorCatalog.ProviderUnavailable => new AuthProblemDescriptor(StatusCodes.Status503ServiceUnavailable, "Service unavailable", "Two-factor provider unavailable"),
+            TwoFactorErrorCatalog.PhoneRequired => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Validation error", "Phone number is required for SMS two-factor"),
             _ => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Business rule violation")
         };
     }

@@ -13,4 +13,5 @@ public static class TwoFactorErrorCatalog
     public const string OtpAlreadyUsed = "TWO_FACTOR_OTP_ALREADY_USED";
     public const string ChallengeExpired = "TWO_FACTOR_CHALLENGE_EXPIRED";
     public const string ChallengeNotFound = "TWO_FACTOR_CHALLENGE_NOT_FOUND";
+    public const string PhoneRequired = "TWO_FACTOR_PHONE_REQUIRED";
 }

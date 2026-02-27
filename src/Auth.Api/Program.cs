@@ -89,10 +89,11 @@ builder.Services.AddScoped<IAuthorizationHandler, PermissionInHandler>();
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment()
+    && !app.Environment.IsEnvironment("Testing")
     && !string.IsNullOrWhiteSpace(integration.TwoFactor.StaticOtpForTesting))
 {
     throw new InvalidOperationException(
-        "StaticOtpForTesting must not be set outside the Development environment.");
+        "StaticOtpForTesting must not be set outside the Development/Testing environment.");
 }
 
 await app.Services.SeedAsync(CancellationToken.None);

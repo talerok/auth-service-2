@@ -31,6 +31,10 @@ services:
       Integration__Smtp__Password: ${SMTP_PASSWORD}
       Integration__Smtp__FromEmail: ${SMTP_FROM_EMAIL}
       Integration__Smtp__FromName: ${SMTP_FROM_NAME}
+      Integration__SmsGateway__Enabled: ${SMS_GATEWAY_ENABLED}
+      Integration__SmsGateway__BaseUrl: ${SMS_GATEWAY_BASE_URL}
+      Integration__SmsGateway__ApiKey: ${SMS_GATEWAY_API_KEY}
+      Integration__SmsGateway__TimeoutSeconds: ${SMS_GATEWAY_TIMEOUT_SECONDS}
     ports:
       - "${AUTH_API_PORT}:8080"
     restart: unless-stopped

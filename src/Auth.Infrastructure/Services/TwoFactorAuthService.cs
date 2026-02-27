@@ -28,6 +28,11 @@ public sealed class TwoFactorAuthService(
         var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken)
             ?? throw new AuthException(AuthErrorCatalog.UserNotFound);
 
+        if (request.Channel == TwoFactorChannel.Sms && string.IsNullOrWhiteSpace(user.Phone))
+        {
+            throw new AuthException(TwoFactorErrorCatalog.PhoneRequired);
+        }
+
         var challenge = await CreateActivationChallengeAsync(
             user.Id,
             request.Channel,
@@ -156,7 +161,7 @@ public sealed class TwoFactorAuthService(
 
     private static void ValidateChannelOrThrow(TwoFactorChannel channel)
     {
-        if (channel != TwoFactorChannel.Email)
+        if (channel is not (TwoFactorChannel.Email or TwoFactorChannel.Sms))
         {
             throw new AuthException(TwoFactorErrorCatalog.UnsupportedChannel);
         }

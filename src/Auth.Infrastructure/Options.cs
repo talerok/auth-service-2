@@ -9,6 +9,7 @@ public sealed class IntegrationOptions
     public TwoFactorOptions TwoFactor { get; set; } = new();
     public PasswordChangeOptions PasswordChange { get; set; } = new();
     public SmtpOptions Smtp { get; set; } = new();
+    public SmsGatewayOptions SmsGateway { get; set; } = new();
 }
 
 public sealed class PostgreSqlOptions
@@ -65,4 +66,12 @@ public sealed class SmtpOptions
     public string Password { get; set; } = string.Empty;
     public string FromEmail { get; set; } = "noreply@auth-service";
     public string FromName { get; set; } = "Auth Service";
+}
+
+public sealed class SmsGatewayOptions
+{
+    public bool Enabled { get; set; }
+    public string BaseUrl { get; set; } = string.Empty;
+    public string ApiKey { get; set; } = string.Empty;
+    public int TimeoutSeconds { get; set; } = 5;
 }

@@ -117,6 +117,93 @@ public sealed class TwoFactorAuthServiceTests
     }
 
     [Fact]
+    public async Task EnableTwoFactorAsync_WhenSmsChannelAndPhoneIsSet_CreatesChallengeWithSmsChannel()
+    {
+        await using var dbContext = CreateDbContext();
+        var user = new User
+        {
+            Username = "smsuser",
+            Email = "sms@example.com",
+            Phone = "+71234567890",
+            PasswordHash = "hash",
+            IsActive = true
+        };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, twoFactorStaticOtp: "123456");
+
+        var started = await service.EnableTwoFactorAsync(
+            user.Id,
+            new EnableTwoFactorRequest(TwoFactorChannel.Sms),
+            CancellationToken.None);
+
+        var challenge = await dbContext.TwoFactorChallenges.SingleAsync(x => x.Id == started.ChallengeId);
+        challenge.Channel.Should().Be(TwoFactorChannel.Sms);
+        started.Channel.Should().Be(TwoFactorChannel.Sms);
+    }
+
+    [Fact]
+    public async Task EnableTwoFactorAsync_WhenSmsChannelAndNoPhone_ThrowsPhoneRequired()
+    {
+        await using var dbContext = CreateDbContext();
+        var user = new User
+        {
+            Username = "nophone",
+            Email = "nophone@example.com",
+            PasswordHash = "hash",
+            IsActive = true
+        };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, twoFactorStaticOtp: "123456");
+
+        var act = () => service.EnableTwoFactorAsync(
+            user.Id,
+            new EnableTwoFactorRequest(TwoFactorChannel.Sms),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<AuthException>()
+            .Where(x => x.Code == TwoFactorErrorCatalog.PhoneRequired);
+    }
+
+    [Fact]
+    public async Task EnableAndConfirmTwoFactorAsync_WithSmsChannel_EnablesTwoFactorSms()
+    {
+        await using var dbContext = CreateDbContext();
+        var user = new User
+        {
+            Username = "smsconfirm",
+            Email = "smsconfirm@example.com",
+            Phone = "+71234567890",
+            PasswordHash = "hash",
+            IsActive = true
+        };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, twoFactorStaticOtp: "123456");
+
+        var started = await service.EnableTwoFactorAsync(
+            user.Id,
+            new EnableTwoFactorRequest(TwoFactorChannel.Sms),
+            CancellationToken.None);
+        var challenge = await dbContext.TwoFactorChallenges.SingleAsync(x => x.Id == started.ChallengeId);
+        challenge.MarkDelivered();
+        await dbContext.SaveChangesAsync();
+
+        await service.ConfirmTwoFactorActivationAsync(
+            user.Id,
+            new VerifyTwoFactorRequest(started.ChallengeId, TwoFactorChannel.Sms, "123456"),
+            CancellationToken.None);
+
+        var updatedUser = await dbContext.Users.SingleAsync(x => x.Id == user.Id);
+        updatedUser.TwoFactorEnabled.Should().BeTrue();
+        updatedUser.TwoFactorChannel.Should().Be(TwoFactorChannel.Sms);
+    }
+
+    [Fact]
     public async Task EnableTwoFactorAsync_WhenChallengeCreated_DoesNotStorePlainTextOtp()
     {
         await using var dbContext = CreateDbContext();

@@ -19,6 +19,11 @@ public interface ITwoFactorEmailGateway
     Task<TwoFactorDeliveryResult> SendOtpAsync(Guid challengeId, string email, string otp, CancellationToken cancellationToken);
 }
 
+public interface ITwoFactorSmsGateway
+{
+    Task<TwoFactorDeliveryResult> SendOtpAsync(Guid challengeId, string phone, string otp, CancellationToken cancellationToken);
+}
+
 public sealed class SafeDefaultTwoFactorEmailGateway(
     IHostEnvironment hostEnvironment,
     ILogger<SafeDefaultTwoFactorEmailGateway> logger) : ITwoFactorEmailGateway
@@ -41,9 +46,32 @@ public sealed class SafeDefaultTwoFactorEmailGateway(
     }
 }
 
+public sealed class SafeDefaultTwoFactorSmsGateway(
+    IHostEnvironment hostEnvironment,
+    ILogger<SafeDefaultTwoFactorSmsGateway> logger) : ITwoFactorSmsGateway
+{
+    public Task<TwoFactorDeliveryResult> SendOtpAsync(
+        Guid challengeId,
+        string phone,
+        string otp,
+        CancellationToken cancellationToken)
+    {
+        if (hostEnvironment.IsDevelopment() || hostEnvironment.IsEnvironment("Testing"))
+        {
+            return Task.FromResult(TwoFactorDeliveryResult.Delivered);
+        }
+
+        logger.LogWarning(
+            "Default 2FA SMS gateway used in non-development environment for challenge {ChallengeId}",
+            challengeId);
+        return Task.FromResult(TwoFactorDeliveryResult.ProviderUnavailable);
+    }
+}
+
 public sealed class TwoFactorDeliveryBackgroundService(
     IServiceProvider serviceProvider,
     ITwoFactorEmailGateway emailGateway,
+    ITwoFactorSmsGateway smsGateway,
     IOptions<IntegrationOptions> options,
     ILogger<TwoFactorDeliveryBackgroundService> logger) : BackgroundService
 {
@@ -85,7 +113,8 @@ public sealed class TwoFactorDeliveryBackgroundService(
                 (challenge, user) => new
                 {
                     Challenge = challenge,
-                    user.Email
+                    user.Email,
+                    user.Phone
                 })
             .ToListAsync(cancellationToken);
 
@@ -96,6 +125,13 @@ public sealed class TwoFactorDeliveryBackgroundService(
 
         foreach (var item in pending)
         {
+            if (item.Challenge.Channel == TwoFactorChannel.Sms && string.IsNullOrWhiteSpace(item.Phone))
+            {
+                item.Challenge.MarkDeliveryFailed();
+                logger.LogWarning("SMS 2FA delivery skipped — user has no phone for challenge {ChallengeId}", item.Challenge.Id);
+                continue;
+            }
+
             var attemptsLeft = _twoFactor.DeliveryRetryCount;
             TwoFactorDeliveryResult? finalResult = null;
             while (attemptsLeft-- > 0)
@@ -105,7 +141,11 @@ public sealed class TwoFactorDeliveryBackgroundService(
                 try
                 {
                     var otp = TwoFactorOtpSecurity.DecryptOtp(item.Challenge.OtpEncrypted, _twoFactorKeyMaterial);
-                    finalResult = await emailGateway.SendOtpAsync(item.Challenge.Id, item.Email, otp, timeout.Token);
+                    finalResult = item.Challenge.Channel switch
+                    {
+                        TwoFactorChannel.Sms => await smsGateway.SendOtpAsync(item.Challenge.Id, item.Phone!, otp, timeout.Token),
+                        _ => await emailGateway.SendOtpAsync(item.Challenge.Id, item.Email, otp, timeout.Token)
+                    };
                     if (finalResult == TwoFactorDeliveryResult.ProviderUnavailable && attemptsLeft > 0)
                     {
                         await Task.Delay(_twoFactor.DeliveryRetryBackoffMilliseconds, cancellationToken);
@@ -124,7 +164,7 @@ public sealed class TwoFactorDeliveryBackgroundService(
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(ex, "2FA email provider unavailable for challenge {ChallengeId}", item.Challenge.Id);
+                    logger.LogWarning(ex, "2FA delivery provider unavailable for challenge {ChallengeId}", item.Challenge.Id);
                     finalResult = TwoFactorDeliveryResult.ProviderUnavailable;
                     if (attemptsLeft > 0)
                     {

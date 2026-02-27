@@ -29,8 +29,23 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<ITwoFactorEmailGateway, SmtpTwoFactorEmailGateway>();
         else
             services.AddSingleton<ITwoFactorEmailGateway, SafeDefaultTwoFactorEmailGateway>();
-        services.AddHostedService<TwoFactorDeliveryBackgroundService>();
 
+        if (integration.SmsGateway.Enabled)
+        {
+            services.AddHttpClient("SmsGateway", client =>
+            {
+                client.BaseAddress = new Uri(integration.SmsGateway.BaseUrl);
+                client.DefaultRequestHeaders.Add("X-Api-Key", integration.SmsGateway.ApiKey);
+                client.Timeout = TimeSpan.FromSeconds(integration.SmsGateway.TimeoutSeconds);
+            });
+            services.AddSingleton<ITwoFactorSmsGateway, HttpTwoFactorSmsGateway>();
+        }
+        else
+        {
+            services.AddSingleton<ITwoFactorSmsGateway, SafeDefaultTwoFactorSmsGateway>();
+        }
+
+        services.AddHostedService<TwoFactorDeliveryBackgroundService>();
 
         return services;
     }

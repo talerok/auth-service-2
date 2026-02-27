@@ -210,7 +210,7 @@ public sealed class AuthService(
 
     private static void ValidateChannelOrThrow(TwoFactorChannel channel)
     {
-        if (channel != TwoFactorChannel.Email)
+        if (channel is not (TwoFactorChannel.Email or TwoFactorChannel.Sms))
         {
             throw new AuthException(TwoFactorErrorCatalog.UnsupportedChannel);
         }
