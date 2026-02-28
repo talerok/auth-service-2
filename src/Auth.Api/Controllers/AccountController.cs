@@ -9,12 +9,12 @@ namespace Auth.Api.Controllers;
 [Route("api/account")]
 public sealed class AccountController(IAuthService authService, ITwoFactorAuthService twoFactorAuthService) : ControllerBase
 {
-    [HttpPost("register")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<UserDto>> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken) =>
-        Ok(await authService.RegisterAsync(request, cancellationToken));
+    // [HttpPost("register")]
+    // [AllowAnonymous]
+    // [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    // [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    // public async Task<ActionResult<UserDto>> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken) =>
+    //     Ok(await authService.RegisterAsync(request, cancellationToken));
 
     [HttpPost("2fa/enable")]
     [Authorize]
