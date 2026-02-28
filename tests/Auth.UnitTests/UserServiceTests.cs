@@ -114,7 +114,7 @@ public sealed class UserServiceTests
         var service = CreateService(dbContext, hasher);
 
         var result = await service.CreateAsync(
-            new CreateUserRequest("bob", "bob@example.com", "pwd", TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email),
+            new CreateUserRequest("bob", "Bob", "bob@example.com", "pwd", TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email),
             CancellationToken.None);
 
         result.TwoFactorEnabled.Should().BeTrue();
@@ -134,7 +134,7 @@ public sealed class UserServiceTests
         var service = CreateService(dbContext, hasher);
 
         var result = await service.CreateAsync(
-            new CreateUserRequest("bob", "bob@example.com", "pwd", TwoFactorEnabled: true, TwoFactorChannel: null),
+            new CreateUserRequest("bob", "Bob", "bob@example.com", "pwd", TwoFactorEnabled: true, TwoFactorChannel: null),
             CancellationToken.None);
 
         result.TwoFactorEnabled.Should().BeTrue();
@@ -150,7 +150,7 @@ public sealed class UserServiceTests
         var service = CreateService(dbContext, hasher);
 
         var result = await service.CreateAsync(
-            new CreateUserRequest("bob", "bob@example.com", "pwd", TwoFactorEnabled: false),
+            new CreateUserRequest("bob", "Bob", "bob@example.com", "pwd", TwoFactorEnabled: false),
             CancellationToken.None);
 
         result.TwoFactorEnabled.Should().BeFalse();
@@ -168,7 +168,7 @@ public sealed class UserServiceTests
 
         var result = await service.UpdateAsync(
             user.Id,
-            new UpdateUserRequest("alice", "alice@example.com", null, true, TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email),
+            new UpdateUserRequest("alice", "Alice", "alice@example.com", null, true, TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -188,7 +188,7 @@ public sealed class UserServiceTests
 
         var result = await service.UpdateAsync(
             user.Id,
-            new UpdateUserRequest("alice", "alice@example.com", null, true, TwoFactorEnabled: false),
+            new UpdateUserRequest("alice", "Alice", "alice@example.com", null, true, TwoFactorEnabled: false),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -207,7 +207,7 @@ public sealed class UserServiceTests
 
         var result = await service.PatchAsync(
             user.Id,
-            new PatchUserRequest(null, null, null, null, TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email),
+            new PatchUserRequest(null, null, null, null, null, TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -227,7 +227,7 @@ public sealed class UserServiceTests
 
         var result = await service.PatchAsync(
             user.Id,
-            new PatchUserRequest(null, null, null, null, TwoFactorEnabled: false),
+            new PatchUserRequest(null, null, null, null, null, TwoFactorEnabled: false),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -247,7 +247,7 @@ public sealed class UserServiceTests
 
         var result = await service.PatchAsync(
             user.Id,
-            new PatchUserRequest(null, "newemail@example.com", null, null),
+            new PatchUserRequest(null, null, "newemail@example.com", null, null),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -265,7 +265,7 @@ public sealed class UserServiceTests
         var service = CreateService(dbContext, hasher);
 
         var result = await service.CreateAsync(
-            new CreateUserRequest("bob", "bob@example.com", "pwd", Phone: "+1234567890"),
+            new CreateUserRequest("bob", "Bob", "bob@example.com", "pwd", Phone: "+1234567890"),
             CancellationToken.None);
 
         result.Phone.Should().Be("+1234567890");
@@ -285,7 +285,7 @@ public sealed class UserServiceTests
 
         var result = await service.PatchAsync(
             user.Id,
-            new PatchUserRequest(null, null, "+9876543210", null),
+            new PatchUserRequest(null, null, null, "+9876543210", null),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -303,7 +303,7 @@ public sealed class UserServiceTests
 
         var result = await service.PatchAsync(
             user.Id,
-            new PatchUserRequest(null, "newemail@example.com", null, null),
+            new PatchUserRequest(null, null, "newemail@example.com", null, null),
             CancellationToken.None);
 
         result.Should().NotBeNull();

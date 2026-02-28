@@ -13,7 +13,7 @@ public sealed record LoginResponse(
     Guid? PasswordChangeChallengeId = null);
 public sealed record ForcedPasswordChangeRequest(Guid ChallengeId, string NewPassword);
 public sealed record RefreshRequest(string RefreshToken);
-public sealed record RegisterRequest(string Username, string Email, string Password);
+public sealed record RegisterRequest(string Username, string FullName, string Email, string Password);
 public sealed record RevokeRequest(string RefreshToken);
 public sealed record EnableTwoFactorRequest(TwoFactorChannel Channel, bool IsHighRisk = false);
 public sealed record EnableTwoFactorResponse(Guid ChallengeId, TwoFactorChannel Channel, DateTime ExpiresAt);

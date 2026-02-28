@@ -104,6 +104,7 @@ public sealed class AuthService(
         var user = new User
         {
             Username = request.Username,
+            FullName = request.FullName,
             Email = request.Email,
             PasswordHash = passwordHasher.Hash(request.Password),
             IsActive = true
@@ -111,7 +112,7 @@ public sealed class AuthService(
 
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = new UserDto(user.Id, user.Username, user.Email, user.Phone, user.IsActive, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel);
+        var dto = new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone, user.IsActive, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel);
         await searchIndexService.IndexUserAsync(dto, cancellationToken);
         return dto;
     }

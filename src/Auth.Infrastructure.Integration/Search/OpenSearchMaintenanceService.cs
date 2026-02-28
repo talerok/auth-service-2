@@ -16,6 +16,7 @@ public sealed class OpenSearchMaintenanceService(
         if (await EnsureIndexExistsAsync<UserDto>(indexNames.Users, p => p
                 .Keyword(k => k.Name(n => n.Id))
                 .Keyword(k => k.Name(n => n.Username))
+                .Keyword(k => k.Name(n => n.FullName))
                 .Keyword(k => k.Name(n => n.Email))
                 .Boolean(b => b.Name(n => n.IsActive))
                 .Boolean(b => b.Name(n => n.MustChangePassword)), cancellationToken))
@@ -63,7 +64,7 @@ public sealed class OpenSearchMaintenanceService(
     public async Task ReindexUsersAsync(CancellationToken cancellationToken)
     {
         var users = await dbContext.Users.AsNoTracking()
-            .Select(x => new UserDto(x.Id, x.Username, x.Email, x.Phone, x.IsActive, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel))
+            .Select(x => new UserDto(x.Id, x.Username, x.FullName, x.Email, x.Phone, x.IsActive, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel))
             .ToListAsync(cancellationToken);
         foreach (var user in users)
         {

@@ -26,7 +26,7 @@ public sealed class AuthServiceTests
 
         var service = CreateService(dbContext);
 
-        var act = () => service.RegisterAsync(new RegisterRequest("admin", "new@example.com", "pwd"), CancellationToken.None);
+        var act = () => service.RegisterAsync(new RegisterRequest("admin", "admin", "new@example.com", "pwd"), CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == AuthErrorCatalog.DuplicateIdentity);
@@ -41,7 +41,7 @@ public sealed class AuthServiceTests
         var searchIndex = new Mock<ISearchIndexService>();
         var service = CreateService(dbContext, hasher: hasher, searchIndexService: searchIndex);
 
-        var result = await service.RegisterAsync(new RegisterRequest("new-user", "new@example.com", "pwd"), CancellationToken.None);
+        var result = await service.RegisterAsync(new RegisterRequest("new-user", "new-user", "new@example.com", "pwd"), CancellationToken.None);
 
         result.Username.Should().Be("new-user");
         result.Email.Should().Be("new@example.com");
