@@ -68,6 +68,14 @@ public sealed class UsersController(IUserService userService, ISearchService sea
         return NoContent();
     }
 
+    [HttpPost("{id:guid}/reset-password")]
+    [HasPermissionIn("default", "users.reset-password")]
+    public async Task<IActionResult> ResetPassword(Guid id, [FromBody] AdminResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        var result = await userService.ResetPasswordAsync(id, request.Password, cancellationToken);
+        return result ? NoContent() : NotFound();
+    }
+
     [HttpPost("search")]
     [HasPermissionIn("default", "users.view")]
     public Task<SearchResponse<UserDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>

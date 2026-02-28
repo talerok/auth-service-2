@@ -311,6 +311,36 @@ public sealed class UserServiceTests
         result.Phone.Should().Be("+1111111111");
     }
 
+    [Fact]
+    public async Task ResetPasswordAsync_WhenUserExists_UpdatesPasswordAndSetsMustChangePassword()
+    {
+        await using var dbContext = CreateDbContext();
+        var hasher = new Mock<IPasswordHasher>();
+        hasher.Setup(x => x.Hash("tempPass123")).Returns("hashed_temp");
+        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "old_hash", IsActive = true };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext, hasher);
+
+        var result = await service.ResetPasswordAsync(user.Id, "tempPass123", CancellationToken.None);
+
+        result.Should().BeTrue();
+        var updated = await dbContext.Users.FirstAsync(x => x.Id == user.Id);
+        updated.PasswordHash.Should().Be("hashed_temp");
+        updated.MustChangePassword.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_WhenUserDoesNotExist_ReturnsFalse()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateService(dbContext);
+
+        var result = await service.ResetPasswordAsync(Guid.NewGuid(), "tempPass123", CancellationToken.None);
+
+        result.Should().BeFalse();
+    }
+
     private static UserService CreateService(
         AuthDbContext dbContext,
         Mock<IPasswordHasher>? passwordHasher = null,

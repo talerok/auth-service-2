@@ -30,7 +30,6 @@ public sealed record UpdateUserRequest(
     string Email,
     string? Phone,
     bool IsActive,
-    bool MustChangePassword = false,
     bool TwoFactorEnabled = false,
     TwoFactorChannel? TwoFactorChannel = null);
 
@@ -40,6 +39,7 @@ public sealed record PatchUserRequest(
     string? Email,
     string? Phone,
     bool? IsActive,
-    bool? MustChangePassword = null,
     bool? TwoFactorEnabled = null,
     TwoFactorChannel? TwoFactorChannel = null);
+
+public sealed record AdminResetPasswordRequest(string Password);

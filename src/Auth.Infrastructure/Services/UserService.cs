@@ -59,10 +59,6 @@ public sealed class UserService(
         user.Email = request.Email;
         user.Phone = request.Phone;
         user.IsActive = request.IsActive;
-        if (request.MustChangePassword)
-            user.MarkMustChangePassword();
-        else
-            user.ClearMustChangePassword();
         if (request.TwoFactorEnabled)
             user.EnableTwoFactor(request.TwoFactorChannel ?? TwoFactorChannel.Email);
         else
@@ -105,14 +101,6 @@ public sealed class UserService(
         if (request.IsActive.HasValue)
         {
             user.IsActive = request.IsActive.Value;
-        }
-
-        if (request.MustChangePassword.HasValue)
-        {
-            if (request.MustChangePassword.Value)
-                user.MarkMustChangePassword();
-            else
-                user.ClearMustChangePassword();
         }
 
         if (request.TwoFactorEnabled.HasValue)
@@ -222,5 +210,17 @@ public sealed class UserService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await tx.CommitAsync(cancellationToken);
+    }
+
+    public async Task<bool> ResetPasswordAsync(Guid userId, string newPassword, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+        if (user is null)
+            return false;
+
+        user.PasswordHash = passwordHasher.Hash(newPassword);
+        user.MarkMustChangePassword();
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }

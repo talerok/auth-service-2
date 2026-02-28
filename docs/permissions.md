@@ -25,6 +25,7 @@
 | 14  | `workspaces.update`  | Update workspaces  |
 | 15  | `workspaces.delete`  | Delete workspaces  |
 | 16  | `search.reindex`     | Reindex search     |
+| 17  | `users.reset-password` | Reset user password |
 
 ## Упаковка в байты
 

@@ -20,6 +20,7 @@ public static class SystemPermissionCatalog
         (13, "workspaces.create", "Create workspaces"),
         (14, "workspaces.update", "Update workspaces"),
         (15, "workspaces.delete", "Delete workspaces"),
-        (16, "search.reindex", "Reindex search")
+        (16, "search.reindex", "Reindex search"),
+        (17, "users.reset-password", "Reset user password")
     ];
 }
