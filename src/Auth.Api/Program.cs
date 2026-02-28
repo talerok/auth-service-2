@@ -54,7 +54,7 @@ builder.Services.AddOpenIddict()
 
         options.RequireProofKeyForCodeExchange();
 
-        options.RegisterScopes("openid", "profile", "email", "phone", "ws");
+        options.RegisterScopes("openid", "profile", "email", "phone", "ws", "offline_access");
 
         options.SetAccessTokenLifetime(TimeSpan.FromMinutes(oidc.AccessTokenLifetimeMinutes));
         options.SetRefreshTokenLifetime(TimeSpan.FromDays(oidc.RefreshTokenLifetimeDays));
@@ -71,11 +71,14 @@ builder.Services.AddOpenIddict()
         else
             options.AddDevelopmentEncryptionCertificate();
 
-        options.UseAspNetCore()
+        var aspNetCoreBuilder = options.UseAspNetCore()
               .EnableAuthorizationEndpointPassthrough()
               .EnableTokenEndpointPassthrough()
               .EnableUserInfoEndpointPassthrough()
               .EnableEndSessionEndpointPassthrough();
+
+        if (builder.Environment.IsDevelopment())
+            aspNetCoreBuilder.DisableTransportSecurityRequirement();
     })
     .AddValidation(options =>
     {
