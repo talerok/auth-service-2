@@ -12,8 +12,7 @@ public sealed class NotificationTemplateService(AuthDbContext dbContext) : INoti
                 x.Id,
                 x.Channel.ToString().ToLowerInvariant(),
                 x.Subject,
-                x.HtmlBody,
-                x.TextBody))
+                x.Body))
             .ToListAsync(cancellationToken);
 
     public async Task<NotificationTemplateDto?> GetByChannelAsync(string channel, CancellationToken cancellationToken)
@@ -27,8 +26,7 @@ public sealed class NotificationTemplateService(AuthDbContext dbContext) : INoti
                 x.Id,
                 x.Channel.ToString().ToLowerInvariant(),
                 x.Subject,
-                x.HtmlBody,
-                x.TextBody))
+                x.Body))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -47,8 +45,7 @@ public sealed class NotificationTemplateService(AuthDbContext dbContext) : INoti
             return null;
 
         entity.Subject = request.Subject;
-        entity.HtmlBody = request.HtmlBody;
-        entity.TextBody = request.TextBody;
+        entity.Body = request.Body;
         entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -56,7 +53,6 @@ public sealed class NotificationTemplateService(AuthDbContext dbContext) : INoti
             entity.Id,
             entity.Channel.ToString().ToLowerInvariant(),
             entity.Subject,
-            entity.HtmlBody,
-            entity.TextBody);
+            entity.Body);
     }
 }

@@ -16,7 +16,7 @@ public enum TwoFactorDeliveryResult
 
 public interface ITwoFactorEmailGateway
 {
-    Task<TwoFactorDeliveryResult> SendAsync(Guid challengeId, string email, string subject, string htmlBody, string textBody, CancellationToken cancellationToken);
+    Task<TwoFactorDeliveryResult> SendAsync(Guid challengeId, string email, string subject, string body, CancellationToken cancellationToken);
 }
 
 public interface ITwoFactorSmsGateway
@@ -32,8 +32,7 @@ public sealed class SafeDefaultTwoFactorEmailGateway(
         Guid challengeId,
         string email,
         string subject,
-        string htmlBody,
-        string textBody,
+        string body,
         CancellationToken cancellationToken)
     {
         if (hostEnvironment.IsDevelopment() || hostEnvironment.IsEnvironment("Testing"))
@@ -208,9 +207,8 @@ public sealed class TwoFactorDeliveryBackgroundService(
         }
 
         var subject = RenderTemplate(template.Subject, otp, email, null);
-        var htmlBody = RenderTemplate(template.HtmlBody, otp, email, null);
-        var textBody = RenderTemplate(template.TextBody, otp, email, null);
-        return await emailGateway.SendAsync(challengeId, email, subject, htmlBody, textBody, cancellationToken);
+        var body = RenderTemplate(template.Body, otp, email, null);
+        return await emailGateway.SendAsync(challengeId, email, subject, body, cancellationToken);
     }
 
     private async Task<TwoFactorDeliveryResult> SendSmsAsync(
@@ -224,7 +222,7 @@ public sealed class TwoFactorDeliveryBackgroundService(
             return TwoFactorDeliveryResult.DeliveryFailed;
         }
 
-        var message = RenderTemplate(template.TextBody, otp, null, phone);
+        var message = RenderTemplate(template.Body, otp, null, phone);
         return await smsGateway.SendAsync(challengeId, phone, message, cancellationToken);
     }
 

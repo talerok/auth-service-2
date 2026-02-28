@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Auth.Application;
 using MailKit.Net.Smtp;
 using MailKit.Security;
@@ -7,19 +8,19 @@ using MimeKit;
 
 namespace Auth.Infrastructure;
 
-public sealed class SmtpTwoFactorEmailGateway(
+public sealed partial class SmtpTwoFactorEmailGateway(
     IOptions<IntegrationOptions> options,
     ILogger<SmtpTwoFactorEmailGateway> logger) : ITwoFactorEmailGateway
 {
     private readonly SmtpOptions _smtp = options.Value.Smtp;
 
     public async Task<TwoFactorDeliveryResult> SendAsync(
-        Guid challengeId, string email, string subject, string htmlBody, string textBody,
+        Guid challengeId, string email, string subject, string body,
         CancellationToken cancellationToken)
     {
         try
         {
-            var message = BuildEmailMessage(_smtp, email, subject, htmlBody, textBody);
+            var message = BuildEmailMessage(_smtp, email, subject, body);
 
             using var client = new SmtpClient();
 
@@ -50,7 +51,7 @@ public sealed class SmtpTwoFactorEmailGateway(
     }
 
     internal static MimeMessage BuildEmailMessage(
-        SmtpOptions options, string toEmail, string subject, string htmlBody, string textBody)
+        SmtpOptions options, string toEmail, string subject, string body)
     {
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(options.FromName, options.FromEmail));
@@ -59,11 +60,17 @@ public sealed class SmtpTwoFactorEmailGateway(
 
         var builder = new BodyBuilder
         {
-            HtmlBody = htmlBody,
-            TextBody = textBody
+            HtmlBody = body,
+            TextBody = StripHtmlTags(body)
         };
 
         message.Body = builder.ToMessageBody();
         return message;
     }
+
+    internal static string StripHtmlTags(string html) =>
+        string.IsNullOrWhiteSpace(html) ? html : HtmlTagRegex().Replace(html, "").Trim();
+
+    [GeneratedRegex("<[^>]+>")]
+    private static partial Regex HtmlTagRegex();
 }

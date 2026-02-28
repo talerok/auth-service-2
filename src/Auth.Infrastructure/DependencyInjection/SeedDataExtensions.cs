@@ -110,7 +110,7 @@ public static class SeedDataExtensions
             {
                 Channel = TwoFactorChannel.Email,
                 Subject = "Your verification code",
-                HtmlBody = """
+                Body = """
                     <html>
                     <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
                       <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 32px;">
@@ -122,15 +122,12 @@ public static class SeedDataExtensions
                       </div>
                     </body>
                     </html>
-                    """,
-                TextBody = "Your verification code: {{otp}}\n\nThis code expires in a few minutes. Do not share it with anyone."
+                    """
             },
             new NotificationTemplate
             {
                 Channel = TwoFactorChannel.Sms,
-                Subject = "",
-                HtmlBody = "",
-                TextBody = "Your code: {{otp}}"
+                Body = "Your code: {{otp}}"
             });
 
         await db.SaveChangesAsync(cancellationToken);

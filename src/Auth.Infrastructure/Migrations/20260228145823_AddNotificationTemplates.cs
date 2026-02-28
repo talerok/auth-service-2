@@ -18,8 +18,7 @@ namespace Auth.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Channel = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
                     Subject = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    HtmlBody = table.Column<string>(type: "text", nullable: false),
-                    TextBody = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
+                    Body = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)

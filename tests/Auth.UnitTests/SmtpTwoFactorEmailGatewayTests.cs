@@ -19,7 +19,7 @@ public class SmtpTwoFactorEmailGatewayTests
 
         // Act
         var message = SmtpTwoFactorEmailGateway.BuildEmailMessage(
-            options, "user@example.com", "Your verification code", "<html><body>123456</body></html>", "123456");
+            options, "user@example.com", "Your verification code", "<html><body>123456</body></html>");
 
         // Assert
         message.Subject.Should().Be("Your verification code");
@@ -33,7 +33,7 @@ public class SmtpTwoFactorEmailGatewayTests
 
         // Act
         var message = SmtpTwoFactorEmailGateway.BuildEmailMessage(
-            options, "user@example.com", "Subject", "<html></html>", "text");
+            options, "user@example.com", "Subject", "<html></html>");
 
         // Assert
         message.From.Count.Should().Be(1);
@@ -48,7 +48,7 @@ public class SmtpTwoFactorEmailGatewayTests
 
         // Act
         var message = SmtpTwoFactorEmailGateway.BuildEmailMessage(
-            options, "user@example.com", "Subject", "<html></html>", "text");
+            options, "user@example.com", "Subject", "<html></html>");
 
         // Assert
         message.To.Count.Should().Be(1);
@@ -64,7 +64,7 @@ public class SmtpTwoFactorEmailGatewayTests
 
         // Act
         var message = SmtpTwoFactorEmailGateway.BuildEmailMessage(
-            options, "user@example.com", "Subject", $"<html><body>{otp}</body></html>", $"Code: {otp}");
+            options, "user@example.com", "Subject", $"<html><body>{otp}</body></html>");
 
         // Assert
         var body = message.ToString();
@@ -79,12 +79,26 @@ public class SmtpTwoFactorEmailGatewayTests
 
         // Act
         var message = SmtpTwoFactorEmailGateway.BuildEmailMessage(
-            options, "user@example.com", "Subject", "<html></html>", "plain text");
+            options, "user@example.com", "Subject", "<html><body>text</body></html>");
 
         // Assert
         var body = message.Body.ToString()!;
         body.Should().NotBeNullOrEmpty();
         // Message has multipart body with both HTML and plain text parts
         message.Body.ContentType.MimeType.Should().Be("multipart/alternative");
+    }
+
+    [Fact]
+    public void StripHtmlTags_RemovesAllTags()
+    {
+        var result = SmtpTwoFactorEmailGateway.StripHtmlTags("<h1>Hello</h1><p>World</p>");
+        result.Should().Be("HelloWorld");
+    }
+
+    [Fact]
+    public void StripHtmlTags_WithEmptyString_ReturnsEmpty()
+    {
+        var result = SmtpTwoFactorEmailGateway.StripHtmlTags("");
+        result.Should().BeEmpty();
     }
 }

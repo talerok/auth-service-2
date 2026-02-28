@@ -17,8 +17,7 @@ public sealed class NotificationTemplateConfiguration : IEntityTypeConfiguration
                 value => Enum.Parse<TwoFactorChannel>(value, true))
             .HasMaxLength(16);
         builder.Property(x => x.Subject).HasMaxLength(500);
-        builder.Property(x => x.HtmlBody).HasColumnType("text");
-        builder.Property(x => x.TextBody).HasMaxLength(2000);
+        builder.Property(x => x.Body).HasColumnType("text");
         builder.HasQueryFilter(x => x.DeletedAt == null);
         builder.HasIndex(x => x.Channel).IsUnique().HasFilter("\"DeletedAt\" IS NULL");
     }
