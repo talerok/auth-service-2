@@ -150,7 +150,7 @@ public sealed class AccountControllerIntegrationTests(IntegrationTestFixture fix
         // Complete MFA with OTP
         var mfaVerifyContent = new FormUrlEncodedContent(new Dictionary<string, string>
         {
-            ["grant_type"] = "urn:custom:mfa_otp",
+            ["grant_type"] = OidcConstants.MfaOtpGrantType,
             ["mfa_token"] = mfaError.MfaToken!,
             ["otp"] = "123456",
             ["mfa_channel"] = "email",
@@ -242,7 +242,7 @@ public sealed class AccountControllerIntegrationTests(IntegrationTestFixture fix
 
         var mfaVerifyContent = new FormUrlEncodedContent(new Dictionary<string, string>
         {
-            ["grant_type"] = "urn:custom:mfa_otp",
+            ["grant_type"] = OidcConstants.MfaOtpGrantType,
             ["mfa_token"] = mfaError.MfaToken!,
             ["otp"] = "123456",
             ["mfa_channel"] = "sms",

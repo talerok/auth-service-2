@@ -50,7 +50,7 @@ builder.Services.AddOpenIddict()
         options.AllowAuthorizationCodeFlow()
               .AllowPasswordFlow()
               .AllowRefreshTokenFlow()
-              .AllowCustomFlow("urn:custom:mfa_otp");
+              .AllowCustomFlow(OidcConstants.MfaOtpGrantType);
 
         options.RequireProofKeyForCodeExchange();
 

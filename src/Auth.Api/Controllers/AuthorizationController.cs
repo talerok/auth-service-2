@@ -57,7 +57,7 @@ public sealed class AuthorizationController(IOidcGrantService oidcGrantService) 
         if (request.IsAuthorizationCodeGrantType() || request.IsRefreshTokenGrantType())
             return await HandleCodeOrRefreshGrant(cancellationToken);
 
-        if (request.GrantType == "urn:custom:mfa_otp")
+        if (request.GrantType == OidcConstants.MfaOtpGrantType)
             return await HandleMfaOtpGrant(request, cancellationToken);
 
         return OidcForbid(Errors.UnsupportedGrantType, "The specified grant type is not supported.");
