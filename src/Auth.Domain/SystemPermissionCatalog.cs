@@ -21,6 +21,8 @@ public static class SystemPermissionCatalog
         (14, "workspaces.update", "Update workspaces"),
         (15, "workspaces.delete", "Delete workspaces"),
         (16, "search.reindex", "Reindex search"),
-        (17, "users.reset-password", "Reset user password")
+        (17, "users.reset-password", "Reset user password"),
+        (18, "notification-templates.view", "View notification templates"),
+        (19, "notification-templates.update", "Update notification templates")
     ];
 }

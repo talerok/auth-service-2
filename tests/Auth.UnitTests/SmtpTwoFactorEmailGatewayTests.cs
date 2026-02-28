@@ -12,26 +12,28 @@ public class SmtpTwoFactorEmailGatewayTests
     };
 
     [Fact]
-    public void BuildOtpEmailMessage_WithValidInputs_SetsCorrectSubject()
+    public void BuildEmailMessage_WithValidInputs_SetsCorrectSubject()
     {
         // Arrange
         var options = DefaultOptions();
 
         // Act
-        var message = SmtpTwoFactorEmailGateway.BuildOtpEmailMessage(options, "user@example.com", "123456");
+        var message = SmtpTwoFactorEmailGateway.BuildEmailMessage(
+            options, "user@example.com", "Your verification code", "<html><body>123456</body></html>", "123456");
 
         // Assert
         message.Subject.Should().Be("Your verification code");
     }
 
     [Fact]
-    public void BuildOtpEmailMessage_WithValidInputs_SetsFromAddress()
+    public void BuildEmailMessage_WithValidInputs_SetsFromAddress()
     {
         // Arrange
         var options = DefaultOptions();
 
         // Act
-        var message = SmtpTwoFactorEmailGateway.BuildOtpEmailMessage(options, "user@example.com", "123456");
+        var message = SmtpTwoFactorEmailGateway.BuildEmailMessage(
+            options, "user@example.com", "Subject", "<html></html>", "text");
 
         // Assert
         message.From.Count.Should().Be(1);
@@ -39,13 +41,14 @@ public class SmtpTwoFactorEmailGatewayTests
     }
 
     [Fact]
-    public void BuildOtpEmailMessage_WithValidInputs_SetsToAddress()
+    public void BuildEmailMessage_WithValidInputs_SetsToAddress()
     {
         // Arrange
         var options = DefaultOptions();
 
         // Act
-        var message = SmtpTwoFactorEmailGateway.BuildOtpEmailMessage(options, "user@example.com", "123456");
+        var message = SmtpTwoFactorEmailGateway.BuildEmailMessage(
+            options, "user@example.com", "Subject", "<html></html>", "text");
 
         // Assert
         message.To.Count.Should().Be(1);
@@ -53,14 +56,15 @@ public class SmtpTwoFactorEmailGatewayTests
     }
 
     [Fact]
-    public void BuildOtpEmailMessage_WithValidInputs_BodyContainsOtpCode()
+    public void BuildEmailMessage_WithValidInputs_BodyContainsOtpCode()
     {
         // Arrange
         var options = DefaultOptions();
         const string otp = "123456";
 
         // Act
-        var message = SmtpTwoFactorEmailGateway.BuildOtpEmailMessage(options, "user@example.com", otp);
+        var message = SmtpTwoFactorEmailGateway.BuildEmailMessage(
+            options, "user@example.com", "Subject", $"<html><body>{otp}</body></html>", $"Code: {otp}");
 
         // Assert
         var body = message.ToString();
@@ -68,13 +72,14 @@ public class SmtpTwoFactorEmailGatewayTests
     }
 
     [Fact]
-    public void BuildOtpEmailMessage_WithValidInputs_HasTextAlternative()
+    public void BuildEmailMessage_WithValidInputs_HasTextAlternative()
     {
         // Arrange
         var options = DefaultOptions();
 
         // Act
-        var message = SmtpTwoFactorEmailGateway.BuildOtpEmailMessage(options, "user@example.com", "123456");
+        var message = SmtpTwoFactorEmailGateway.BuildEmailMessage(
+            options, "user@example.com", "Subject", "<html></html>", "plain text");
 
         // Assert
         var body = message.Body.ToString()!;

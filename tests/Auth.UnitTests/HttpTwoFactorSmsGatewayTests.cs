@@ -11,40 +11,40 @@ namespace Auth.UnitTests;
 public sealed class HttpTwoFactorSmsGatewayTests
 {
     [Fact]
-    public async Task SendOtpAsync_WhenGatewayReturns200_ReturnsDelivered()
+    public async Task SendAsync_WhenGatewayReturns200_ReturnsDelivered()
     {
         var handler = CreateHandler(HttpStatusCode.OK, new { status = "accepted" });
         var gateway = CreateGateway(handler);
 
-        var result = await gateway.SendOtpAsync(Guid.NewGuid(), "+71234567890", "123456", CancellationToken.None);
+        var result = await gateway.SendAsync(Guid.NewGuid(), "+71234567890", "Your code: 123456", CancellationToken.None);
 
         result.Should().Be(TwoFactorDeliveryResult.Delivered);
     }
 
     [Fact]
-    public async Task SendOtpAsync_WhenGatewayReturns422_ReturnsDeliveryFailed()
+    public async Task SendAsync_WhenGatewayReturns422_ReturnsDeliveryFailed()
     {
         var handler = CreateHandler((HttpStatusCode)422, new { status = "rejected", reason = "invalid_phone" });
         var gateway = CreateGateway(handler);
 
-        var result = await gateway.SendOtpAsync(Guid.NewGuid(), "+invalid", "123456", CancellationToken.None);
+        var result = await gateway.SendAsync(Guid.NewGuid(), "+invalid", "Your code: 123456", CancellationToken.None);
 
         result.Should().Be(TwoFactorDeliveryResult.DeliveryFailed);
     }
 
     [Fact]
-    public async Task SendOtpAsync_WhenGatewayReturns503_ReturnsProviderUnavailable()
+    public async Task SendAsync_WhenGatewayReturns503_ReturnsProviderUnavailable()
     {
         var handler = CreateHandler(HttpStatusCode.ServiceUnavailable, new { status = "unavailable", reason = "provider_down" });
         var gateway = CreateGateway(handler);
 
-        var result = await gateway.SendOtpAsync(Guid.NewGuid(), "+71234567890", "123456", CancellationToken.None);
+        var result = await gateway.SendAsync(Guid.NewGuid(), "+71234567890", "Your code: 123456", CancellationToken.None);
 
         result.Should().Be(TwoFactorDeliveryResult.ProviderUnavailable);
     }
 
     [Fact]
-    public async Task SendOtpAsync_WhenHttpRequestThrows_ReturnsProviderUnavailable()
+    public async Task SendAsync_WhenHttpRequestThrows_ReturnsProviderUnavailable()
     {
         var handler = new Mock<HttpMessageHandler>();
         handler
@@ -56,13 +56,13 @@ public sealed class HttpTwoFactorSmsGatewayTests
 
         var gateway = CreateGateway(handler.Object);
 
-        var result = await gateway.SendOtpAsync(Guid.NewGuid(), "+71234567890", "123456", CancellationToken.None);
+        var result = await gateway.SendAsync(Guid.NewGuid(), "+71234567890", "Your code: 123456", CancellationToken.None);
 
         result.Should().Be(TwoFactorDeliveryResult.ProviderUnavailable);
     }
 
     [Fact]
-    public async Task SendOtpAsync_WhenTimeout_ReturnsProviderUnavailable()
+    public async Task SendAsync_WhenTimeout_ReturnsProviderUnavailable()
     {
         var handler = new Mock<HttpMessageHandler>();
         handler
@@ -74,13 +74,13 @@ public sealed class HttpTwoFactorSmsGatewayTests
 
         var gateway = CreateGateway(handler.Object);
 
-        var result = await gateway.SendOtpAsync(Guid.NewGuid(), "+71234567890", "123456", CancellationToken.None);
+        var result = await gateway.SendAsync(Guid.NewGuid(), "+71234567890", "Your code: 123456", CancellationToken.None);
 
         result.Should().Be(TwoFactorDeliveryResult.ProviderUnavailable);
     }
 
     [Fact]
-    public async Task SendOtpAsync_SendsCorrectRequestBody()
+    public async Task SendAsync_SendsCorrectRequestBody()
     {
         string? capturedBody = null;
         var handler = new Mock<HttpMessageHandler>();
@@ -102,7 +102,7 @@ public sealed class HttpTwoFactorSmsGatewayTests
         var challengeId = Guid.NewGuid();
         var gateway = CreateGateway(handler.Object);
 
-        await gateway.SendOtpAsync(challengeId, "+71234567890", "482916", CancellationToken.None);
+        await gateway.SendAsync(challengeId, "+71234567890", "Your code: 482916", CancellationToken.None);
 
         capturedBody.Should().NotBeNull();
         var doc = JsonDocument.Parse(capturedBody!);

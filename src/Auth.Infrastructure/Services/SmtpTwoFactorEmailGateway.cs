@@ -13,12 +13,13 @@ public sealed class SmtpTwoFactorEmailGateway(
 {
     private readonly SmtpOptions _smtp = options.Value.Smtp;
 
-    public async Task<TwoFactorDeliveryResult> SendOtpAsync(
-        Guid challengeId, string email, string otp, CancellationToken cancellationToken)
+    public async Task<TwoFactorDeliveryResult> SendAsync(
+        Guid challengeId, string email, string subject, string htmlBody, string textBody,
+        CancellationToken cancellationToken)
     {
         try
         {
-            var message = BuildOtpEmailMessage(_smtp, email, otp);
+            var message = BuildEmailMessage(_smtp, email, subject, htmlBody, textBody);
 
             using var client = new SmtpClient();
 
@@ -48,29 +49,18 @@ public sealed class SmtpTwoFactorEmailGateway(
         }
     }
 
-    internal static MimeMessage BuildOtpEmailMessage(SmtpOptions options, string toEmail, string otp)
+    internal static MimeMessage BuildEmailMessage(
+        SmtpOptions options, string toEmail, string subject, string htmlBody, string textBody)
     {
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(options.FromName, options.FromEmail));
         message.To.Add(MailboxAddress.Parse(toEmail));
-        message.Subject = "Your verification code";
+        message.Subject = subject;
 
         var builder = new BodyBuilder
         {
-            HtmlBody = $"""
-                <html>
-                <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
-                  <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 32px;">
-                    <h2 style="color: #333;">Your verification code</h2>
-                    <p style="color: #555;">Use the code below to complete your sign-in.</p>
-                    <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #111; margin: 24px 0;">{otp}</div>
-                    <p style="color: #888; font-size: 13px;">This code expires in a few minutes. Do not share it with anyone.</p>
-                    <p style="color: #ccc; font-size: 11px;">Reference: {toEmail}</p>
-                  </div>
-                </body>
-                </html>
-                """,
-            TextBody = $"Your verification code: {otp}\n\nThis code expires in a few minutes. Do not share it with anyone."
+            HtmlBody = htmlBody,
+            TextBody = textBody
         };
 
         message.Body = builder.ToMessageBody();

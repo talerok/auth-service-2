@@ -16,22 +16,24 @@ public enum TwoFactorDeliveryResult
 
 public interface ITwoFactorEmailGateway
 {
-    Task<TwoFactorDeliveryResult> SendOtpAsync(Guid challengeId, string email, string otp, CancellationToken cancellationToken);
+    Task<TwoFactorDeliveryResult> SendAsync(Guid challengeId, string email, string subject, string htmlBody, string textBody, CancellationToken cancellationToken);
 }
 
 public interface ITwoFactorSmsGateway
 {
-    Task<TwoFactorDeliveryResult> SendOtpAsync(Guid challengeId, string phone, string otp, CancellationToken cancellationToken);
+    Task<TwoFactorDeliveryResult> SendAsync(Guid challengeId, string phone, string message, CancellationToken cancellationToken);
 }
 
 public sealed class SafeDefaultTwoFactorEmailGateway(
     IHostEnvironment hostEnvironment,
     ILogger<SafeDefaultTwoFactorEmailGateway> logger) : ITwoFactorEmailGateway
 {
-    public Task<TwoFactorDeliveryResult> SendOtpAsync(
+    public Task<TwoFactorDeliveryResult> SendAsync(
         Guid challengeId,
         string email,
-        string otp,
+        string subject,
+        string htmlBody,
+        string textBody,
         CancellationToken cancellationToken)
     {
         if (hostEnvironment.IsDevelopment() || hostEnvironment.IsEnvironment("Testing"))
@@ -50,10 +52,10 @@ public sealed class SafeDefaultTwoFactorSmsGateway(
     IHostEnvironment hostEnvironment,
     ILogger<SafeDefaultTwoFactorSmsGateway> logger) : ITwoFactorSmsGateway
 {
-    public Task<TwoFactorDeliveryResult> SendOtpAsync(
+    public Task<TwoFactorDeliveryResult> SendAsync(
         Guid challengeId,
         string phone,
-        string otp,
+        string message,
         CancellationToken cancellationToken)
     {
         if (hostEnvironment.IsDevelopment() || hostEnvironment.IsEnvironment("Testing"))
@@ -123,6 +125,10 @@ public sealed class TwoFactorDeliveryBackgroundService(
             return;
         }
 
+        var templates = await dbContext.NotificationTemplates
+            .AsNoTracking()
+            .ToDictionaryAsync(x => x.Channel, cancellationToken);
+
         foreach (var item in pending)
         {
             if (item.Challenge.Channel == TwoFactorChannel.Sms && string.IsNullOrWhiteSpace(item.Phone))
@@ -143,8 +149,8 @@ public sealed class TwoFactorDeliveryBackgroundService(
                     var otp = TwoFactorOtpSecurity.DecryptOtp(item.Challenge.OtpEncrypted, _twoFactorKeyMaterial);
                     finalResult = item.Challenge.Channel switch
                     {
-                        TwoFactorChannel.Sms => await smsGateway.SendOtpAsync(item.Challenge.Id, item.Phone!, otp, timeout.Token),
-                        _ => await emailGateway.SendOtpAsync(item.Challenge.Id, item.Email, otp, timeout.Token)
+                        TwoFactorChannel.Sms => await SendSmsAsync(item.Challenge.Id, item.Phone!, otp, templates, timeout.Token),
+                        _ => await SendEmailAsync(item.Challenge.Id, item.Email, otp, templates, timeout.Token)
                     };
                     if (finalResult == TwoFactorDeliveryResult.ProviderUnavailable && attemptsLeft > 0)
                     {
@@ -189,4 +195,42 @@ public sealed class TwoFactorDeliveryBackgroundService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    private async Task<TwoFactorDeliveryResult> SendEmailAsync(
+        Guid challengeId, string email, string otp,
+        Dictionary<TwoFactorChannel, NotificationTemplate> templates,
+        CancellationToken cancellationToken)
+    {
+        if (!templates.TryGetValue(TwoFactorChannel.Email, out var template))
+        {
+            logger.LogWarning("Email notification template not found for challenge {ChallengeId}", challengeId);
+            return TwoFactorDeliveryResult.DeliveryFailed;
+        }
+
+        var subject = RenderTemplate(template.Subject, otp, email, null);
+        var htmlBody = RenderTemplate(template.HtmlBody, otp, email, null);
+        var textBody = RenderTemplate(template.TextBody, otp, email, null);
+        return await emailGateway.SendAsync(challengeId, email, subject, htmlBody, textBody, cancellationToken);
+    }
+
+    private async Task<TwoFactorDeliveryResult> SendSmsAsync(
+        Guid challengeId, string phone, string otp,
+        Dictionary<TwoFactorChannel, NotificationTemplate> templates,
+        CancellationToken cancellationToken)
+    {
+        if (!templates.TryGetValue(TwoFactorChannel.Sms, out var template))
+        {
+            logger.LogWarning("SMS notification template not found for challenge {ChallengeId}", challengeId);
+            return TwoFactorDeliveryResult.DeliveryFailed;
+        }
+
+        var message = RenderTemplate(template.TextBody, otp, null, phone);
+        return await smsGateway.SendAsync(challengeId, phone, message, cancellationToken);
+    }
+
+    private static string RenderTemplate(string template, string otp, string? email, string? phone) =>
+        template
+            .Replace("{{otp}}", otp)
+            .Replace("{{email}}", email ?? "")
+            .Replace("{{phone}}", phone ?? "");
 }

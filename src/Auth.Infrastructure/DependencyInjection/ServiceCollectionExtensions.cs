@@ -21,6 +21,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IWorkspaceService, WorkspaceService>();
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IPermissionService, PermissionService>();
+        services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
         services.AddScoped<IWorkspaceMaskService, WorkspaceMaskService>();
         services.AddScoped<IOidcGrantService, OidcGrantService>();
         services.AddSingleton<IPermissionBitCache, PermissionBitCache>();

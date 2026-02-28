@@ -93,8 +93,47 @@ public static class SeedDataExtensions
             await db.SaveChangesAsync(cancellationToken);
         }
 
+        await SeedNotificationTemplatesAsync(db, cancellationToken);
+
         await permissionCache.WarmupAsync(cancellationToken);
         await SeedOidcClientsAsync(appManager, cancellationToken);
+    }
+
+    private static async Task SeedNotificationTemplatesAsync(AuthDbContext db, CancellationToken cancellationToken)
+    {
+        var hasAny = await db.NotificationTemplates.AnyAsync(cancellationToken);
+        if (hasAny)
+            return;
+
+        db.NotificationTemplates.AddRange(
+            new NotificationTemplate
+            {
+                Channel = TwoFactorChannel.Email,
+                Subject = "Your verification code",
+                HtmlBody = """
+                    <html>
+                    <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+                      <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 32px;">
+                        <h2 style="color: #333;">Your verification code</h2>
+                        <p style="color: #555;">Use the code below to complete your sign-in.</p>
+                        <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #111; margin: 24px 0;">{{otp}}</div>
+                        <p style="color: #888; font-size: 13px;">This code expires in a few minutes. Do not share it with anyone.</p>
+                        <p style="color: #ccc; font-size: 11px;">Reference: {{email}}</p>
+                      </div>
+                    </body>
+                    </html>
+                    """,
+                TextBody = "Your verification code: {{otp}}\n\nThis code expires in a few minutes. Do not share it with anyone."
+            },
+            new NotificationTemplate
+            {
+                Channel = TwoFactorChannel.Sms,
+                Subject = "",
+                HtmlBody = "",
+                TextBody = "Your code: {{otp}}"
+            });
+
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     private static async Task SeedOidcClientsAsync(IOpenIddictApplicationManager appManager, CancellationToken cancellationToken)

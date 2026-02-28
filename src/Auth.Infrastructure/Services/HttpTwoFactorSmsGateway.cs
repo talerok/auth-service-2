@@ -8,13 +8,13 @@ public sealed class HttpTwoFactorSmsGateway(
     IHttpClientFactory httpClientFactory,
     ILogger<HttpTwoFactorSmsGateway> logger) : ITwoFactorSmsGateway
 {
-    public async Task<TwoFactorDeliveryResult> SendOtpAsync(
-        Guid challengeId, string phone, string otp, CancellationToken cancellationToken)
+    public async Task<TwoFactorDeliveryResult> SendAsync(
+        Guid challengeId, string phone, string message, CancellationToken cancellationToken)
     {
         try
         {
             using var client = httpClientFactory.CreateClient("SmsGateway");
-            var request = new SmsGatewaySendRequest(challengeId.ToString(), phone, $"Your code: {otp}");
+            var request = new SmsGatewaySendRequest(challengeId.ToString(), phone, message);
             var response = await client.PostAsJsonAsync("/api/sms/send", request, cancellationToken);
 
             if (response.IsSuccessStatusCode)
