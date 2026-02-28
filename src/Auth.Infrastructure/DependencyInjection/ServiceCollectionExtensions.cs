@@ -15,13 +15,14 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<AuthDbContext>(options => options.UseNpgsql(integration.PostgreSql.ConnectionString));
 
         services.AddScoped<IPasswordHasher, PasswordHasher>();
-        services.AddScoped<IJwtTokenFactory, JwtTokenFactory>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IWorkspaceService, WorkspaceService>();
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IPermissionService, PermissionService>();
+        services.AddScoped<IWorkspaceMaskService, WorkspaceMaskService>();
+        services.AddScoped<IOidcGrantService, OidcGrantService>();
         services.AddSingleton<IPermissionBitCache, PermissionBitCache>();
         services.AddScoped<ISearchIndexService, NullSearchIndexService>();
 
@@ -46,6 +47,13 @@ public static class ServiceCollectionExtensions
         }
 
         services.AddHostedService<TwoFactorDeliveryBackgroundService>();
+
+        services.AddOpenIddict()
+            .AddCore(options =>
+            {
+                options.UseEntityFrameworkCore()
+                      .UseDbContext<AuthDbContext>();
+            });
 
         return services;
     }

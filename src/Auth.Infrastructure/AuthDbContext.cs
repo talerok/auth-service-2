@@ -19,5 +19,6 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options) : DbC
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AuthDbContext).Assembly);
+        modelBuilder.UseOpenIddict();
     }
 }

@@ -9,11 +9,9 @@ namespace Auth.Infrastructure;
 
 public sealed class TwoFactorAuthService(
     AuthDbContext dbContext,
-    IJwtTokenFactory jwtTokenFactory,
     IOptions<IntegrationOptions> options,
     ILogger<TwoFactorAuthService> logger) : ITwoFactorAuthService
 {
-    private readonly JwtOptions _jwt = options.Value.Jwt;
     private readonly TwoFactorOptions _twoFactor = options.Value.TwoFactor;
     private readonly string _twoFactorKeyMaterial = string.IsNullOrWhiteSpace(options.Value.TwoFactor.EncryptionKey)
         ? options.Value.Jwt.Secret
@@ -87,16 +85,20 @@ public sealed class TwoFactorAuthService(
             "SUCCESS");
     }
 
-    public async Task<AuthTokensResponse> VerifyTwoFactorLoginAsync(VerifyTwoFactorRequest request, CancellationToken cancellationToken)
+    public async Task<User> ValidateLoginOtpAsync(
+        Guid challengeId,
+        TwoFactorChannel channel,
+        string otp,
+        CancellationToken cancellationToken)
     {
-        ValidateChannelOrThrow(request.Channel);
+        ValidateChannelOrThrow(channel);
         var challenge = await dbContext.TwoFactorChallenges
             .FirstOrDefaultAsync(
-                x => x.Id == request.ChallengeId && x.Purpose == TwoFactorChallenge.PurposeLogin,
+                x => x.Id == challengeId && x.Purpose == TwoFactorChallenge.PurposeLogin,
                 cancellationToken);
-        ValidateChallengeOrThrow(challenge, request.Channel);
+        ValidateChallengeOrThrow(challenge, channel);
         ValidateDeliveryStatusOrThrow(challenge!, TwoFactorChallenge.PurposeLogin);
-        await VerifyOtpOrThrowAsync(challenge!, request.Otp, cancellationToken);
+        await VerifyOtpOrThrowAsync(challenge!, otp, cancellationToken);
 
         challenge!.MarkVerified();
         var user = await dbContext.Users.FirstAsync(x => x.Id == challenge.UserId, cancellationToken);
@@ -105,9 +107,6 @@ public sealed class TwoFactorAuthService(
             throw new AuthException(TwoFactorErrorCatalog.NotRequired);
         }
 
-        var masks = await BuildWorkspaceMasksAsync(user.Id, cancellationToken);
-        var tokens = jwtTokenFactory.CreateTokens(user, masks);
-        await SaveRefreshTokenAsync(user.Id, tokens.RefreshToken, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation(
@@ -116,7 +115,7 @@ public sealed class TwoFactorAuthService(
             "LOGIN_VERIFIED",
             "SUCCESS");
 
-        return tokens;
+        return user;
     }
 
     private async Task<TwoFactorChallenge> CreateActivationChallengeAsync(
@@ -229,38 +228,5 @@ public sealed class TwoFactorAuthService(
             await dbContext.SaveChangesAsync(cancellationToken);
             throw new AuthException(TwoFactorErrorCatalog.VerificationFailed);
         }
-    }
-
-    private async Task SaveRefreshTokenAsync(Guid userId, string refreshToken, CancellationToken cancellationToken)
-    {
-        dbContext.RefreshTokens.Add(new RefreshToken
-        {
-            UserId = userId,
-            Token = refreshToken,
-            ExpiresAt = DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpirationDays)
-        });
-        await dbContext.SaveChangesAsync(cancellationToken);
-    }
-
-    private async Task<Dictionary<string, byte[]>> BuildWorkspaceMasksAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        var matrix = await dbContext.UserWorkspaces
-            .Where(uw => uw.UserId == userId)
-            .Select(uw => new
-            {
-                uw.Workspace!.Code,
-                Bits = uw.UserWorkspaceRoles
-                    .SelectMany(uwr => uwr.Role!.RolePermissions)
-                    .Select(rp => rp.Permission!.Bit)
-            })
-            .ToListAsync(cancellationToken);
-
-        var result = new Dictionary<string, byte[]>();
-        foreach (var row in matrix)
-        {
-            result[row.Code] = PermissionBitmask.BuildMask(row.Bits);
-        }
-
-        return result;
     }
 }

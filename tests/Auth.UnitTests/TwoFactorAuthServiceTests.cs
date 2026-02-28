@@ -46,7 +46,7 @@ public sealed class TwoFactorAuthServiceTests
     }
 
     [Fact]
-    public async Task VerifyTwoFactorLoginAsync_WhenAttemptsExceedLimit_ReturnsDeterministicErrorCode()
+    public async Task ValidateLoginOtpAsync_WhenAttemptsExceedLimit_ReturnsDeterministicErrorCode()
     {
         await using var dbContext = CreateDbContext();
         var user = new User
@@ -61,30 +61,30 @@ public sealed class TwoFactorAuthServiceTests
         await dbContext.SaveChangesAsync();
 
         var authService = CreateAuthService(dbContext, "123456");
-        var login = await authService.LoginAsync(new LoginRequest("admin", "pwd"), CancellationToken.None);
-        var challenge = await dbContext.TwoFactorChallenges.SingleAsync(x => x.Id == login.ChallengeId);
+        var loginChallenge = await authService.CreateLoginChallengeAsync(user.Id, TwoFactorChannel.Email, CancellationToken.None);
+        var challenge = await dbContext.TwoFactorChallenges.SingleAsync(x => x.Id == loginChallenge.Id);
         challenge.MarkDelivered();
         await dbContext.SaveChangesAsync();
 
         var service = CreateService(dbContext, twoFactorStaticOtp: "123456");
         for (var i = 0; i < 5; i++)
         {
-            var act = () => service.VerifyTwoFactorLoginAsync(
-                new VerifyTwoFactorRequest(login.ChallengeId!.Value, TwoFactorChannel.Email, "000000"),
+            var act = () => service.ValidateLoginOtpAsync(
+                loginChallenge.Id, TwoFactorChannel.Email, "000000",
                 CancellationToken.None);
             await act.Should().ThrowAsync<AuthException>()
                 .Where(x => x.Code == TwoFactorErrorCatalog.VerificationFailed);
         }
 
-        var blocked = () => service.VerifyTwoFactorLoginAsync(
-            new VerifyTwoFactorRequest(login.ChallengeId!.Value, TwoFactorChannel.Email, "123456"),
+        var blocked = () => service.ValidateLoginOtpAsync(
+            loginChallenge.Id, TwoFactorChannel.Email, "123456",
             CancellationToken.None);
         await blocked.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == TwoFactorErrorCatalog.AttemptsExceeded);
     }
 
     [Fact]
-    public async Task VerifyTwoFactorLoginAsync_WhenOtpAlreadyUsed_RejectsSecondAttempt()
+    public async Task ValidateLoginOtpAsync_WhenOtpAlreadyUsed_RejectsSecondAttempt()
     {
         await using var dbContext = CreateDbContext();
         var user = new User
@@ -99,18 +99,18 @@ public sealed class TwoFactorAuthServiceTests
         await dbContext.SaveChangesAsync();
 
         var authService = CreateAuthService(dbContext, "123456");
-        var login = await authService.LoginAsync(new LoginRequest("admin", "pwd"), CancellationToken.None);
-        var challenge = await dbContext.TwoFactorChallenges.SingleAsync(x => x.Id == login.ChallengeId);
+        var loginChallenge = await authService.CreateLoginChallengeAsync(user.Id, TwoFactorChannel.Email, CancellationToken.None);
+        var challenge = await dbContext.TwoFactorChallenges.SingleAsync(x => x.Id == loginChallenge.Id);
         challenge.MarkDelivered();
         await dbContext.SaveChangesAsync();
 
         var service = CreateService(dbContext, twoFactorStaticOtp: "123456");
-        await service.VerifyTwoFactorLoginAsync(
-            new VerifyTwoFactorRequest(login.ChallengeId!.Value, TwoFactorChannel.Email, "123456"),
+        await service.ValidateLoginOtpAsync(
+            loginChallenge.Id, TwoFactorChannel.Email, "123456",
             CancellationToken.None);
 
-        var second = () => service.VerifyTwoFactorLoginAsync(
-            new VerifyTwoFactorRequest(login.ChallengeId.Value, TwoFactorChannel.Email, "123456"),
+        var second = () => service.ValidateLoginOtpAsync(
+            loginChallenge.Id, TwoFactorChannel.Email, "123456",
             CancellationToken.None);
         await second.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == TwoFactorErrorCatalog.OtpAlreadyUsed);
@@ -231,15 +231,10 @@ public sealed class TwoFactorAuthServiceTests
 
     private static TwoFactorAuthService CreateService(AuthDbContext dbContext, string twoFactorStaticOtp)
     {
-        var tokenFactory = new Mock<IJwtTokenFactory>();
-        tokenFactory
-            .Setup(x => x.CreateTokens(It.IsAny<User>(), It.IsAny<Dictionary<string, byte[]>>()))
-            .Returns(new AuthTokensResponse("access", "refresh", DateTime.UtcNow.AddMinutes(15)));
         var options = CreateOptions(twoFactorStaticOtp);
 
         return new TwoFactorAuthService(
             dbContext,
-            tokenFactory.Object,
             options,
             NullLogger<TwoFactorAuthService>.Instance);
     }
@@ -249,11 +244,6 @@ public sealed class TwoFactorAuthServiceTests
         var hasher = new Mock<IPasswordHasher>();
         hasher.Setup(x => x.Verify("pwd", "hash")).Returns(true);
 
-        var tokenFactory = new Mock<IJwtTokenFactory>();
-        tokenFactory
-            .Setup(x => x.CreateTokens(It.IsAny<User>(), It.IsAny<Dictionary<string, byte[]>>()))
-            .Returns(new AuthTokensResponse("access", "refresh", DateTime.UtcNow.AddMinutes(15)));
-
         var searchIndex = new Mock<ISearchIndexService>();
         searchIndex.Setup(x => x.IndexUserAsync(It.IsAny<UserDto>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -261,7 +251,6 @@ public sealed class TwoFactorAuthServiceTests
         return new AuthService(
             dbContext,
             hasher.Object,
-            tokenFactory.Object,
             searchIndex.Object,
             CreateOptions(twoFactorStaticOtp),
             NullLogger<AuthService>.Instance);
@@ -272,11 +261,7 @@ public sealed class TwoFactorAuthServiceTests
         {
             Jwt = new JwtOptions
             {
-                Secret = "super-secret-key-min-32-characters-long!",
-                Issuer = "auth-service",
-                Audience = "auth-service-clients",
-                AccessTokenExpirationMinutes = 15,
-                RefreshTokenExpirationDays = 7
+                Secret = "super-secret-key-min-32-characters-long!"
             },
             TwoFactor = new TwoFactorOptions
             {

@@ -10,86 +10,38 @@ namespace Auth.Infrastructure;
 public sealed class AuthService(
     AuthDbContext dbContext,
     IPasswordHasher passwordHasher,
-    IJwtTokenFactory jwtTokenFactory,
     ISearchIndexService searchIndexService,
     IOptions<IntegrationOptions> options,
     ILogger<AuthService> logger) : IAuthService
 {
-    private readonly JwtOptions _jwt = options.Value.Jwt;
     private readonly TwoFactorOptions _twoFactor = options.Value.TwoFactor;
     private readonly PasswordChangeOptions _passwordChange = options.Value.PasswordChange;
     private readonly string _twoFactorKeyMaterial = string.IsNullOrWhiteSpace(options.Value.TwoFactor.EncryptionKey)
         ? options.Value.Jwt.Secret
         : options.Value.TwoFactor.EncryptionKey;
 
-    public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
+    public async Task<User> ValidateCredentialsAsync(string username, string password, CancellationToken cancellationToken)
     {
         var user = await dbContext.Users
-            .FirstOrDefaultAsync(x => x.Username == request.Username, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Username == username, cancellationToken);
 
-        if (user is null || !user.IsActive || !passwordHasher.Verify(request.Password, user.PasswordHash))
+        if (user is null || !user.IsActive || !passwordHasher.Verify(password, user.PasswordHash))
         {
             throw new AuthException(AuthErrorCatalog.InvalidCredentials);
         }
 
-        if (user.MustChangePassword)
-        {
-            var passwordChallenge = PasswordChangeChallenge.Create(
-                user.Id,
-                DateTime.UtcNow.AddMinutes(_passwordChange.PasswordChangeTtlMinutes));
-            dbContext.PasswordChangeChallenges.Add(passwordChallenge);
-            await dbContext.SaveChangesAsync(cancellationToken);
-
-            logger.LogInformation(
-                "PasswordChangeOperation userId={UserId} operation={Operation} result={Result}",
-                user.Id, "PASSWORD_CHANGE_CHALLENGE_CREATED", "SUCCESS");
-
-            return new LoginResponse(false, null, null, null, true, passwordChallenge.Id);
-        }
-
-        if (!user.TwoFactorEnabled)
-        {
-            var masks = await BuildWorkspaceMasksAsync(user.Id, cancellationToken);
-            var tokens = jwtTokenFactory.CreateTokens(user, masks);
-            await SaveRefreshTokenAsync(user.Id, tokens.RefreshToken, cancellationToken);
-            return new LoginResponse(false, tokens, null, null);
-        }
-
-        ValidateChannelOrThrow(user.TwoFactorChannel ?? TwoFactorChannel.Email);
-        var challenge = await CreateLoginChallengeAsync(
-            user.Id,
-            user.TwoFactorChannel ?? TwoFactorChannel.Email,
-            cancellationToken);
-        logger.LogInformation(
-            "TwoFactorOperation userId={UserId} operation={Operation} result={Result}",
-            user.Id,
-            "LOGIN_CHALLENGE_INITIATED",
-            "SUCCESS");
-
-        return new LoginResponse(true, null, challenge.Id, challenge.Channel);
+        return user;
     }
 
-    public async Task<AuthTokensResponse> RefreshAsync(RefreshRequest request, CancellationToken cancellationToken)
+    public async Task<User> GetActiveUserAsync(Guid userId, CancellationToken cancellationToken)
     {
-        var current = await dbContext.RefreshTokens
-            .FirstOrDefaultAsync(x => x.Token == request.RefreshToken, cancellationToken);
-        if (current is null || current.RevokedAt is not null || current.ExpiresAt <= DateTime.UtcNow)
-        {
-            throw new AuthException(AuthErrorCatalog.InvalidRefreshToken);
-        }
+        var user = await dbContext.Users
+            .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
 
-        var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == current.UserId, cancellationToken);
         if (user is null || !user.IsActive)
-        {
             throw new AuthException(AuthErrorCatalog.UserInactive);
-        }
 
-        current.RevokedAt = DateTime.UtcNow;
-        var masks = await BuildWorkspaceMasksAsync(user.Id, cancellationToken);
-        var tokens = jwtTokenFactory.CreateTokens(user, masks);
-        await SaveRefreshTokenAsync(user.Id, tokens.RefreshToken, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return tokens;
+        return user;
     }
 
     public async Task<UserDto> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken)
@@ -117,20 +69,7 @@ public sealed class AuthService(
         return dto;
     }
 
-    public async Task RevokeAsync(RevokeRequest request, CancellationToken cancellationToken)
-    {
-        var refreshToken = await dbContext.RefreshTokens
-            .FirstOrDefaultAsync(x => x.Token == request.RefreshToken, cancellationToken);
-        if (refreshToken is null)
-        {
-            return;
-        }
-
-        refreshToken.RevokedAt = DateTime.UtcNow;
-        await dbContext.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task<AuthTokensResponse> ForcedChangePasswordAsync(
+    public async Task<User> ValidateForcedPasswordChangeAsync(
         ForcedPasswordChangeRequest request, CancellationToken cancellationToken)
     {
         var passwordChallenge = await dbContext.PasswordChangeChallenges
@@ -148,35 +87,37 @@ public sealed class AuthService(
         user.PasswordHash = passwordHasher.Hash(request.NewPassword);
         user.ClearMustChangePassword();
         passwordChallenge.MarkAsUsed();
-
-        var masks = await BuildWorkspaceMasksAsync(user.Id, cancellationToken);
-        var tokens = jwtTokenFactory.CreateTokens(user, masks);
-        await SaveRefreshTokenAsync(user.Id, tokens.RefreshToken, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation(
             "PasswordChangeOperation userId={UserId} operation={Operation} result={Result}",
             user.Id, "FORCED_PASSWORD_CHANGED", "SUCCESS");
 
-        return tokens;
+        return user;
     }
 
-    private async Task SaveRefreshTokenAsync(Guid userId, string refreshToken, CancellationToken cancellationToken)
+    public async Task<PasswordChangeChallenge> CreatePasswordChangeChallengeAsync(Guid userId, CancellationToken cancellationToken)
     {
-        dbContext.RefreshTokens.Add(new RefreshToken
-        {
-            UserId = userId,
-            Token = refreshToken,
-            ExpiresAt = DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpirationDays)
-        });
+        var challenge = PasswordChangeChallenge.Create(
+            userId,
+            DateTime.UtcNow.AddMinutes(_passwordChange.PasswordChangeTtlMinutes));
+
+        dbContext.PasswordChangeChallenges.Add(challenge);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "PasswordChangeOperation userId={UserId} operation={Operation} result={Result}",
+            userId, "CHALLENGE_CREATED", "SUCCESS");
+
+        return challenge;
     }
 
-    private async Task<TwoFactorChallenge> CreateLoginChallengeAsync(
+    public async Task<TwoFactorChallenge> CreateLoginChallengeAsync(
         Guid userId,
         TwoFactorChannel channel,
         CancellationToken cancellationToken)
     {
+        ValidateChannelOrThrow(channel);
         var otp = CreateOtp();
         var otpSalt = TwoFactorOtpSecurity.CreateSalt();
         var otpHash = TwoFactorOtpSecurity.HashOtp(otp, otpSalt);
@@ -193,6 +134,11 @@ public sealed class AuthService(
 
         dbContext.TwoFactorChallenges.Add(challenge);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "TwoFactorOperation userId={UserId} operation={Operation} result={Result}",
+            userId, "LOGIN_CHALLENGE_INITIATED", "SUCCESS");
+
         return challenge;
     }
 
@@ -215,27 +161,5 @@ public sealed class AuthService(
         {
             throw new AuthException(TwoFactorErrorCatalog.UnsupportedChannel);
         }
-    }
-
-    private async Task<Dictionary<string, byte[]>> BuildWorkspaceMasksAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        var matrix = await dbContext.UserWorkspaces
-            .Where(uw => uw.UserId == userId)
-            .Select(uw => new
-            {
-                uw.Workspace!.Code,
-                Bits = uw.UserWorkspaceRoles
-                    .SelectMany(uwr => uwr.Role!.RolePermissions)
-                    .Select(rp => rp.Permission!.Bit)
-            })
-            .ToListAsync(cancellationToken);
-
-        var result = new Dictionary<string, byte[]>();
-        foreach (var row in matrix)
-        {
-            result[row.Code] = PermissionBitmask.BuildMask(row.Bits);
-        }
-
-        return result;
     }
 }

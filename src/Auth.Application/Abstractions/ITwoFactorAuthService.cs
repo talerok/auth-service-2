@@ -1,3 +1,5 @@
+using Auth.Domain;
+
 namespace Auth.Application;
 
 public interface ITwoFactorAuthService
@@ -5,5 +7,5 @@ public interface ITwoFactorAuthService
     Task<EnableTwoFactorResponse> EnableTwoFactorAsync(Guid userId, EnableTwoFactorRequest request, CancellationToken cancellationToken);
     Task ConfirmTwoFactorActivationAsync(Guid userId, VerifyTwoFactorRequest request, CancellationToken cancellationToken);
     Task DisableTwoFactorAsync(Guid userId, CancellationToken cancellationToken);
-    Task<AuthTokensResponse> VerifyTwoFactorLoginAsync(VerifyTwoFactorRequest request, CancellationToken cancellationToken);
+    Task<User> ValidateLoginOtpAsync(Guid challengeId, TwoFactorChannel channel, string otp, CancellationToken cancellationToken);
 }

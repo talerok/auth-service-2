@@ -1,12 +1,11 @@
-using System.Text;
+using System.Security.Cryptography.X509Certificates;
 using Auth.Api;
 using Auth.Application;
 using Auth.Api.HealthChecks;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Integration;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -38,6 +37,51 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddInfrastructureIntegration(builder.Configuration);
 
 var integration = builder.Configuration.GetSection("Integration").Get<IntegrationOptions>() ?? new IntegrationOptions();
+var oidc = integration.Oidc;
+
+builder.Services.AddOpenIddict()
+    .AddServer(options =>
+    {
+        options.SetAuthorizationEndpointUris("/connect/authorize")
+              .SetTokenEndpointUris("/connect/token")
+              .SetUserInfoEndpointUris("/connect/userinfo")
+              .SetEndSessionEndpointUris("/connect/logout");
+
+        options.AllowAuthorizationCodeFlow()
+              .AllowPasswordFlow()
+              .AllowRefreshTokenFlow()
+              .AllowCustomFlow("urn:custom:mfa_otp");
+
+        options.RequireProofKeyForCodeExchange();
+
+        options.RegisterScopes("openid", "profile", "email", "phone", "ws");
+
+        options.SetAccessTokenLifetime(TimeSpan.FromMinutes(oidc.AccessTokenLifetimeMinutes));
+        options.SetRefreshTokenLifetime(TimeSpan.FromDays(oidc.RefreshTokenLifetimeDays));
+
+        options.DisableAccessTokenEncryption();
+
+        if (!string.IsNullOrWhiteSpace(oidc.SigningKeyPath))
+            options.AddSigningCertificate(new X509Certificate2(oidc.SigningKeyPath, oidc.SigningKeyPassword));
+        else
+            options.AddDevelopmentSigningCertificate();
+
+        if (!string.IsNullOrWhiteSpace(oidc.EncryptionKeyPath))
+            options.AddEncryptionCertificate(new X509Certificate2(oidc.EncryptionKeyPath, oidc.EncryptionKeyPassword));
+        else
+            options.AddDevelopmentEncryptionCertificate();
+
+        options.UseAspNetCore()
+              .EnableAuthorizationEndpointPassthrough()
+              .EnableTokenEndpointPassthrough()
+              .EnableUserInfoEndpointPassthrough()
+              .EnableEndSessionEndpointPassthrough();
+    })
+    .AddValidation(options =>
+    {
+        options.UseLocalServer();
+        options.UseAspNetCore();
+    });
 
 if (integration.Cors.AllowedOrigins.Length > 0)
 {
@@ -48,53 +92,41 @@ if (integration.Cors.AllowedOrigins.Length > 0)
             policy
                 .WithOrigins(integration.Cors.AllowedOrigins)
                 .AllowAnyHeader()
-                .AllowAnyMethod();
+                .AllowAnyMethod()
+                .AllowCredentials();
         });
     });
 }
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddCookie(options =>
+{
+    options.LoginPath = integration.Oidc.LoginUrl;
+    options.Cookie.Name = "auth.session";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.ExpireTimeSpan = TimeSpan.FromHours(1);
+    options.Events.OnRedirectToLogin = context =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
+        if (context.Request.Path.StartsWithSegments("/api"))
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateIssuerSigningKey = true,
-            ValidateLifetime = true,
-            ValidIssuer = integration.Jwt.Issuer,
-            ValidAudience = integration.Jwt.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(integration.Jwt.Secret))
-        };
-        options.Events = new JwtBearerEvents
-        {
-            OnChallenge = context =>
-            {
-                if (context.Response.HasStarted)
-                {
-                    return Task.CompletedTask;
-                }
+            context.Response.StatusCode = 401;
+            return Task.CompletedTask;
+        }
 
-                context.HandleResponse();
-                var code = string.IsNullOrWhiteSpace(context.Error)
-                    ? AuthErrorCatalog.AuthenticationRequired
-                    : AuthErrorCatalog.AuthenticationFailed;
-                var problem = AuthProblemDetailsMapper.Map(code);
-                return ProblemDetailsResponseWriter.WriteAsync(context.HttpContext, problem, code);
-            },
-            OnForbidden = context =>
-            {
-                if (context.Response.HasStarted)
-                {
-                    return Task.CompletedTask;
-                }
-
-                var code = AuthErrorCatalog.AccessDenied;
-                var problem = AuthProblemDetailsMapper.Map(code);
-                return ProblemDetailsResponseWriter.WriteAsync(context.HttpContext, problem, code);
-            }
-        };
-    });
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        context.Response.StatusCode = 403;
+        return Task.CompletedTask;
+    };
+});
 
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();

@@ -2,7 +2,8 @@ using Auth.Application;
 using Auth.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
+using OpenIddict.Abstractions;
+using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Auth.Infrastructure;
 
@@ -14,7 +15,7 @@ public static class SeedDataExtensions
         var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         var permissionCache = scope.ServiceProvider.GetRequiredService<IPermissionBitCache>();
-        var jwtOptions = scope.ServiceProvider.GetRequiredService<IOptions<IntegrationOptions>>();
+        var appManager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
         await db.Database.MigrateAsync(cancellationToken);
 
         var existingBits = await db.Permissions.IgnoreQueryFilters()
@@ -93,6 +94,55 @@ public static class SeedDataExtensions
         }
 
         await permissionCache.WarmupAsync(cancellationToken);
-        _ = jwtOptions.Value.Jwt.Secret;
+        await SeedOidcClientsAsync(appManager, cancellationToken);
+    }
+
+    private static async Task SeedOidcClientsAsync(IOpenIddictApplicationManager appManager, CancellationToken cancellationToken)
+    {
+        if (await appManager.FindByClientIdAsync("frontend-app", cancellationToken) is null)
+        {
+            await appManager.CreateAsync(new OpenIddictApplicationDescriptor
+            {
+                ClientId = "frontend-app",
+                DisplayName = "Frontend SPA",
+                ClientType = ClientTypes.Public,
+                RedirectUris = { new Uri("http://localhost:4200/callback") },
+                PostLogoutRedirectUris = { new Uri("http://localhost:4200") },
+                Permissions =
+                {
+                    Permissions.Endpoints.Authorization,
+                    Permissions.Endpoints.Token,
+                    Permissions.Endpoints.EndSession,
+                    Permissions.GrantTypes.AuthorizationCode,
+                    Permissions.GrantTypes.RefreshToken,
+                    Permissions.ResponseTypes.Code,
+                    Permissions.Scopes.Email,
+                    Permissions.Scopes.Profile,
+                    Permissions.Prefixes.Scope + "ws",
+                    Permissions.Prefixes.Scope + "phone"
+                }
+            }, cancellationToken);
+        }
+
+        if (await appManager.FindByClientIdAsync("mobile-app", cancellationToken) is null)
+        {
+            await appManager.CreateAsync(new OpenIddictApplicationDescriptor
+            {
+                ClientId = "mobile-app",
+                DisplayName = "Mobile App",
+                ClientType = ClientTypes.Public,
+                Permissions =
+                {
+                    Permissions.Endpoints.Token,
+                    Permissions.GrantTypes.Password,
+                    Permissions.GrantTypes.RefreshToken,
+                    "gt:urn:custom:mfa_otp",
+                    Permissions.Scopes.Email,
+                    Permissions.Scopes.Profile,
+                    Permissions.Prefixes.Scope + "ws",
+                    Permissions.Prefixes.Scope + "phone"
+                }
+            }, cancellationToken);
+        }
     }
 }

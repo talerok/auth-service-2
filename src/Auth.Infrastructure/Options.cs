@@ -11,6 +11,7 @@ public sealed class IntegrationOptions
     public SmtpOptions Smtp { get; set; } = new();
     public SmsGatewayOptions SmsGateway { get; set; } = new();
     public CorsOptions Cors { get; set; } = new();
+    public OidcOptions Oidc { get; set; } = new();
 }
 
 public sealed class PostgreSqlOptions
@@ -80,4 +81,15 @@ public sealed class SmsGatewayOptions
     public string BaseUrl { get; set; } = string.Empty;
     public string ApiKey { get; set; } = string.Empty;
     public int TimeoutSeconds { get; set; } = 5;
+}
+
+public sealed class OidcOptions
+{
+    public string SigningKeyPath { get; set; } = string.Empty;
+    public string SigningKeyPassword { get; set; } = string.Empty;
+    public string EncryptionKeyPath { get; set; } = string.Empty;
+    public string EncryptionKeyPassword { get; set; } = string.Empty;
+    public int AccessTokenLifetimeMinutes { get; set; } = 15;
+    public int RefreshTokenLifetimeDays { get; set; } = 7;
+    public string LoginUrl { get; set; } = "/auth/login";
 }

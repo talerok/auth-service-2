@@ -17,6 +17,20 @@ using Testcontainers.PostgreSql;
 
 namespace Auth.IntegrationTests;
 
+public sealed record OidcTokenResponse(
+    [property: JsonPropertyName("access_token")] string AccessToken,
+    [property: JsonPropertyName("refresh_token")] string? RefreshToken,
+    [property: JsonPropertyName("id_token")] string? IdToken,
+    [property: JsonPropertyName("token_type")] string TokenType,
+    [property: JsonPropertyName("expires_in")] int ExpiresIn);
+
+public sealed record OidcErrorResponse(
+    [property: JsonPropertyName("error")] string Error,
+    [property: JsonPropertyName("error_description")] string? ErrorDescription,
+    [property: JsonPropertyName("mfa_token")] string? MfaToken = null,
+    [property: JsonPropertyName("mfa_channel")] string? MfaChannel = null,
+    [property: JsonPropertyName("challenge_id")] string? ChallengeId = null);
+
 public sealed class IntegrationTestFixture : IAsyncLifetime
 {
     public static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
@@ -26,15 +40,10 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
 
     private static readonly IReadOnlyDictionary<string, string> TestEnvironmentVariables = new Dictionary<string, string>
     {
-
         ["Integration__OpenSearch__Url"] = "http://localhost:9200",
         ["Integration__OpenSearch__EnsureIndicesOnStartup"] = "false",
         ["Integration__OpenSearch__ReindexOnStartup"] = "false",
         ["Integration__Jwt__Secret"] = "super-secret-key-min-32-characters-long!",
-        ["Integration__Jwt__Issuer"] = "auth-service",
-        ["Integration__Jwt__Audience"] = "auth-service-clients",
-        ["Integration__Jwt__AccessTokenExpirationMinutes"] = "15",
-        ["Integration__Jwt__RefreshTokenExpirationDays"] = "7",
         ["Integration__TwoFactor__StaticOtpForTesting"] = "123456",
         ["Integration__TwoFactor__DeliveryPollIntervalMilliseconds"] = "50"
     };
@@ -91,20 +100,23 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         await _network.DisposeAsync();
     }
 
-    public async Task<AuthTokensResponse> LoginAsync(string username, string password)
+    public async Task<OidcTokenResponse> LoginAsync(string username, string password)
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/login", new
+        var content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
-            username,
-            password
+            ["grant_type"] = "password",
+            ["username"] = username,
+            ["password"] = password,
+            ["client_id"] = "mobile-app",
+            ["scope"] = "openid profile email ws"
         });
+
+        var response = await Client.PostAsync("/connect/token", content);
         response.EnsureSuccessStatusCode();
 
-        var login = await response.Content.ReadFromJsonAsync<LoginResponse>(JsonOptions);
-        login.Should().NotBeNull();
-        login!.RequiresTwoFactor.Should().BeFalse();
-        login.Tokens.Should().NotBeNull();
-        return login.Tokens!;
+        var tokens = await response.Content.ReadFromJsonAsync<OidcTokenResponse>(JsonOptions);
+        tokens.Should().NotBeNull();
+        return tokens!;
     }
 
     public void SetBearerToken(string accessToken) =>
@@ -166,10 +178,6 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
                     ["Integration:OpenSearch:EnsureIndicesOnStartup"] = "false",
                     ["Integration:OpenSearch:ReindexOnStartup"] = "false",
                     ["Integration:Jwt:Secret"] = "super-secret-key-min-32-characters-long!",
-                    ["Integration:Jwt:Issuer"] = "auth-service",
-                    ["Integration:Jwt:Audience"] = "auth-service-clients",
-                    ["Integration:Jwt:AccessTokenExpirationMinutes"] = "15",
-                    ["Integration:Jwt:RefreshTokenExpirationDays"] = "7",
                     ["Integration:TwoFactor:StaticOtpForTesting"] = "123456",
                     ["Integration:TwoFactor:DeliveryPollIntervalMilliseconds"] = "50"
                 });

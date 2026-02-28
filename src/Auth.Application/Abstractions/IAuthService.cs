@@ -1,10 +1,13 @@
+using Auth.Domain;
+
 namespace Auth.Application;
 
 public interface IAuthService
 {
-    Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken);
-    Task<AuthTokensResponse> RefreshAsync(RefreshRequest request, CancellationToken cancellationToken);
+    Task<User> ValidateCredentialsAsync(string username, string password, CancellationToken cancellationToken);
+    Task<User> GetActiveUserAsync(Guid userId, CancellationToken cancellationToken);
     Task<UserDto> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken);
-    Task RevokeAsync(RevokeRequest request, CancellationToken cancellationToken);
-    Task<AuthTokensResponse> ForcedChangePasswordAsync(ForcedPasswordChangeRequest request, CancellationToken cancellationToken);
+    Task<User> ValidateForcedPasswordChangeAsync(ForcedPasswordChangeRequest request, CancellationToken cancellationToken);
+    Task<PasswordChangeChallenge> CreatePasswordChangeChallengeAsync(Guid userId, CancellationToken cancellationToken);
+    Task<TwoFactorChallenge> CreateLoginChallengeAsync(Guid userId, TwoFactorChannel channel, CancellationToken cancellationToken);
 }

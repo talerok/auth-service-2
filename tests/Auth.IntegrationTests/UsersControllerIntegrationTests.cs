@@ -23,9 +23,10 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
         var suffix = Guid.NewGuid().ToString("N")[..8];
         var username = $"user_{suffix}";
 
-        var registerResponse = await fixture.Client.PostAsJsonAsync("/api/auth/register", new
+        var registerResponse = await fixture.Client.PostAsJsonAsync("/api/account/register", new
         {
             username,
+            fullName = username,
             email = $"{username}@example.com",
             password = "password123"
         });
@@ -51,6 +52,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
         var response = await fixture.Client.PostAsJsonAsync("/api/users", new
         {
             username,
+            fullName = username,
             email = $"{username}@example.com",
             password = "strong-password",
             isActive = true
@@ -85,6 +87,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
         var createUserResponse = await fixture.Client.PostAsJsonAsync("/api/users", new
         {
             username = $"user_{suffix}",
+            fullName = $"user_{suffix}",
             email = $"user_{suffix}@example.com",
             password = "strong-password",
             isActive = true
@@ -113,6 +116,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
         var response = await fixture.Client.PostAsJsonAsync("/api/users", new
         {
             username,
+            fullName = username,
             email = $"{username}@example.com",
             password = "strong-password",
             isActive = true,
@@ -137,6 +141,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
         var createResponse = await fixture.Client.PostAsJsonAsync("/api/users", new
         {
             username = $"user_{suffix}",
+            fullName = $"user_{suffix}",
             email = $"user_{suffix}@example.com",
             password = "strong-password",
             isActive = true
@@ -168,6 +173,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
         var createResponse = await fixture.Client.PostAsJsonAsync("/api/users", new
         {
             username = $"user_{suffix}",
+            fullName = $"user_{suffix}",
             email = $"user_{suffix}@example.com",
             password = "strong-password",
             isActive = true
@@ -210,6 +216,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
         var response = await fixture.Client.PostAsJsonAsync("/api/users", new
         {
             username,
+            fullName = username,
             email = $"{username}@example.com",
             password = "strong-password",
             phone = "+1234567890",
@@ -232,6 +239,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
         var createResponse = await fixture.Client.PostAsJsonAsync("/api/users", new
         {
             username = $"user_{suffix}",
+            fullName = $"user_{suffix}",
             email = $"user_{suffix}@example.com",
             password = "strong-password",
             phone = "+1111111111",
@@ -262,6 +270,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
         var createUserResponse = await fixture.Client.PostAsJsonAsync("/api/users", new
         {
             username = $"user_{suffix}",
+            fullName = $"user_{suffix}",
             email = $"user_{suffix}@example.com",
             password = "strong-password",
             isActive = true
