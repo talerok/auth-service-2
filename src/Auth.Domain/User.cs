@@ -12,8 +12,7 @@ public sealed class User : EntityBase
     public bool TwoFactorEnabled { get; private set; }
     public TwoFactorChannel? TwoFactorChannel { get; private set; }
     public ICollection<UserWorkspace> UserWorkspaces { get; private set; } = [];
-    public ICollection<RefreshToken> RefreshTokens { get; private set; } = [];
-    public ICollection<TwoFactorChallenge> TwoFactorChallenges { get; private set; } = [];
+public ICollection<TwoFactorChallenge> TwoFactorChallenges { get; private set; } = [];
 
     public void MarkMustChangePassword()
     {

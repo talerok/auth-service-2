@@ -6,7 +6,6 @@ public static class AuthErrorCatalog
     public const string AuthenticationFailed = "AUTH_AUTHENTICATION_FAILED";
     public const string AccessDenied = "AUTH_ACCESS_DENIED";
     public const string InvalidCredentials = "AUTH_INVALID_CREDENTIALS";
-    public const string InvalidRefreshToken = "AUTH_INVALID_REFRESH_TOKEN";
     public const string UserInactive = "AUTH_USER_INACTIVE";
     public const string UserNotFound = "AUTH_USER_NOT_FOUND";
     public const string InvalidUserContext = "AUTH_INVALID_USER_CONTEXT";

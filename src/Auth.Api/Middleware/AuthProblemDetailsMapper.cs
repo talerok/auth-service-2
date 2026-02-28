@@ -14,7 +14,6 @@ public static class AuthProblemDetailsMapper
             AuthErrorCatalog.AuthenticationFailed => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Authentication failed"),
             AuthErrorCatalog.AccessDenied => new AuthProblemDescriptor(StatusCodes.Status403Forbidden, "Forbidden", "Access denied"),
             AuthErrorCatalog.InvalidCredentials => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Invalid credentials"),
-            AuthErrorCatalog.InvalidRefreshToken => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Invalid refresh token"),
             AuthErrorCatalog.UserInactive => new AuthProblemDescriptor(StatusCodes.Status403Forbidden, "Forbidden", "User inactive"),
             AuthErrorCatalog.UserNotFound => new AuthProblemDescriptor(StatusCodes.Status404NotFound, "Resource not found", "User not found"),
             AuthErrorCatalog.InvalidUserContext => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Invalid user context"),
