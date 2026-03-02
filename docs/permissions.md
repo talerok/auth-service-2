@@ -26,6 +26,12 @@
 | 15  | `workspaces.delete`  | Delete workspaces  |
 | 16  | `search.reindex`     | Reindex search     |
 | 17  | `users.reset-password` | Reset user password |
+| 18  | `notification-templates.view` | View notification templates |
+| 19  | `notification-templates.update` | Update notification templates |
+| 20  | `identity-sources.view` | View identity sources |
+| 21  | `identity-sources.create` | Create identity sources |
+| 22  | `identity-sources.update` | Update identity sources |
+| 23  | `identity-sources.delete` | Delete identity sources |
 
 ## Упаковка в байты
 

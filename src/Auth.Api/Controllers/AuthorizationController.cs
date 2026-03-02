@@ -3,7 +3,6 @@ using Auth.Application;
 using Auth.Domain;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Abstractions;
@@ -13,38 +12,10 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 namespace Auth.Api.Controllers;
 
 [ApiController]
-public sealed class AuthorizationController(IOidcGrantService oidcGrantService) : ControllerBase
+public sealed class AuthorizationController(
+    IOidcGrantService oidcGrantService,
+    IIdentitySourceAuthService identitySourceAuthService) : ControllerBase
 {
-    [HttpGet("connect/authorize")]
-    [HttpPost("connect/authorize")]
-    public async Task<IActionResult> Authorize(CancellationToken cancellationToken)
-    {
-        var request = HttpContext.GetOpenIddictServerRequest()
-            ?? throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
-
-        var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-        if (!result.Succeeded || result.Principal is null)
-        {
-            return Challenge(
-                authenticationSchemes: [CookieAuthenticationDefaults.AuthenticationScheme],
-                properties: new AuthenticationProperties
-                {
-                    RedirectUri = Request.PathBase + Request.Path + QueryString.Create(
-                        Request.HasFormContentType ? Request.Form.ToList() : Request.Query.ToList())
-                });
-        }
-
-        var subject = result.Principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!Guid.TryParse(subject, out var userId))
-            return Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-
-        var principal = await oidcGrantService.BuildPrincipalAsync(
-            userId, request.GetScopes(), cancellationToken);
-
-        return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-    }
-
     [HttpPost("connect/token")]
     public async Task<IActionResult> Exchange(CancellationToken cancellationToken)
     {
@@ -54,11 +25,14 @@ public sealed class AuthorizationController(IOidcGrantService oidcGrantService) 
         if (request.IsPasswordGrantType())
             return await HandlePasswordGrant(request, cancellationToken);
 
-        if (request.IsAuthorizationCodeGrantType() || request.IsRefreshTokenGrantType())
-            return await HandleCodeOrRefreshGrant(cancellationToken);
+        if (request.IsRefreshTokenGrantType())
+            return await HandleRefreshGrant(cancellationToken);
 
         if (request.GrantType == OidcConstants.MfaOtpGrantType)
             return await HandleMfaOtpGrant(request, cancellationToken);
+
+        if (request.GrantType == OidcConstants.TokenExchangeGrantType)
+            return await HandleTokenExchange(request, cancellationToken);
 
         return OidcForbid(Errors.UnsupportedGrantType, "The specified grant type is not supported.");
     }
@@ -86,16 +60,6 @@ public sealed class AuthorizationController(IOidcGrantService oidcGrantService) 
         if (phone is not null) claims[Claims.PhoneNumber] = phone;
 
         return Ok(claims);
-    }
-
-    [HttpGet("connect/logout")]
-    [HttpPost("connect/logout")]
-    public async Task<IActionResult> Logout()
-    {
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        return SignOut(
-            authenticationSchemes: [OpenIddictServerAspNetCoreDefaults.AuthenticationScheme],
-            properties: new AuthenticationProperties { RedirectUri = "/" });
     }
 
     private async Task<IActionResult> HandlePasswordGrant(
@@ -138,7 +102,7 @@ public sealed class AuthorizationController(IOidcGrantService oidcGrantService) 
         };
     }
 
-    private async Task<IActionResult> HandleCodeOrRefreshGrant(CancellationToken cancellationToken)
+    private async Task<IActionResult> HandleRefreshGrant(CancellationToken cancellationToken)
     {
         var authResult = await HttpContext.AuthenticateAsync(
             OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
@@ -185,6 +149,53 @@ public sealed class AuthorizationController(IOidcGrantService oidcGrantService) 
         }
 
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+    }
+
+    private async Task<IActionResult> HandleTokenExchange(
+        OpenIddictRequest request, CancellationToken cancellationToken)
+    {
+        var identitySource = request.GetParameter("identity_source")?.ToString();
+        var token = request.GetParameter("token")?.ToString();
+
+        if (string.IsNullOrWhiteSpace(identitySource) || string.IsNullOrWhiteSpace(token))
+            return OidcForbid(Errors.InvalidRequest,
+                "The identity_source and token parameters are required.");
+
+        PasswordGrantResult result;
+        try
+        {
+            result = await identitySourceAuthService.AuthenticateAsync(
+                identitySource, token, request.GetScopes().ToList(), cancellationToken);
+        }
+        catch (AuthException)
+        {
+            return OidcForbid(Errors.InvalidGrant, "The token exchange failed.");
+        }
+
+        return result switch
+        {
+            PasswordGrantResult.Success s =>
+                SignIn(s.Principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme),
+
+            PasswordGrantResult.MfaRequired mfa =>
+                BadRequest(new
+                {
+                    error = "mfa_required",
+                    error_description = "Multi-factor authentication is required.",
+                    mfa_token = mfa.ChallengeId.ToString(),
+                    mfa_channel = mfa.Channel.ToString().ToLowerInvariant()
+                }),
+
+            PasswordGrantResult.PasswordChangeRequired pc =>
+                BadRequest(new
+                {
+                    error = "password_change_required",
+                    error_description = "The user must change their password.",
+                    challenge_id = pc.ChallengeId.ToString()
+                }),
+
+            _ => throw new InvalidOperationException($"Unexpected grant result: {result.GetType().Name}")
+        };
     }
 
     private IActionResult OidcForbid(string error, string description) =>

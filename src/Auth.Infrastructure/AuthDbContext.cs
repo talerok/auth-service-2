@@ -15,6 +15,9 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options) : DbC
 public DbSet<TwoFactorChallenge> TwoFactorChallenges => Set<TwoFactorChallenge>();
     public DbSet<PasswordChangeChallenge> PasswordChangeChallenges => Set<PasswordChangeChallenge>();
     public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
+    public DbSet<IdentitySource> IdentitySources => Set<IdentitySource>();
+    public DbSet<IdentitySourceOidcConfig> IdentitySourceOidcConfigs => Set<IdentitySourceOidcConfig>();
+    public DbSet<IdentitySourceLink> IdentitySourceLinks => Set<IdentitySourceLink>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

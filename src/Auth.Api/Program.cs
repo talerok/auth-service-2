@@ -42,17 +42,13 @@ var oidc = integration.Oidc;
 builder.Services.AddOpenIddict()
     .AddServer(options =>
     {
-        options.SetAuthorizationEndpointUris("/connect/authorize")
-              .SetTokenEndpointUris("/connect/token")
-              .SetUserInfoEndpointUris("/connect/userinfo")
-              .SetEndSessionEndpointUris("/connect/logout");
+        options.SetTokenEndpointUris("/connect/token")
+              .SetUserInfoEndpointUris("/connect/userinfo");
 
-        options.AllowAuthorizationCodeFlow()
-              .AllowPasswordFlow()
+        options.AllowPasswordFlow()
               .AllowRefreshTokenFlow()
-              .AllowCustomFlow(OidcConstants.MfaOtpGrantType);
-
-        options.RequireProofKeyForCodeExchange();
+              .AllowCustomFlow(OidcConstants.MfaOtpGrantType)
+              .AllowCustomFlow(OidcConstants.TokenExchangeGrantType);
 
         options.RegisterScopes("openid", "profile", "email", "phone", "ws", "offline_access");
 
@@ -72,10 +68,8 @@ builder.Services.AddOpenIddict()
             options.AddDevelopmentEncryptionCertificate();
 
         var aspNetCoreBuilder = options.UseAspNetCore()
-              .EnableAuthorizationEndpointPassthrough()
               .EnableTokenEndpointPassthrough()
-              .EnableUserInfoEndpointPassthrough()
-              .EnableEndSessionEndpointPassthrough();
+              .EnableUserInfoEndpointPassthrough();
 
         if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
             aspNetCoreBuilder.DisableTransportSecurityRequirement();
@@ -104,15 +98,6 @@ if (integration.Cors.AllowedOrigins.Length > 0)
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
-})
-.AddCookie(options =>
-{
-    options.LoginPath = integration.Oidc.LoginUrl;
-    options.Cookie.Name = "auth.session";
-    options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.ExpireTimeSpan = TimeSpan.FromHours(1);
 });
 
 builder.Services.AddAuthorization();

@@ -34,6 +34,13 @@ public static class AuthProblemDetailsMapper
             TwoFactorErrorCatalog.DeliveryFailed => new AuthProblemDescriptor(StatusCodes.Status503ServiceUnavailable, "Service unavailable", "Two-factor delivery failed"),
             TwoFactorErrorCatalog.ProviderUnavailable => new AuthProblemDescriptor(StatusCodes.Status503ServiceUnavailable, "Service unavailable", "Two-factor provider unavailable"),
             TwoFactorErrorCatalog.PhoneRequired => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Validation error", "Phone number is required for SMS two-factor"),
+            AuthErrorCatalog.IdentitySourceNotFound => new AuthProblemDescriptor(StatusCodes.Status404NotFound, "Resource not found", "Identity source not found"),
+            AuthErrorCatalog.IdentitySourceDisabled => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Identity source is disabled"),
+            AuthErrorCatalog.IdentitySourceTokenInvalid => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "External identity token is invalid"),
+            AuthErrorCatalog.IdentitySourceLinkNotFound => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "User is not linked to this identity source"),
+            AuthErrorCatalog.IdentitySourceUserInactive => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Linked user is inactive"),
+            AuthErrorCatalog.IdentitySourceDuplicateLink => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "This identity link already exists"),
+            AuthErrorCatalog.IdentitySourceTypeMismatch => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Config type does not match identity source type"),
             _ => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Business rule violation")
         };
     }

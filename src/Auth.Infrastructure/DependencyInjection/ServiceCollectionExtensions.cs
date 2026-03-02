@@ -24,6 +24,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
         services.AddScoped<IWorkspaceMaskService, WorkspaceMaskService>();
         services.AddScoped<IOidcGrantService, OidcGrantService>();
+        services.AddScoped<IIdentitySourceService, IdentitySourceService>();
+        services.AddScoped<IIdentitySourceAuthService, IdentitySourceAuthService>();
+        services.AddSingleton<IOidcTokenValidator, OidcTokenValidator>();
         services.AddSingleton<IPermissionBitCache, PermissionBitCache>();
         services.AddScoped<ISearchIndexService, NullSearchIndexService>();
 
