@@ -211,7 +211,7 @@ public sealed class OidcGrantServiceTests
             .ReturnsAsync(TestUser);
         var workspaceMaskService = new Mock<IWorkspaceMaskService>();
         workspaceMaskService.Setup(x => x.BuildWorkspaceMasksAsync(TestUser.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<string, byte[]> { ["default"] = [0b_0000_0101] });
+            .ReturnsAsync(new Dictionary<string, byte[]> { ["system"] = [0b_0000_0101] });
         var service = CreateService(authService: authService, workspaceMaskService: workspaceMaskService);
 
         var principal = await service.BuildPrincipalAsync(
@@ -219,7 +219,7 @@ public sealed class OidcGrantServiceTests
 
         var wsClaim = principal.FindFirst("ws");
         wsClaim.Should().NotBeNull();
-        wsClaim!.Value.Should().Contain("default");
+        wsClaim!.Value.Should().Contain("system");
         wsClaim.Value.Should().Contain(Convert.ToBase64String([0b_0000_0101]));
     }
 

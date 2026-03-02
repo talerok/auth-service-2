@@ -8,36 +8,36 @@
 
 | Бит | Код                  | Описание           |
 | --- | -------------------- | ------------------ |
-| 0   | `users.view`         | View users         |
-| 1   | `users.create`       | Create users       |
-| 2   | `users.update`       | Update users       |
-| 3   | `users.delete`       | Delete users       |
-| 4   | `roles.view`         | View roles         |
-| 5   | `roles.create`       | Create roles       |
-| 6   | `roles.update`       | Update roles       |
-| 7   | `roles.delete`       | Delete roles       |
-| 8   | `permissions.view`   | View permissions   |
-| 9   | `permissions.create` | Create permissions |
-| 10  | `permissions.update` | Update permissions |
-| 11  | `permissions.delete` | Delete permissions |
-| 12  | `workspaces.view`    | View workspaces    |
-| 13  | `workspaces.create`  | Create workspaces  |
-| 14  | `workspaces.update`  | Update workspaces  |
-| 15  | `workspaces.delete`  | Delete workspaces  |
-| 16  | `search.reindex`     | Reindex search     |
-| 17  | `users.reset-password` | Reset user password |
-| 18  | `notification-templates.view` | View notification templates |
-| 19  | `notification-templates.update` | Update notification templates |
-| 20  | `identity-sources.view` | View identity sources |
-| 21  | `identity-sources.create` | Create identity sources |
-| 22  | `identity-sources.update` | Update identity sources |
-| 23  | `identity-sources.delete` | Delete identity sources |
+| 0   | `system.users.view`         | View users         |
+| 1   | `system.users.create`       | Create users       |
+| 2   | `system.users.update`       | Update users       |
+| 3   | `system.users.delete`       | Delete users       |
+| 4   | `system.roles.view`         | View roles         |
+| 5   | `system.roles.create`       | Create roles       |
+| 6   | `system.roles.update`       | Update roles       |
+| 7   | `system.roles.delete`       | Delete roles       |
+| 8   | `system.permissions.view`   | View permissions   |
+| 9   | `system.permissions.create` | Create permissions |
+| 10  | `system.permissions.update` | Update permissions |
+| 11  | `system.permissions.delete` | Delete permissions |
+| 12  | `system.workspaces.view`    | View workspaces    |
+| 13  | `system.workspaces.create`  | Create workspaces  |
+| 14  | `system.workspaces.update`  | Update workspaces  |
+| 15  | `system.workspaces.delete`  | Delete workspaces  |
+| 16  | `system.search.reindex`     | Reindex search     |
+| 17  | `system.users.reset-password` | Reset user password |
+| 18  | `system.notification-templates.view` | View notification templates |
+| 19  | `system.notification-templates.update` | Update notification templates |
+| 20  | `system.identity-sources.view` | View identity sources |
+| 21  | `system.identity-sources.create` | Create identity sources |
+| 22  | `system.identity-sources.update` | Update identity sources |
+| 23  | `system.identity-sources.delete` | Delete identity sources |
 
 ## Упаковка в байты
 
 Биты 0–7 → байт 0, биты 8–15 → байт 1 и т.д.
 
-Пример: полномочия `users.view` (бит 0) + `roles.view` (бит 4) + `permissions.view` (бит 8):
+Пример: полномочия `system.users.view` (бит 0) + `system.roles.view` (бит 4) + `system.permissions.view` (бит 8):
 
 ```
 Байт 0: 0b00010001 = 0x11  (биты 0 и 4)

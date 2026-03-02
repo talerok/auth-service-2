@@ -37,10 +37,10 @@ public static class SeedDataExtensions
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        var workspace = await db.Workspaces.FirstOrDefaultAsync(x => x.Name == "default", cancellationToken);
+        var workspace = await db.Workspaces.FirstOrDefaultAsync(x => x.Name == "system", cancellationToken);
         if (workspace is null)
         {
-            workspace = new Workspace { Name = "default", Code = "default", Description = "Default system workspace", IsSystem = true };
+            workspace = new Workspace { Name = "system", Code = "system", Description = "System workspace", IsSystem = true };
             db.Workspaces.Add(workspace);
             await db.SaveChangesAsync(cancellationToken);
         }

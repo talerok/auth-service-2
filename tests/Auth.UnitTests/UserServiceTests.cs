@@ -40,7 +40,7 @@ public sealed class UserServiceTests
     {
         await using var dbContext = CreateDbContext();
         var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hash", IsActive = true };
-        var workspace = new Workspace { Name = "default", Description = "Default workspace", IsSystem = false };
+        var workspace = new Workspace { Name = "system", Description = "System workspace", IsSystem = false };
         dbContext.Users.Add(user);
         dbContext.Workspaces.Add(workspace);
         await dbContext.SaveChangesAsync();
@@ -61,7 +61,7 @@ public sealed class UserServiceTests
     {
         await using var dbContext = CreateDbContext();
         var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hash", IsActive = true };
-        var workspace = new Workspace { Name = "default", Description = "Default workspace", IsSystem = false };
+        var workspace = new Workspace { Name = "system", Description = "System workspace", IsSystem = false };
         var role = new Role { Name = "editor", Description = "Editor" };
         dbContext.Users.Add(user);
         dbContext.Workspaces.Add(workspace);

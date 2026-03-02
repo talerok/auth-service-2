@@ -40,7 +40,7 @@ public sealed class RoleServiceTests
     {
         await using var dbContext = CreateDbContext();
         var role = new Role { Name = "admin", Description = "Administrator" };
-        var permission = new Permission { Bit = 0, Code = "users.view", Description = "View users", IsSystem = true };
+        var permission = new Permission { Bit = 0, Code = "system.users.view", Description = "View users", IsSystem = true };
         dbContext.Roles.Add(role);
         dbContext.Permissions.Add(permission);
         await dbContext.SaveChangesAsync();
@@ -53,7 +53,7 @@ public sealed class RoleServiceTests
         result.Should().NotBeNull();
         result.Should().HaveCount(1);
         result!.Single().Id.Should().Be(permission.Id);
-        result.Single().Code.Should().Be("users.view");
+        result.Single().Code.Should().Be("system.users.view");
         result.Single().Bit.Should().Be(0);
         result.Single().IsSystem.Should().BeTrue();
     }
@@ -63,8 +63,8 @@ public sealed class RoleServiceTests
     {
         await using var dbContext = CreateDbContext();
         var role = new Role { Name = "admin", Description = "Administrator" };
-        var p1 = new Permission { Bit = 0, Code = "users.view", Description = "View users", IsSystem = true };
-        var p2 = new Permission { Bit = 1, Code = "users.create", Description = "Create users", IsSystem = true };
+        var p1 = new Permission { Bit = 0, Code = "system.users.view", Description = "View users", IsSystem = true };
+        var p2 = new Permission { Bit = 1, Code = "system.users.create", Description = "Create users", IsSystem = true };
         dbContext.Roles.Add(role);
         dbContext.Permissions.AddRange(p1, p2);
         await dbContext.SaveChangesAsync();
@@ -78,7 +78,7 @@ public sealed class RoleServiceTests
 
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        result!.Select(x => x.Code).Should().BeEquivalentTo("users.view", "users.create");
+        result!.Select(x => x.Code).Should().BeEquivalentTo("system.users.view", "system.users.create");
     }
 
     private static RoleService CreateService(
