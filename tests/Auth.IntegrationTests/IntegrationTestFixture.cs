@@ -108,7 +108,7 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
             ["username"] = username,
             ["password"] = password,
             ["client_id"] = "mobile-app",
-            ["scope"] = "openid profile email ws"
+            ["scope"] = "openid profile email ws offline_access"
         });
 
         var response = await Client.PostAsync("/connect/token", content);

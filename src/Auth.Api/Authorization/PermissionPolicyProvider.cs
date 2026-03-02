@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
-using OpenIddict.Validation.AspNetCore;
 
 namespace Auth.Api;
 
@@ -31,7 +30,6 @@ public sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> opti
         var req = new PermissionInRequirement(code, permission);
 
         var policy = new AuthorizationPolicyBuilder()
-            .AddAuthenticationSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)
             .RequireAuthenticatedUser()
             .AddRequirements(req)
             .Build();

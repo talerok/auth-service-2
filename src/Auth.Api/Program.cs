@@ -4,8 +4,8 @@ using Auth.Application;
 using Auth.Api.HealthChecks;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Integration;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using OpenIddict.Validation.AspNetCore;
 using Serilog;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -77,7 +77,7 @@ builder.Services.AddOpenIddict()
               .EnableUserInfoEndpointPassthrough()
               .EnableEndSessionEndpointPassthrough();
 
-        if (builder.Environment.IsDevelopment())
+        if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
             aspNetCoreBuilder.DisableTransportSecurityRequirement();
     })
     .AddValidation(options =>
@@ -103,7 +103,7 @@ if (integration.Cors.AllowedOrigins.Length > 0)
 
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
 })
 .AddCookie(options =>
 {
@@ -113,22 +113,6 @@ builder.Services.AddAuthentication(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.ExpireTimeSpan = TimeSpan.FromHours(1);
-    options.Events.OnRedirectToLogin = context =>
-    {
-        if (context.Request.Path.StartsWithSegments("/api"))
-        {
-            context.Response.StatusCode = 401;
-            return Task.CompletedTask;
-        }
-
-        context.Response.Redirect(context.RedirectUri);
-        return Task.CompletedTask;
-    };
-    options.Events.OnRedirectToAccessDenied = context =>
-    {
-        context.Response.StatusCode = 403;
-        return Task.CompletedTask;
-    };
 });
 
 builder.Services.AddAuthorization();

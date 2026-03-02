@@ -19,7 +19,7 @@ public sealed class AccountControllerIntegrationTests(IntegrationTestFixture fix
             ["username"] = "admin",
             ["password"] = "admin",
             ["client_id"] = "mobile-app",
-            ["scope"] = "openid profile email ws"
+            ["scope"] = "openid profile email ws offline_access"
         });
 
         var response = await fixture.Client.PostAsync("/connect/token", content);
@@ -96,15 +96,19 @@ public sealed class AccountControllerIntegrationTests(IntegrationTestFixture fix
         var email = $"{username}@example.com";
         var password = "password123";
 
-        var registerResponse = await fixture.Client.PostAsJsonAsync("/api/account/register", new
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+        var createResponse = await fixture.Client.PostAsJsonAsync("/api/users", new
         {
             username,
             fullName = username,
             email,
-            password
+            password,
+            isActive = true
         });
-        registerResponse.EnsureSuccessStatusCode();
+        createResponse.EnsureSuccessStatusCode();
 
+        fixture.ClearAuth();
         var initialLogin = await fixture.LoginAsync(username, password);
         fixture.SetBearerToken(initialLogin.AccessToken);
 
@@ -265,15 +269,19 @@ public sealed class AccountControllerIntegrationTests(IntegrationTestFixture fix
         var email = $"{username}@example.com";
         var password = "password123";
 
-        var registerResponse = await fixture.Client.PostAsJsonAsync("/api/account/register", new
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+        var createResponse = await fixture.Client.PostAsJsonAsync("/api/users", new
         {
             username,
             fullName = username,
             email,
-            password
+            password,
+            isActive = true
         });
-        registerResponse.EnsureSuccessStatusCode();
+        createResponse.EnsureSuccessStatusCode();
 
+        fixture.ClearAuth();
         var tokens = await fixture.LoginAsync(username, password);
         fixture.SetBearerToken(tokens.AccessToken);
 
