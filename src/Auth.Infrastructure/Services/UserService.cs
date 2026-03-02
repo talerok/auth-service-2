@@ -223,4 +223,18 @@ public sealed class UserService(
         await dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }
+
+    public async Task<IReadOnlyCollection<UserIdentitySourceLinkDto>?> GetIdentitySourceLinksAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var exists = await dbContext.Users.AnyAsync(x => x.Id == userId, cancellationToken);
+        if (!exists)
+            return null;
+
+        return await dbContext.IdentitySourceLinks.AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .Join(dbContext.IdentitySources, l => l.IdentitySourceId, s => s.Id,
+                (l, s) => new UserIdentitySourceLinkDto(
+                    l.Id, s.Id, s.Name, s.DisplayName, s.Type, l.ExternalIdentity, l.CreatedAt))
+            .ToListAsync(cancellationToken);
+    }
 }

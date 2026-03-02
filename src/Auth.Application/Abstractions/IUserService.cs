@@ -11,4 +11,5 @@ public interface IUserService
     Task SetWorkspacesAsync(Guid userId, IReadOnlyCollection<UserWorkspaceRolesItem> workspaces, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<UserWorkspaceRolesItem>?> GetWorkspacesAsync(Guid userId, CancellationToken cancellationToken);
     Task<bool> ResetPasswordAsync(Guid userId, string newPassword, CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<UserIdentitySourceLinkDto>?> GetIdentitySourceLinksAsync(Guid userId, CancellationToken cancellationToken);
 }

@@ -76,6 +76,14 @@ public sealed class UsersController(IUserService userService, ISearchService sea
         return result ? NoContent() : NotFound();
     }
 
+    [HttpGet("{id:guid}/identity-sources")]
+    [HasPermissionIn("default", "users.view")]
+    public async Task<IActionResult> GetIdentitySourceLinks(Guid id, CancellationToken cancellationToken)
+    {
+        var links = await userService.GetIdentitySourceLinksAsync(id, cancellationToken);
+        return links is null ? NotFound() : Ok(links);
+    }
+
     [HttpPost("search")]
     [HasPermissionIn("default", "users.view")]
     public Task<SearchResponse<UserDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
