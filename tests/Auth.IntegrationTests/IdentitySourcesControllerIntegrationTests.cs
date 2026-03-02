@@ -314,4 +314,145 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
+
+    [Fact]
+    public async Task Create_LdapSource_ReturnsCreatedSource()
+    {
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var response = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
+        {
+            name = $"ldap-{suffix}",
+            displayName = "Corporate LDAP",
+            type = "ldap",
+            ldapConfig = new
+            {
+                host = "ldap.example.com",
+                port = 389,
+                baseDn = "dc=example,dc=com",
+                bindDn = "cn=admin,dc=example,dc=com",
+                bindPassword = "secret",
+                useSsl = false,
+                searchFilter = "(uid={username})"
+            }
+        });
+
+        response.IsSuccessStatusCode.Should().BeTrue();
+        var created = await response.Content.ReadFromJsonAsync<IdentitySourceDetailDto>(IntegrationTestFixture.JsonOptions);
+        created.Should().NotBeNull();
+        created!.Name.Should().Be($"ldap-{suffix}");
+        created.Type.Should().Be(IdentitySourceType.Ldap);
+        created.IsEnabled.Should().BeTrue();
+        created.LdapConfig.Should().NotBeNull();
+        created.LdapConfig!.Host.Should().Be("ldap.example.com");
+        created.LdapConfig.Port.Should().Be(389);
+        created.OidcConfig.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Create_LdapTypeWithoutConfig_ReturnsBadRequest()
+    {
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var response = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
+        {
+            name = $"ldap-{suffix}",
+            displayName = "LDAP No Config",
+            type = "ldap"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task GetById_LdapSource_ReturnsWithLdapConfig()
+    {
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var createResponse = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
+        {
+            name = $"ldap-{suffix}",
+            displayName = "Corporate LDAP",
+            type = "ldap",
+            ldapConfig = new
+            {
+                host = "ldap.example.com",
+                port = 636,
+                baseDn = "dc=example,dc=com",
+                bindDn = "cn=admin,dc=example,dc=com",
+                bindPassword = "secret",
+                useSsl = true,
+                searchFilter = "(sAMAccountName={username})"
+            }
+        });
+        createResponse.EnsureSuccessStatusCode();
+        var created = await createResponse.Content.ReadFromJsonAsync<IdentitySourceDetailDto>(IntegrationTestFixture.JsonOptions);
+
+        var response = await fixture.Client.GetAsync($"/api/identity-sources/{created!.Id}");
+
+        response.IsSuccessStatusCode.Should().BeTrue();
+        var detail = await response.Content.ReadFromJsonAsync<IdentitySourceDetailDto>(IntegrationTestFixture.JsonOptions);
+        detail.Should().NotBeNull();
+        detail!.LdapConfig.Should().NotBeNull();
+        detail.LdapConfig!.Host.Should().Be("ldap.example.com");
+        detail.LdapConfig.Port.Should().Be(636);
+        detail.LdapConfig.UseSsl.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Update_LdapSource_ModifiesConfig()
+    {
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var createResponse = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
+        {
+            name = $"ldap-{suffix}",
+            displayName = "Old LDAP",
+            type = "ldap",
+            ldapConfig = new
+            {
+                host = "ldap.example.com",
+                port = 389,
+                baseDn = "dc=example,dc=com",
+                bindDn = "cn=admin,dc=example,dc=com",
+                bindPassword = "secret",
+                useSsl = false,
+                searchFilter = "(uid={username})"
+            }
+        });
+        createResponse.EnsureSuccessStatusCode();
+        var created = await createResponse.Content.ReadFromJsonAsync<IdentitySourceDetailDto>(IntegrationTestFixture.JsonOptions);
+
+        var updateResponse = await fixture.Client.PutAsJsonAsync($"/api/identity-sources/{created!.Id}", new
+        {
+            displayName = "New LDAP",
+            isEnabled = false,
+            ldapConfig = new
+            {
+                host = "new-ldap.example.com",
+                port = 636,
+                baseDn = "dc=new,dc=com",
+                bindDn = "cn=admin,dc=new,dc=com",
+                useSsl = true,
+                searchFilter = "(sAMAccountName={username})"
+            }
+        });
+
+        updateResponse.IsSuccessStatusCode.Should().BeTrue();
+        var updated = await updateResponse.Content.ReadFromJsonAsync<IdentitySourceDetailDto>(IntegrationTestFixture.JsonOptions);
+        updated!.DisplayName.Should().Be("New LDAP");
+        updated.IsEnabled.Should().BeFalse();
+        updated.LdapConfig.Should().NotBeNull();
+        updated.LdapConfig!.Host.Should().Be("new-ldap.example.com");
+        updated.LdapConfig.Port.Should().Be(636);
+        updated.LdapConfig.UseSsl.Should().BeTrue();
+    }
 }

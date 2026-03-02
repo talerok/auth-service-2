@@ -8,27 +8,50 @@ internal sealed class IdentitySourceAuthService(
     AuthDbContext dbContext,
     IAuthService authService,
     IOidcGrantService oidcGrantService,
-    IOidcTokenValidator tokenValidator) : IIdentitySourceAuthService
+    IOidcTokenValidator tokenValidator,
+    ILdapAuthenticator ldapAuthenticator) : IIdentitySourceAuthService
 {
     public async Task<PasswordGrantResult> AuthenticateAsync(
-        string identitySourceName, string token, IReadOnlyCollection<string> scopes, CancellationToken cancellationToken)
+        string identitySourceName, string? username, string token, IReadOnlyCollection<string> scopes, CancellationToken cancellationToken)
     {
         var source = await dbContext.IdentitySources
             .Include(x => x.OidcConfig)
+            .Include(x => x.LdapConfig)
             .FirstOrDefaultAsync(x => x.Name == identitySourceName, cancellationToken)
             ?? throw new AuthException(AuthErrorCatalog.IdentitySourceNotFound);
 
         if (!source.IsEnabled)
             throw new AuthException(AuthErrorCatalog.IdentitySourceDisabled);
 
-        if (source.Type != IdentitySourceType.Oidc || source.OidcConfig is null)
-            throw new AuthException(AuthErrorCatalog.IdentitySourceTypeMismatch);
+        string externalIdentity;
 
-        var sub = await tokenValidator.ValidateAndGetSubjectAsync(
-            source.OidcConfig.Authority, source.OidcConfig.ClientId, token, cancellationToken);
+        switch (source.Type)
+        {
+            case IdentitySourceType.Oidc:
+                if (source.OidcConfig is null)
+                    throw new AuthException(AuthErrorCatalog.IdentitySourceTypeMismatch);
+
+                externalIdentity = await tokenValidator.ValidateAndGetSubjectAsync(
+                    source.OidcConfig.Authority, source.OidcConfig.ClientId, token, cancellationToken);
+                break;
+
+            case IdentitySourceType.Ldap:
+                if (source.LdapConfig is null)
+                    throw new AuthException(AuthErrorCatalog.IdentitySourceTypeMismatch);
+
+                if (string.IsNullOrWhiteSpace(username))
+                    throw new AuthException(AuthErrorCatalog.IdentitySourceUsernameRequired);
+
+                await ldapAuthenticator.AuthenticateAsync(source.LdapConfig, username, token, cancellationToken);
+                externalIdentity = username;
+                break;
+
+            default:
+                throw new AuthException(AuthErrorCatalog.IdentitySourceTypeMismatch);
+        }
 
         var link = await dbContext.IdentitySourceLinks
-            .FirstOrDefaultAsync(x => x.IdentitySourceId == source.Id && x.ExternalIdentity == sub, cancellationToken)
+            .FirstOrDefaultAsync(x => x.IdentitySourceId == source.Id && x.ExternalIdentity == externalIdentity, cancellationToken)
             ?? throw new AuthException(AuthErrorCatalog.IdentitySourceLinkNotFound);
 
         var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == link.UserId, cancellationToken)

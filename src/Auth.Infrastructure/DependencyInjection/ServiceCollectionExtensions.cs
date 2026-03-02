@@ -27,6 +27,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IIdentitySourceService, IdentitySourceService>();
         services.AddScoped<IIdentitySourceAuthService, IdentitySourceAuthService>();
         services.AddSingleton<IOidcTokenValidator, OidcTokenValidator>();
+        services.AddScoped<ILdapAuthenticator, LdapAuthenticator>();
         services.AddSingleton<IPermissionBitCache, PermissionBitCache>();
         services.AddScoped<ISearchIndexService, NullSearchIndexService>();
 

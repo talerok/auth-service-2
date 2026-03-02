@@ -12,6 +12,10 @@
 - `refresh_tokens`
 - `password_change_challenges`
 - `two_factor_challenges`
+- `identity_sources`
+- `identity_source_oidc_configs`
+- `identity_source_ldap_configs`
+- `identity_source_links`
 
 
 Принципы:
@@ -182,5 +186,69 @@
 Индексы:
 - `IX_two_factor_challenges_UserId`
 - `IX_two_factor_challenges_UserId_Purpose`
+
+
+### Таблица `identity_sources`
+
+| Колонка        | Тип          | Nullable | Описание                                    |
+|----------------|--------------|----------|---------------------------------------------|
+| `id`           | uuid         | NO       | PK                                          |
+| `name`         | varchar(120) | NO       | Уникальное имя источника (partial index)    |
+| `display_name` | varchar(200) | NO       | Отображаемое имя                            |
+| `type`         | varchar(16)  | NO       | Тип источника (oidc, ldap)                  |
+| `is_enabled`   | boolean      | NO       | Активен ли источник                         |
+| `created_at`   | timestamptz  | NO       |                                             |
+| `updated_at`   | timestamptz  | NO       |                                             |
+| `deleted_at`   | timestamptz  | YES      | Soft delete                                 |
+
+Индексы:
+- `IX_identity_sources_Name` UNIQUE WHERE `"DeletedAt" IS NULL`
+
+
+### Таблица `identity_source_oidc_configs`
+
+| Колонка              | Тип          | Nullable | Описание                              |
+|----------------------|--------------|----------|---------------------------------------|
+| `id`                 | uuid         | NO       | PK                                    |
+| `identity_source_id` | uuid         | NO       | FK → identity_sources(id) CASCADE     |
+| `authority`          | varchar(500) | NO       | OIDC Authority URL                    |
+| `client_id`          | varchar(200) | NO       | OAuth2 Client ID                      |
+| `client_secret`      | varchar(500) | YES      | OAuth2 Client Secret                  |
+
+Индексы:
+- `IX_identity_source_oidc_configs_IdentitySourceId` UNIQUE
+
+
+### Таблица `identity_source_ldap_configs`
+
+| Колонка              | Тип          | Nullable | Описание                              |
+|----------------------|--------------|----------|---------------------------------------|
+| `id`                 | uuid         | NO       | PK                                    |
+| `identity_source_id` | uuid         | NO       | FK → identity_sources(id) CASCADE     |
+| `host`               | varchar(500) | NO       | LDAP-сервер                           |
+| `port`               | integer      | NO       | Порт (389 / 636)                      |
+| `base_dn`            | varchar(500) | NO       | Base DN для поиска                    |
+| `bind_dn`            | varchar(500) | NO       | DN сервисного аккаунта                |
+| `bind_password`      | varchar(500) | YES      | Пароль сервисного аккаунта            |
+| `use_ssl`            | boolean      | NO       | Использовать SSL                      |
+| `search_filter`      | varchar(500) | NO       | Фильтр поиска (напр. `(uid={username})`) |
+
+Индексы:
+- `IX_identity_source_ldap_configs_IdentitySourceId` UNIQUE
+
+
+### Таблица `identity_source_links`
+
+| Колонка              | Тип          | Nullable | Описание                                    |
+|----------------------|--------------|----------|---------------------------------------------|
+| `id`                 | uuid         | NO       | PK                                          |
+| `user_id`            | uuid         | NO       | FK → users(id) CASCADE                      |
+| `identity_source_id` | uuid         | NO       | FK → identity_sources(id) CASCADE           |
+| `external_identity`  | varchar(500) | NO       | Внешний идентификатор (sub / username)       |
+| `created_at`         | timestamptz  | NO       |                                             |
+
+Индексы:
+- `IX_identity_source_links_IdentitySourceId_ExternalIdentity` UNIQUE
+- `IX_identity_source_links_UserId`
 
 

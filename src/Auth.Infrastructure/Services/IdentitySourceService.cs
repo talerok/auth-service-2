@@ -17,11 +17,15 @@ public sealed class IdentitySourceService(AuthDbContext dbContext) : IIdentitySo
     {
         return await dbContext.IdentitySources.AsNoTracking()
             .Include(x => x.OidcConfig)
+            .Include(x => x.LdapConfig)
             .Where(x => x.Id == id)
             .Select(x => new IdentitySourceDetailDto(
                 x.Id, x.Name, x.DisplayName, x.Type, x.IsEnabled, x.CreatedAt,
                 x.OidcConfig != null
                     ? new IdentitySourceOidcConfigDto(x.OidcConfig.Authority, x.OidcConfig.ClientId, x.OidcConfig.ClientSecret != null)
+                    : null,
+                x.LdapConfig != null
+                    ? new IdentitySourceLdapConfigDto(x.LdapConfig.Host, x.LdapConfig.Port, x.LdapConfig.BaseDn, x.LdapConfig.UseSsl)
                     : null))
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -29,6 +33,9 @@ public sealed class IdentitySourceService(AuthDbContext dbContext) : IIdentitySo
     public async Task<IdentitySourceDetailDto> CreateAsync(CreateIdentitySourceRequest request, CancellationToken cancellationToken)
     {
         if (request.Type == IdentitySourceType.Oidc && request.OidcConfig is null)
+            throw new AuthException(AuthErrorCatalog.IdentitySourceTypeMismatch);
+
+        if (request.Type == IdentitySourceType.Ldap && request.LdapConfig is null)
             throw new AuthException(AuthErrorCatalog.IdentitySourceTypeMismatch);
 
         var source = new IdentitySource
@@ -50,20 +57,32 @@ public sealed class IdentitySourceService(AuthDbContext dbContext) : IIdentitySo
             };
         }
 
+        if (request.LdapConfig is not null)
+        {
+            source.LdapConfig = new IdentitySourceLdapConfig
+            {
+                IdentitySourceId = source.Id,
+                Host = request.LdapConfig.Host,
+                Port = request.LdapConfig.Port,
+                BaseDn = request.LdapConfig.BaseDn,
+                BindDn = request.LdapConfig.BindDn,
+                BindPassword = request.LdapConfig.BindPassword,
+                UseSsl = request.LdapConfig.UseSsl,
+                SearchFilter = request.LdapConfig.SearchFilter
+            };
+        }
+
         dbContext.IdentitySources.Add(source);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return new IdentitySourceDetailDto(
-            source.Id, source.Name, source.DisplayName, source.Type, source.IsEnabled, source.CreatedAt,
-            source.OidcConfig is not null
-                ? new IdentitySourceOidcConfigDto(source.OidcConfig.Authority, source.OidcConfig.ClientId, source.OidcConfig.ClientSecret is not null)
-                : null);
+        return ToDetailDto(source);
     }
 
     public async Task<IdentitySourceDetailDto> UpdateAsync(Guid id, UpdateIdentitySourceRequest request, CancellationToken cancellationToken)
     {
         var source = await dbContext.IdentitySources
             .Include(x => x.OidcConfig)
+            .Include(x => x.LdapConfig)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new AuthException(AuthErrorCatalog.IdentitySourceNotFound);
 
@@ -92,13 +111,38 @@ public sealed class IdentitySourceService(AuthDbContext dbContext) : IIdentitySo
             }
         }
 
+        if (request.LdapConfig is not null)
+        {
+            if (source.LdapConfig is not null)
+            {
+                source.LdapConfig.Host = request.LdapConfig.Host;
+                source.LdapConfig.Port = request.LdapConfig.Port;
+                source.LdapConfig.BaseDn = request.LdapConfig.BaseDn;
+                source.LdapConfig.BindDn = request.LdapConfig.BindDn;
+                source.LdapConfig.UseSsl = request.LdapConfig.UseSsl;
+                source.LdapConfig.SearchFilter = request.LdapConfig.SearchFilter;
+                if (request.LdapConfig.BindPassword is not null)
+                    source.LdapConfig.BindPassword = request.LdapConfig.BindPassword;
+            }
+            else
+            {
+                source.LdapConfig = new IdentitySourceLdapConfig
+                {
+                    IdentitySourceId = source.Id,
+                    Host = request.LdapConfig.Host,
+                    Port = request.LdapConfig.Port,
+                    BaseDn = request.LdapConfig.BaseDn,
+                    BindDn = request.LdapConfig.BindDn,
+                    BindPassword = request.LdapConfig.BindPassword,
+                    UseSsl = request.LdapConfig.UseSsl,
+                    SearchFilter = request.LdapConfig.SearchFilter
+                };
+            }
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return new IdentitySourceDetailDto(
-            source.Id, source.Name, source.DisplayName, source.Type, source.IsEnabled, source.CreatedAt,
-            source.OidcConfig is not null
-                ? new IdentitySourceOidcConfigDto(source.OidcConfig.Authority, source.OidcConfig.ClientId, source.OidcConfig.ClientSecret is not null)
-                : null);
+        return ToDetailDto(source);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
@@ -156,4 +200,13 @@ public sealed class IdentitySourceService(AuthDbContext dbContext) : IIdentitySo
         dbContext.IdentitySourceLinks.Remove(link);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    private static IdentitySourceDetailDto ToDetailDto(IdentitySource source) =>
+        new(source.Id, source.Name, source.DisplayName, source.Type, source.IsEnabled, source.CreatedAt,
+            source.OidcConfig is not null
+                ? new IdentitySourceOidcConfigDto(source.OidcConfig.Authority, source.OidcConfig.ClientId, source.OidcConfig.ClientSecret is not null)
+                : null,
+            source.LdapConfig is not null
+                ? new IdentitySourceLdapConfigDto(source.LdapConfig.Host, source.LdapConfig.Port, source.LdapConfig.BaseDn, source.LdapConfig.UseSsl)
+                : null);
 }

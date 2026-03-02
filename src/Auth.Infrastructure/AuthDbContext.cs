@@ -17,6 +17,7 @@ public DbSet<TwoFactorChallenge> TwoFactorChallenges => Set<TwoFactorChallenge>(
     public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
     public DbSet<IdentitySource> IdentitySources => Set<IdentitySource>();
     public DbSet<IdentitySourceOidcConfig> IdentitySourceOidcConfigs => Set<IdentitySourceOidcConfig>();
+    public DbSet<IdentitySourceLdapConfig> IdentitySourceLdapConfigs => Set<IdentitySourceLdapConfig>();
     public DbSet<IdentitySourceLink> IdentitySourceLinks => Set<IdentitySourceLink>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

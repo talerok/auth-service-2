@@ -7,5 +7,6 @@ public sealed class IdentitySource : EntityBase
     public IdentitySourceType Type { get; set; }
     public bool IsEnabled { get; set; } = true;
     public IdentitySourceOidcConfig? OidcConfig { get; set; }
+    public IdentitySourceLdapConfig? LdapConfig { get; set; }
     public ICollection<IdentitySourceLink> Links { get; private set; } = [];
 }

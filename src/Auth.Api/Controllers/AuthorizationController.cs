@@ -156,6 +156,7 @@ public sealed class AuthorizationController(
     {
         var identitySource = request.GetParameter("identity_source")?.ToString();
         var token = request.GetParameter("token")?.ToString();
+        var username = request.GetParameter("username")?.ToString();
 
         if (string.IsNullOrWhiteSpace(identitySource) || string.IsNullOrWhiteSpace(token))
             return OidcForbid(Errors.InvalidRequest,
@@ -165,7 +166,7 @@ public sealed class AuthorizationController(
         try
         {
             result = await identitySourceAuthService.AuthenticateAsync(
-                identitySource, token, request.GetScopes().ToList(), cancellationToken);
+                identitySource, username, token, request.GetScopes().ToList(), cancellationToken);
         }
         catch (AuthException)
         {

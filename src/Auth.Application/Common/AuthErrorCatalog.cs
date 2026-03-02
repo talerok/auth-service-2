@@ -22,4 +22,5 @@ public static class AuthErrorCatalog
     public const string IdentitySourceUserInactive = "AUTH_IDENTITY_SOURCE_USER_INACTIVE";
     public const string IdentitySourceDuplicateLink = "AUTH_IDENTITY_SOURCE_DUPLICATE_LINK";
     public const string IdentitySourceTypeMismatch = "AUTH_IDENTITY_SOURCE_TYPE_MISMATCH";
+    public const string IdentitySourceUsernameRequired = "AUTH_IDENTITY_SOURCE_USERNAME_REQUIRED";
 }

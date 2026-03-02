@@ -349,6 +349,117 @@ public sealed class IdentitySourceServiceTests
             .Where(x => x.Code == AuthErrorCatalog.IdentitySourceLinkNotFound);
     }
 
+    [Fact]
+    public async Task CreateAsync_WithLdapConfig_CreatesSourceAndConfig()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = new IdentitySourceService(dbContext);
+
+        var result = await service.CreateAsync(new CreateIdentitySourceRequest(
+            "corporate-ldap", "Corporate LDAP", IdentitySourceType.Ldap,
+            LdapConfig: new CreateLdapConfigRequest("ldap.example.com", 389, "dc=example,dc=com", "cn=admin,dc=example,dc=com", "secret")),
+            CancellationToken.None);
+
+        result.Name.Should().Be("corporate-ldap");
+        result.LdapConfig.Should().NotBeNull();
+        result.LdapConfig!.Host.Should().Be("ldap.example.com");
+        result.LdapConfig.Port.Should().Be(389);
+        result.OidcConfig.Should().BeNull();
+        (await dbContext.IdentitySources.CountAsync()).Should().Be(1);
+        (await dbContext.IdentitySourceLdapConfigs.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task CreateAsync_LdapTypeWithoutConfig_ThrowsTypeMismatch()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = new IdentitySourceService(dbContext);
+
+        var act = () => service.CreateAsync(
+            new CreateIdentitySourceRequest("ldap", "LDAP", IdentitySourceType.Ldap),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<AuthException>()
+            .Where(x => x.Code == AuthErrorCatalog.IdentitySourceTypeMismatch);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_LdapSource_ReturnsDetailWithLdapConfig()
+    {
+        await using var dbContext = CreateDbContext();
+        var source = new IdentitySource
+        {
+            Name = "corporate-ldap",
+            DisplayName = "Corporate LDAP",
+            Type = IdentitySourceType.Ldap,
+            IsEnabled = true,
+            LdapConfig = new IdentitySourceLdapConfig
+            {
+                Host = "ldap.example.com",
+                Port = 636,
+                BaseDn = "dc=example,dc=com",
+                BindDn = "cn=admin,dc=example,dc=com",
+                BindPassword = "secret",
+                UseSsl = true,
+                SearchFilter = "(uid={username})"
+            }
+        };
+        source.LdapConfig.IdentitySourceId = source.Id;
+        dbContext.IdentitySources.Add(source);
+        await dbContext.SaveChangesAsync();
+
+        var service = new IdentitySourceService(dbContext);
+
+        var result = await service.GetByIdAsync(source.Id, CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.LdapConfig.Should().NotBeNull();
+        result.LdapConfig!.Host.Should().Be("ldap.example.com");
+        result.LdapConfig.Port.Should().Be(636);
+        result.LdapConfig.UseSsl.Should().BeTrue();
+        result.OidcConfig.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateAsync_LdapSource_UpdatesConfig()
+    {
+        await using var dbContext = CreateDbContext();
+        var source = new IdentitySource
+        {
+            Name = "corporate-ldap",
+            DisplayName = "Old LDAP",
+            Type = IdentitySourceType.Ldap,
+            IsEnabled = true,
+            LdapConfig = new IdentitySourceLdapConfig
+            {
+                Host = "ldap.example.com",
+                Port = 389,
+                BaseDn = "dc=example,dc=com",
+                BindDn = "cn=admin,dc=example,dc=com",
+                BindPassword = "secret",
+                UseSsl = false,
+                SearchFilter = "(uid={username})"
+            }
+        };
+        source.LdapConfig.IdentitySourceId = source.Id;
+        dbContext.IdentitySources.Add(source);
+        await dbContext.SaveChangesAsync();
+
+        var service = new IdentitySourceService(dbContext);
+
+        var result = await service.UpdateAsync(source.Id, new UpdateIdentitySourceRequest(
+            "New LDAP", false,
+            LdapConfig: new CreateLdapConfigRequest("new-ldap.example.com", 636, "dc=new,dc=com", "cn=admin,dc=new,dc=com", UseSsl: true)),
+            CancellationToken.None);
+
+        result.DisplayName.Should().Be("New LDAP");
+        result.IsEnabled.Should().BeFalse();
+        result.LdapConfig.Should().NotBeNull();
+        result.LdapConfig!.Host.Should().Be("new-ldap.example.com");
+        result.LdapConfig.Port.Should().Be(636);
+        result.LdapConfig.UseSsl.Should().BeTrue();
+    }
+
     private static AuthDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AuthDbContext>()
