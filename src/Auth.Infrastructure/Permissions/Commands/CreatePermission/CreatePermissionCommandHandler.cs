@@ -18,7 +18,7 @@ internal sealed class CreatePermissionCommandHandler(
 
         var entity = new Permission
         {
-            Bit = maxBit + 1,
+            Bit = Math.Max(maxBit + 1, SystemPermissionCatalog.CustomBitStart),
             Code = command.Code,
             Description = command.Description,
             IsSystem = false

@@ -2,6 +2,12 @@ namespace Auth.Domain;
 
 public static class SystemPermissionCatalog
 {
+    /// <summary>
+    /// Биты 0–127 зарезервированы для системных полномочий.
+    /// Пользовательские полномочия начинаются с этого бита.
+    /// </summary>
+    public const int CustomBitStart = 128;
+
     public static readonly (int Bit, string Code, string Description)[] Permissions =
     [
         (0, "system.users.view", "View users"),

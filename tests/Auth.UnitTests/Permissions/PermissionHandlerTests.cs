@@ -53,7 +53,7 @@ public sealed class PermissionHandlerTests
     }
 
     [Fact]
-    public async Task Create_EmptyDatabase_AssignsBitZero()
+    public async Task Create_EmptyDatabase_AssignsCustomBitStart()
     {
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
@@ -63,14 +63,14 @@ public sealed class PermissionHandlerTests
             new CreatePermissionCommand("first.perm", "First"),
             CancellationToken.None);
 
-        result.Bit.Should().Be(0);
+        result.Bit.Should().Be(SystemPermissionCatalog.CustomBitStart);
     }
 
     [Fact]
-    public async Task Create_ExistingPermissions_AssignsNextBit()
+    public async Task Create_OnlySystemPermissions_AssignsCustomBitStart()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Permissions.Add(new Permission { Bit = 5, Code = "existing", Description = "Existing" });
+        dbContext.Permissions.Add(new Permission { Bit = 5, Code = "existing", Description = "Existing", IsSystem = true });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new CreatePermissionCommandHandler(dbContext, searchIndex.Object);
@@ -79,14 +79,30 @@ public sealed class PermissionHandlerTests
             new CreatePermissionCommand("new.perm", "New permission"),
             CancellationToken.None);
 
-        result.Bit.Should().Be(6);
+        result.Bit.Should().Be(SystemPermissionCatalog.CustomBitStart);
     }
 
     [Fact]
-    public async Task Create_DeletedPermissionWithHighBit_UsesDeletedBitForMax()
+    public async Task Create_ExistingCustomPermission_AssignsNextBit()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Permissions.Add(new Permission { Bit = 3, Code = "active", Description = "Active" });
+        dbContext.Permissions.Add(new Permission { Bit = 130, Code = "custom.existing", Description = "Existing custom" });
+        await dbContext.SaveChangesAsync();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var handler = new CreatePermissionCommandHandler(dbContext, searchIndex.Object);
+
+        var result = await handler.Handle(
+            new CreatePermissionCommand("new.perm", "New permission"),
+            CancellationToken.None);
+
+        result.Bit.Should().Be(131);
+    }
+
+    [Fact]
+    public async Task Create_DeletedPermissionInReservedRange_AssignsCustomBitStart()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Permissions.Add(new Permission { Bit = 3, Code = "active", Description = "Active", IsSystem = true });
         dbContext.Permissions.Add(new Permission { Bit = 7, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
@@ -96,7 +112,7 @@ public sealed class PermissionHandlerTests
             new CreatePermissionCommand("after.deleted", "After deleted"),
             CancellationToken.None);
 
-        result.Bit.Should().Be(8);
+        result.Bit.Should().Be(SystemPermissionCatalog.CustomBitStart);
     }
 
     // ── UpdatePermissionCommandHandler ──────────────────────────────────
