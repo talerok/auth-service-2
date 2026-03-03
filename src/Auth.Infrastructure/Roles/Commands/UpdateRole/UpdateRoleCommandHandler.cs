@@ -1,0 +1,28 @@
+using Auth.Application;
+using Auth.Application.Roles.Commands.UpdateRole;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+
+namespace Auth.Infrastructure.Roles.Commands.UpdateRole;
+
+internal sealed class UpdateRoleCommandHandler(
+    AuthDbContext dbContext,
+    ISearchIndexService searchIndexService) : IRequestHandler<UpdateRoleCommand, RoleDto?>
+{
+    public async Task<RoleDto?> Handle(UpdateRoleCommand command, CancellationToken cancellationToken)
+    {
+        var entity = await dbContext.Roles.FirstOrDefaultAsync(x => x.Id == command.Id, cancellationToken);
+        if (entity is null)
+        {
+            return null;
+        }
+
+        entity.Name = command.Name;
+        entity.Description = command.Description;
+        entity.UpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        var dto = new RoleDto(entity.Id, entity.Name, entity.Description);
+        await searchIndexService.IndexRoleAsync(dto, cancellationToken);
+        return dto;
+    }
+}

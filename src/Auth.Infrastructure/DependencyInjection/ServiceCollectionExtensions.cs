@@ -1,4 +1,6 @@
 using Auth.Application;
+using FluentValidation;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,19 +16,11 @@ public static class ServiceCollectionExtensions
 
         services.AddDbContext<AuthDbContext>(options => options.UseNpgsql(integration.PostgreSql.ConnectionString));
 
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ServiceCollectionExtensions).Assembly));
+        services.AddValidatorsFromAssembly(typeof(AuthException).Assembly);
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
         services.AddScoped<IPasswordHasher, PasswordHasher>();
-        services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IWorkspaceService, WorkspaceService>();
-        services.AddScoped<IRoleService, RoleService>();
-        services.AddScoped<IPermissionService, PermissionService>();
-        services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
-        services.AddScoped<IWorkspaceMaskService, WorkspaceMaskService>();
-        services.AddScoped<IOidcGrantService, OidcGrantService>();
-        services.AddScoped<IIdentitySourceService, IdentitySourceService>();
-        services.AddScoped<IIdentitySourceAuthService, IdentitySourceAuthService>();
-        services.AddScoped<IApiClientService, ApiClientService>();
         services.AddSingleton<IOidcTokenValidator, OidcTokenValidator>();
         services.AddScoped<ILdapAuthenticator, LdapAuthenticator>();
         services.AddSingleton<IPermissionBitCache, PermissionBitCache>();

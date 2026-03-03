@@ -1,4 +1,9 @@
 using Auth.Application;
+using Auth.Application.Auth.Commands.ValidateForcedPasswordChange;
+using Auth.Application.TwoFactor.Commands.ConfirmTwoFactorActivation;
+using Auth.Application.TwoFactor.Commands.DisableTwoFactor;
+using Auth.Application.TwoFactor.Commands.EnableTwoFactor;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Abstractions;
@@ -7,7 +12,7 @@ namespace Auth.Api.Controllers;
 
 [ApiController]
 [Route("api/account")]
-public sealed class AccountController(IAuthService authService, ITwoFactorAuthService twoFactorAuthService) : ControllerBase
+public sealed class AccountController(ISender sender) : ControllerBase
 {
     [HttpPost("2fa/enable")]
     [Authorize]
@@ -16,7 +21,7 @@ public sealed class AccountController(IAuthService authService, ITwoFactorAuthSe
     public async Task<ActionResult<EnableTwoFactorResponse>> EnableTwoFactor(
         [FromBody] EnableTwoFactorRequest request,
         CancellationToken cancellationToken) =>
-        Ok(await twoFactorAuthService.EnableTwoFactorAsync(GetUserId(), request, cancellationToken));
+        Ok(await sender.Send(new EnableTwoFactorCommand(GetUserId(), request.Channel, request.IsHighRisk), cancellationToken));
 
     [HttpPost("2fa/confirm")]
     [Authorize]
@@ -24,7 +29,7 @@ public sealed class AccountController(IAuthService authService, ITwoFactorAuthSe
         [FromBody] VerifyTwoFactorRequest request,
         CancellationToken cancellationToken)
     {
-        await twoFactorAuthService.ConfirmTwoFactorActivationAsync(GetUserId(), request, cancellationToken);
+        await sender.Send(new ConfirmTwoFactorActivationCommand(GetUserId(), request.ChallengeId, request.Channel, request.Otp), cancellationToken);
         return NoContent();
     }
 
@@ -32,7 +37,7 @@ public sealed class AccountController(IAuthService authService, ITwoFactorAuthSe
     [Authorize]
     public async Task<IActionResult> DisableTwoFactor(CancellationToken cancellationToken)
     {
-        await twoFactorAuthService.DisableTwoFactorAsync(GetUserId(), cancellationToken);
+        await sender.Send(new DisableTwoFactorCommand(GetUserId()), cancellationToken);
         return NoContent();
     }
 
@@ -42,7 +47,7 @@ public sealed class AccountController(IAuthService authService, ITwoFactorAuthSe
         [FromBody] ForcedPasswordChangeRequest request,
         CancellationToken cancellationToken)
     {
-        await authService.ValidateForcedPasswordChangeAsync(request, cancellationToken);
+        await sender.Send(new ValidateForcedPasswordChangeCommand(request.ChallengeId, request.NewPassword), cancellationToken);
         return NoContent();
     }
 

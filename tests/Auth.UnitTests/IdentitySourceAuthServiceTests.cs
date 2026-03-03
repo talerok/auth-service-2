@@ -1,8 +1,14 @@
 using System.Security.Claims;
 using Auth.Application;
+using Auth.Application.Auth.Commands.CreateLoginChallenge;
+using Auth.Application.Auth.Commands.CreatePasswordChangeChallenge;
+using Auth.Application.Oidc.Commands.AuthenticateViaIdentitySource;
+using Auth.Application.Oidc.Queries.BuildPrincipal;
 using Auth.Domain;
 using Auth.Infrastructure;
+using Auth.Infrastructure.Oidc.Commands.AuthenticateViaIdentitySource;
 using FluentAssertions;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 
@@ -14,9 +20,11 @@ public sealed class IdentitySourceAuthServiceTests
     public async Task AuthenticateAsync_WhenSourceNotFound_ThrowsException()
     {
         await using var dbContext = CreateDbContext();
-        var service = CreateService(dbContext);
+        var handler = CreateHandler(dbContext);
 
-        var act = () => service.AuthenticateAsync("nonexistent", null, "token", ["openid"], CancellationToken.None);
+        var act = () => handler.Handle(
+            new AuthenticateViaIdentitySourceCommand("nonexistent", null, "token", ["openid"]),
+            CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == AuthErrorCatalog.IdentitySourceNotFound);
@@ -30,9 +38,11 @@ public sealed class IdentitySourceAuthServiceTests
         dbContext.IdentitySources.Add(source);
         await dbContext.SaveChangesAsync();
 
-        var service = CreateService(dbContext);
+        var handler = CreateHandler(dbContext);
 
-        var act = () => service.AuthenticateAsync("keycloak", null, "token", ["openid"], CancellationToken.None);
+        var act = () => handler.Handle(
+            new AuthenticateViaIdentitySourceCommand("keycloak", null, "token", ["openid"]),
+            CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == AuthErrorCatalog.IdentitySourceDisabled);
@@ -52,9 +62,11 @@ public sealed class IdentitySourceAuthServiceTests
         dbContext.IdentitySources.Add(source);
         await dbContext.SaveChangesAsync();
 
-        var service = CreateService(dbContext);
+        var handler = CreateHandler(dbContext);
 
-        var act = () => service.AuthenticateAsync("oidc-no-config", null, "token", ["openid"], CancellationToken.None);
+        var act = () => handler.Handle(
+            new AuthenticateViaIdentitySourceCommand("oidc-no-config", null, "token", ["openid"]),
+            CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == AuthErrorCatalog.IdentitySourceTypeMismatch);
@@ -73,9 +85,11 @@ public sealed class IdentitySourceAuthServiceTests
             .Setup(x => x.ValidateAndGetSubjectAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("unknown-sub");
 
-        var service = CreateService(dbContext, tokenValidator: tokenValidator);
+        var handler = CreateHandler(dbContext, tokenValidator: tokenValidator);
 
-        var act = () => service.AuthenticateAsync("keycloak", null, "token", ["openid"], CancellationToken.None);
+        var act = () => handler.Handle(
+            new AuthenticateViaIdentitySourceCommand("keycloak", null, "token", ["openid"]),
+            CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == AuthErrorCatalog.IdentitySourceLinkNotFound);
@@ -108,9 +122,11 @@ public sealed class IdentitySourceAuthServiceTests
             .Setup(x => x.ValidateAndGetSubjectAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("ext-sub");
 
-        var service = CreateService(dbContext, tokenValidator: tokenValidator);
+        var handler = CreateHandler(dbContext, tokenValidator: tokenValidator);
 
-        var act = () => service.AuthenticateAsync("keycloak", null, "token", ["openid"], CancellationToken.None);
+        var act = () => handler.Handle(
+            new AuthenticateViaIdentitySourceCommand("keycloak", null, "token", ["openid"]),
+            CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == AuthErrorCatalog.IdentitySourceUserInactive);
@@ -144,14 +160,18 @@ public sealed class IdentitySourceAuthServiceTests
             .ReturnsAsync("ext-sub");
 
         var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim("sub", user.Id.ToString())]));
-        var oidcGrantService = new Mock<IOidcGrantService>();
-        oidcGrantService
-            .Setup(x => x.BuildPrincipalAsync(user.Id, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+        var senderMock = new Mock<ISender>();
+        senderMock
+            .Setup(x => x.Send(
+                It.Is<BuildPrincipalQuery>(q => q.UserId == user.Id),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(principal);
 
-        var service = CreateService(dbContext, tokenValidator: tokenValidator, oidcGrantService: oidcGrantService);
+        var handler = CreateHandler(dbContext, sender: senderMock, tokenValidator: tokenValidator);
 
-        var result = await service.AuthenticateAsync("keycloak", null, "token", ["openid"], CancellationToken.None);
+        var result = await handler.Handle(
+            new AuthenticateViaIdentitySourceCommand("keycloak", null, "token", ["openid"]),
+            CancellationToken.None);
 
         result.Should().BeOfType<PasswordGrantResult.Success>();
         var success = (PasswordGrantResult.Success)result;
@@ -186,14 +206,18 @@ public sealed class IdentitySourceAuthServiceTests
             .Setup(x => x.ValidateAndGetSubjectAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("ext-sub");
 
-        var authServiceMock = new Mock<IAuthService>();
-        authServiceMock
-            .Setup(x => x.CreateLoginChallengeAsync(user.Id, TwoFactorChannel.Email, It.IsAny<CancellationToken>()))
+        var senderMock = new Mock<ISender>();
+        senderMock
+            .Setup(x => x.Send(
+                It.Is<CreateLoginChallengeCommand>(c => c.UserId == user.Id && c.Channel == TwoFactorChannel.Email),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(TwoFactorChallenge.Create(user.Id, TwoFactorChallenge.PurposeLogin, TwoFactorChannel.Email, "hash", "salt", "enc", DateTime.UtcNow.AddMinutes(5), 5));
 
-        var service = CreateService(dbContext, authService: authServiceMock, tokenValidator: tokenValidator);
+        var handler = CreateHandler(dbContext, sender: senderMock, tokenValidator: tokenValidator);
 
-        var result = await service.AuthenticateAsync("keycloak", null, "token", ["openid"], CancellationToken.None);
+        var result = await handler.Handle(
+            new AuthenticateViaIdentitySourceCommand("keycloak", null, "token", ["openid"]),
+            CancellationToken.None);
 
         result.Should().BeOfType<PasswordGrantResult.MfaRequired>();
     }
@@ -227,14 +251,18 @@ public sealed class IdentitySourceAuthServiceTests
             .ReturnsAsync("ext-sub");
 
         var challenge = PasswordChangeChallenge.Create(user.Id, DateTime.UtcNow.AddMinutes(15));
-        var authServiceMock = new Mock<IAuthService>();
-        authServiceMock
-            .Setup(x => x.CreatePasswordChangeChallengeAsync(user.Id, It.IsAny<CancellationToken>()))
+        var senderMock = new Mock<ISender>();
+        senderMock
+            .Setup(x => x.Send(
+                It.Is<CreatePasswordChangeChallengeCommand>(c => c.UserId == user.Id),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(challenge);
 
-        var service = CreateService(dbContext, authService: authServiceMock, tokenValidator: tokenValidator);
+        var handler = CreateHandler(dbContext, sender: senderMock, tokenValidator: tokenValidator);
 
-        var result = await service.AuthenticateAsync("keycloak", null, "token", ["openid"], CancellationToken.None);
+        var result = await handler.Handle(
+            new AuthenticateViaIdentitySourceCommand("keycloak", null, "token", ["openid"]),
+            CancellationToken.None);
 
         result.Should().BeOfType<PasswordGrantResult.PasswordChangeRequired>();
     }
@@ -269,14 +297,18 @@ public sealed class IdentitySourceAuthServiceTests
             .ReturnsAsync("jdoe");
 
         var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim("sub", user.Id.ToString())]));
-        var oidcGrantService = new Mock<IOidcGrantService>();
-        oidcGrantService
-            .Setup(x => x.BuildPrincipalAsync(user.Id, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+        var senderMock = new Mock<ISender>();
+        senderMock
+            .Setup(x => x.Send(
+                It.Is<BuildPrincipalQuery>(q => q.UserId == user.Id),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(principal);
 
-        var service = CreateService(dbContext, oidcGrantService: oidcGrantService, ldapAuthenticator: ldapAuthenticator);
+        var handler = CreateHandler(dbContext, sender: senderMock, ldapAuthenticator: ldapAuthenticator);
 
-        var result = await service.AuthenticateAsync("corporate-ldap", "jdoe", "password", ["openid"], CancellationToken.None);
+        var result = await handler.Handle(
+            new AuthenticateViaIdentitySourceCommand("corporate-ldap", "jdoe", "password", ["openid"]),
+            CancellationToken.None);
 
         result.Should().BeOfType<PasswordGrantResult.Success>();
         var success = (PasswordGrantResult.Success)result;
@@ -291,9 +323,11 @@ public sealed class IdentitySourceAuthServiceTests
         dbContext.IdentitySources.Add(source);
         await dbContext.SaveChangesAsync();
 
-        var service = CreateService(dbContext);
+        var handler = CreateHandler(dbContext);
 
-        var act = () => service.AuthenticateAsync("corporate-ldap", null, "password", ["openid"], CancellationToken.None);
+        var act = () => handler.Handle(
+            new AuthenticateViaIdentitySourceCommand("corporate-ldap", null, "password", ["openid"]),
+            CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == AuthErrorCatalog.IdentitySourceUsernameRequired);
@@ -313,9 +347,11 @@ public sealed class IdentitySourceAuthServiceTests
         dbContext.IdentitySources.Add(source);
         await dbContext.SaveChangesAsync();
 
-        var service = CreateService(dbContext);
+        var handler = CreateHandler(dbContext);
 
-        var act = () => service.AuthenticateAsync("ldap-no-config", "jdoe", "password", ["openid"], CancellationToken.None);
+        var act = () => handler.Handle(
+            new AuthenticateViaIdentitySourceCommand("ldap-no-config", "jdoe", "password", ["openid"]),
+            CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == AuthErrorCatalog.IdentitySourceTypeMismatch);
@@ -334,9 +370,11 @@ public sealed class IdentitySourceAuthServiceTests
             .Setup(x => x.AuthenticateAsync(It.IsAny<IdentitySourceLdapConfig>(), "jdoe", "password", It.IsAny<CancellationToken>()))
             .ReturnsAsync("jdoe");
 
-        var service = CreateService(dbContext, ldapAuthenticator: ldapAuthenticator);
+        var handler = CreateHandler(dbContext, ldapAuthenticator: ldapAuthenticator);
 
-        var act = () => service.AuthenticateAsync("corporate-ldap", "jdoe", "password", ["openid"], CancellationToken.None);
+        var act = () => handler.Handle(
+            new AuthenticateViaIdentitySourceCommand("corporate-ldap", "jdoe", "password", ["openid"]),
+            CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == AuthErrorCatalog.IdentitySourceLinkNotFound);
@@ -369,9 +407,11 @@ public sealed class IdentitySourceAuthServiceTests
             .Setup(x => x.AuthenticateAsync(It.IsAny<IdentitySourceLdapConfig>(), "jdoe", "password", It.IsAny<CancellationToken>()))
             .ReturnsAsync("jdoe");
 
-        var service = CreateService(dbContext, ldapAuthenticator: ldapAuthenticator);
+        var handler = CreateHandler(dbContext, ldapAuthenticator: ldapAuthenticator);
 
-        var act = () => service.AuthenticateAsync("corporate-ldap", "jdoe", "password", ["openid"], CancellationToken.None);
+        var act = () => handler.Handle(
+            new AuthenticateViaIdentitySourceCommand("corporate-ldap", "jdoe", "password", ["openid"]),
+            CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == AuthErrorCatalog.IdentitySourceUserInactive);
@@ -405,14 +445,18 @@ public sealed class IdentitySourceAuthServiceTests
             .Setup(x => x.AuthenticateAsync(It.IsAny<IdentitySourceLdapConfig>(), "jdoe", "password", It.IsAny<CancellationToken>()))
             .ReturnsAsync("jdoe");
 
-        var authServiceMock = new Mock<IAuthService>();
-        authServiceMock
-            .Setup(x => x.CreateLoginChallengeAsync(user.Id, TwoFactorChannel.Email, It.IsAny<CancellationToken>()))
+        var senderMock = new Mock<ISender>();
+        senderMock
+            .Setup(x => x.Send(
+                It.Is<CreateLoginChallengeCommand>(c => c.UserId == user.Id && c.Channel == TwoFactorChannel.Email),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(TwoFactorChallenge.Create(user.Id, TwoFactorChallenge.PurposeLogin, TwoFactorChannel.Email, "hash", "salt", "enc", DateTime.UtcNow.AddMinutes(5), 5));
 
-        var service = CreateService(dbContext, authService: authServiceMock, ldapAuthenticator: ldapAuthenticator);
+        var handler = CreateHandler(dbContext, sender: senderMock, ldapAuthenticator: ldapAuthenticator);
 
-        var result = await service.AuthenticateAsync("corporate-ldap", "jdoe", "password", ["openid"], CancellationToken.None);
+        var result = await handler.Handle(
+            new AuthenticateViaIdentitySourceCommand("corporate-ldap", "jdoe", "password", ["openid"]),
+            CancellationToken.None);
 
         result.Should().BeOfType<PasswordGrantResult.MfaRequired>();
     }
@@ -448,22 +492,19 @@ public sealed class IdentitySourceAuthServiceTests
         }
     };
 
-    private static IdentitySourceAuthService CreateService(
+    private static AuthenticateViaIdentitySourceCommandHandler CreateHandler(
         AuthDbContext dbContext,
-        Mock<IAuthService>? authService = null,
-        Mock<IOidcGrantService>? oidcGrantService = null,
+        Mock<ISender>? sender = null,
         Mock<IOidcTokenValidator>? tokenValidator = null,
         Mock<ILdapAuthenticator>? ldapAuthenticator = null)
     {
-        authService ??= new Mock<IAuthService>();
-        oidcGrantService ??= new Mock<IOidcGrantService>();
+        sender ??= new Mock<ISender>();
         tokenValidator ??= new Mock<IOidcTokenValidator>();
         ldapAuthenticator ??= new Mock<ILdapAuthenticator>();
 
-        return new IdentitySourceAuthService(
+        return new AuthenticateViaIdentitySourceCommandHandler(
             dbContext,
-            authService.Object,
-            oidcGrantService.Object,
+            sender.Object,
             tokenValidator.Object,
             ldapAuthenticator.Object);
     }

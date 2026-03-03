@@ -1,4 +1,6 @@
 using Auth.Application;
+using FluentValidation;
+
 namespace Auth.Api;
 
 public sealed class ProblemDetailsMiddleware(RequestDelegate next, ILogger<ProblemDetailsMiddleware> logger)
@@ -13,6 +15,21 @@ public sealed class ProblemDetailsMiddleware(RequestDelegate next, ILogger<Probl
         {
             var problem = AuthProblemDetailsMapper.Map(ex);
             await ProblemDetailsResponseWriter.WriteAsync(context, problem, ex.Code);
+        }
+        catch (ValidationException ex)
+        {
+            var errors = ex.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.ErrorMessage).ToArray());
+
+            var problem = new AuthProblemDescriptor(
+                StatusCodes.Status400BadRequest,
+                "Validation Error",
+                "One or more validation errors occurred");
+
+            await ProblemDetailsResponseWriter.WriteValidationAsync(context, problem, errors);
         }
         catch (Exception ex)
         {

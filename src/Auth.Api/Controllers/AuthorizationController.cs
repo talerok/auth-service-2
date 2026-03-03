@@ -1,6 +1,12 @@
 using System.Security.Claims;
 using Auth.Application;
+using Auth.Application.Oidc.Commands.AuthenticateViaIdentitySource;
+using Auth.Application.Oidc.Commands.HandleClientCredentialsGrant;
+using Auth.Application.Oidc.Commands.HandleMfaOtpGrant;
+using Auth.Application.Oidc.Commands.HandlePasswordGrant;
+using Auth.Application.Oidc.Queries.BuildPrincipal;
 using Auth.Domain;
+using MediatR;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -12,9 +18,7 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 namespace Auth.Api.Controllers;
 
 [ApiController]
-public sealed class AuthorizationController(
-    IOidcGrantService oidcGrantService,
-    IIdentitySourceAuthService identitySourceAuthService) : ControllerBase
+public sealed class AuthorizationController(ISender sender) : ControllerBase
 {
     [HttpPost("connect/token")]
     public async Task<IActionResult> Exchange(CancellationToken cancellationToken)
@@ -71,8 +75,8 @@ public sealed class AuthorizationController(
         PasswordGrantResult result;
         try
         {
-            result = await oidcGrantService.HandlePasswordGrantAsync(
-                request.Username!, request.Password!, request.GetScopes().ToList(), cancellationToken);
+            result = await sender.Send(new HandlePasswordGrantCommand(
+                request.Username!, request.Password!, request.GetScopes().ToList()), cancellationToken);
         }
         catch (AuthException)
         {
@@ -117,8 +121,8 @@ public sealed class AuthorizationController(
         if (!Guid.TryParse(subject, out var userId))
             return Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
 
-        var principal = await oidcGrantService.BuildPrincipalAsync(
-            userId, authResult.Principal.GetScopes(), cancellationToken);
+        var principal = await sender.Send(new BuildPrincipalQuery(
+            userId, authResult.Principal.GetScopes().ToList()), cancellationToken);
 
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
@@ -143,8 +147,8 @@ public sealed class AuthorizationController(
         ClaimsPrincipal principal;
         try
         {
-            principal = await oidcGrantService.HandleMfaOtpGrantAsync(
-                challengeId, channel, otp, request.GetScopes().ToList(), cancellationToken);
+            principal = await sender.Send(new HandleMfaOtpGrantCommand(
+                challengeId, channel, otp, request.GetScopes().ToList()), cancellationToken);
         }
         catch (AuthException)
         {
@@ -168,8 +172,8 @@ public sealed class AuthorizationController(
         PasswordGrantResult result;
         try
         {
-            result = await identitySourceAuthService.AuthenticateAsync(
-                identitySource, username, token, request.GetScopes().ToList(), cancellationToken);
+            result = await sender.Send(new AuthenticateViaIdentitySourceCommand(
+                identitySource, username, token, request.GetScopes().ToList()), cancellationToken);
         }
         catch (AuthException)
         {
@@ -212,8 +216,8 @@ public sealed class AuthorizationController(
         ClaimsPrincipal principal;
         try
         {
-            principal = await oidcGrantService.HandleClientCredentialsGrantAsync(
-                clientId, request.GetScopes().ToList(), cancellationToken);
+            principal = await sender.Send(new HandleClientCredentialsGrantCommand(
+                clientId, request.GetScopes().ToList()), cancellationToken);
         }
         catch (AuthException)
         {

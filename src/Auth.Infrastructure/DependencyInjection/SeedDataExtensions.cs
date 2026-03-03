@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
+using OidcPermissions = OpenIddict.Abstractions.OpenIddictConstants.Permissions;
 
 namespace Auth.Infrastructure;
 
@@ -144,15 +145,15 @@ public static class SeedDataExtensions
                 ClientType = ClientTypes.Public,
                 Permissions =
                 {
-                    Permissions.Endpoints.Token,
-                    Permissions.GrantTypes.Password,
-                    Permissions.GrantTypes.RefreshToken,
-                    Permissions.Prefixes.GrantType + OidcConstants.MfaOtpGrantType,
-                    Permissions.Prefixes.GrantType + OidcConstants.TokenExchangeGrantType,
-                    Permissions.Scopes.Email,
-                    Permissions.Scopes.Profile,
-                    Permissions.Prefixes.Scope + "ws",
-                    Permissions.Prefixes.Scope + "phone"
+                    OidcPermissions.Endpoints.Token,
+                    OidcPermissions.GrantTypes.Password,
+                    OidcPermissions.GrantTypes.RefreshToken,
+                    OidcPermissions.Prefixes.GrantType + OidcConstants.MfaOtpGrantType,
+                    OidcPermissions.Prefixes.GrantType + OidcConstants.TokenExchangeGrantType,
+                    OidcPermissions.Scopes.Email,
+                    OidcPermissions.Scopes.Profile,
+                    OidcPermissions.Prefixes.Scope + "ws",
+                    OidcPermissions.Prefixes.Scope + "phone"
                 }
             }, cancellationToken);
         }
@@ -166,15 +167,15 @@ public static class SeedDataExtensions
                 ClientType = ClientTypes.Public,
                 Permissions =
                 {
-                    Permissions.Endpoints.Token,
-                    Permissions.GrantTypes.Password,
-                    Permissions.GrantTypes.RefreshToken,
-                    Permissions.Prefixes.GrantType + OidcConstants.MfaOtpGrantType,
-                    Permissions.Prefixes.GrantType + OidcConstants.TokenExchangeGrantType,
-                    Permissions.Scopes.Email,
-                    Permissions.Scopes.Profile,
-                    Permissions.Prefixes.Scope + "ws",
-                    Permissions.Prefixes.Scope + "phone"
+                    OidcPermissions.Endpoints.Token,
+                    OidcPermissions.GrantTypes.Password,
+                    OidcPermissions.GrantTypes.RefreshToken,
+                    OidcPermissions.Prefixes.GrantType + OidcConstants.MfaOtpGrantType,
+                    OidcPermissions.Prefixes.GrantType + OidcConstants.TokenExchangeGrantType,
+                    OidcPermissions.Scopes.Email,
+                    OidcPermissions.Scopes.Profile,
+                    OidcPermissions.Prefixes.Scope + "ws",
+                    OidcPermissions.Prefixes.Scope + "phone"
                 }
             }, cancellationToken);
         }

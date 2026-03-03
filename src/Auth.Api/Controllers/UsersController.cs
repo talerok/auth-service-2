@@ -1,5 +1,16 @@
 using Auth.Application;
-using Auth.Api;
+using Auth.Application.Users.Commands.CreateUser;
+using Auth.Application.Users.Commands.PatchUser;
+using Auth.Application.Users.Commands.ResetPassword;
+using Auth.Application.Users.Commands.SetUserWorkspaces;
+using Auth.Application.Users.Commands.SoftDeleteUser;
+using Auth.Application.Users.Commands.UpdateUser;
+using Auth.Application.Users.Queries.GetAllUsers;
+using Auth.Application.Users.Queries.GetUserById;
+using Auth.Application.Users.Queries.GetUserIdentitySourceLinks;
+using Auth.Application.Users.Queries.GetUserWorkspaces;
+using Auth.Application.Users.Queries.SearchUsers;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,31 +19,37 @@ namespace Auth.Api.Controllers;
 [ApiController]
 [Route("api/users")]
 [Authorize]
-public sealed class UsersController(IUserService userService, ISearchService searchService) : ControllerBase
+public sealed class UsersController(ISender sender) : ControllerBase
 {
     [HttpGet]
     [HasPermissionIn("system", "system.users.view")]
     public Task<IReadOnlyCollection<UserDto>> GetAll(CancellationToken cancellationToken) =>
-        userService.GetAllAsync(cancellationToken);
+        sender.Send(new GetAllUsersQuery(), cancellationToken);
 
     [HttpGet("{id:guid}")]
     [HasPermissionIn("system", "system.users.view")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var item = await userService.GetByIdAsync(id, cancellationToken);
+        var item = await sender.Send(new GetUserByIdQuery(id), cancellationToken);
         return item is null ? NotFound() : Ok(item);
     }
 
     [HttpPost]
     [HasPermissionIn("system", "system.users.create")]
     public Task<UserDto> Create([FromBody] CreateUserRequest request, CancellationToken cancellationToken) =>
-        userService.CreateAsync(request, cancellationToken);
+        sender.Send(new CreateUserCommand(
+            request.Username, request.FullName, request.Email, request.Password,
+            request.Phone, request.IsActive, request.MustChangePassword,
+            request.TwoFactorEnabled, request.TwoFactorChannel), cancellationToken);
 
     [HttpPut("{id:guid}")]
     [HasPermissionIn("system", "system.users.update")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
-        var updated = await userService.UpdateAsync(id, request, cancellationToken);
+        var updated = await sender.Send(new UpdateUserCommand(
+            id, request.Username, request.FullName, request.Email,
+            request.Phone, request.IsActive, request.TwoFactorEnabled,
+            request.TwoFactorChannel), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -40,7 +57,10 @@ public sealed class UsersController(IUserService userService, ISearchService sea
     [HasPermissionIn("system", "system.users.update")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] PatchUserRequest request, CancellationToken cancellationToken)
     {
-        var updated = await userService.PatchAsync(id, request, cancellationToken);
+        var updated = await sender.Send(new PatchUserCommand(
+            id, request.Username, request.FullName, request.Email,
+            request.Phone, request.IsActive, request.TwoFactorEnabled,
+            request.TwoFactorChannel), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -48,7 +68,7 @@ public sealed class UsersController(IUserService userService, ISearchService sea
     [HasPermissionIn("system", "system.users.delete")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var deleted = await userService.SoftDeleteAsync(id, cancellationToken);
+        var deleted = await sender.Send(new SoftDeleteUserCommand(id), cancellationToken);
         return deleted ? NoContent() : NotFound();
     }
 
@@ -56,7 +76,7 @@ public sealed class UsersController(IUserService userService, ISearchService sea
     [HasPermissionIn("system", "system.users.view")]
     public async Task<IActionResult> GetWorkspaces(Guid id, CancellationToken cancellationToken)
     {
-        var workspaces = await userService.GetWorkspacesAsync(id, cancellationToken);
+        var workspaces = await sender.Send(new GetUserWorkspacesQuery(id), cancellationToken);
         return workspaces is null ? NotFound() : Ok(workspaces);
     }
 
@@ -64,7 +84,7 @@ public sealed class UsersController(IUserService userService, ISearchService sea
     [HasPermissionIn("system", "system.users.update")]
     public async Task<IActionResult> SetWorkspaces(Guid id, [FromBody] SetUserWorkspacesRequest request, CancellationToken cancellationToken)
     {
-        await userService.SetWorkspacesAsync(id, request.Workspaces, cancellationToken);
+        await sender.Send(new SetUserWorkspacesCommand(id, request.Workspaces), cancellationToken);
         return NoContent();
     }
 
@@ -72,7 +92,7 @@ public sealed class UsersController(IUserService userService, ISearchService sea
     [HasPermissionIn("system", "system.users.reset-password")]
     public async Task<IActionResult> ResetPassword(Guid id, [FromBody] AdminResetPasswordRequest request, CancellationToken cancellationToken)
     {
-        var result = await userService.ResetPasswordAsync(id, request.Password, cancellationToken);
+        var result = await sender.Send(new ResetPasswordCommand(id, request.Password), cancellationToken);
         return result ? NoContent() : NotFound();
     }
 
@@ -80,12 +100,12 @@ public sealed class UsersController(IUserService userService, ISearchService sea
     [HasPermissionIn("system", "system.users.view")]
     public async Task<IActionResult> GetIdentitySourceLinks(Guid id, CancellationToken cancellationToken)
     {
-        var links = await userService.GetIdentitySourceLinksAsync(id, cancellationToken);
+        var links = await sender.Send(new GetUserIdentitySourceLinksQuery(id), cancellationToken);
         return links is null ? NotFound() : Ok(links);
     }
 
     [HttpPost("search")]
     [HasPermissionIn("system", "system.users.view")]
     public Task<SearchResponse<UserDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
-        searchService.SearchUsersAsync(request, cancellationToken);
+        sender.Send(new SearchUsersQuery(request), cancellationToken);
 }

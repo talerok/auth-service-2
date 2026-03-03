@@ -1,5 +1,13 @@
 using Auth.Application;
+using Auth.Application.Permissions.Commands.CreatePermission;
+using Auth.Application.Permissions.Commands.PatchPermission;
+using Auth.Application.Permissions.Commands.SoftDeletePermission;
+using Auth.Application.Permissions.Commands.UpdatePermission;
+using Auth.Application.Permissions.Queries.GetAllPermissions;
+using Auth.Application.Permissions.Queries.GetPermissionById;
+using Auth.Application.Permissions.Queries.SearchPermissions;
 using Auth.Api;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,31 +16,31 @@ namespace Auth.Api.Controllers;
 [ApiController]
 [Route("api/permissions")]
 [Authorize]
-public sealed class PermissionsController(IPermissionService permissionService, ISearchService searchService) : ControllerBase
+public sealed class PermissionsController(ISender sender) : ControllerBase
 {
     [HttpGet]
     [HasPermissionIn("system", "system.permissions.view")]
-    public Task<IReadOnlyCollection<PermissionDto>> GetAll(CancellationToken cancellationToken) =>
-        permissionService.GetAllAsync(cancellationToken);
+    public async Task<IReadOnlyCollection<PermissionDto>> GetAll(CancellationToken cancellationToken) =>
+        await sender.Send(new GetAllPermissionsQuery(), cancellationToken);
 
     [HttpGet("{id:guid}")]
     [HasPermissionIn("system", "system.permissions.view")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var item = await permissionService.GetByIdAsync(id, cancellationToken);
+        var item = await sender.Send(new GetPermissionByIdQuery(id), cancellationToken);
         return item is null ? NotFound() : Ok(item);
     }
 
     [HttpPost]
     [HasPermissionIn("system", "system.permissions.create")]
-    public Task<PermissionDto> Create([FromBody] CreatePermissionRequest request, CancellationToken cancellationToken) =>
-        permissionService.CreateAsync(request, cancellationToken);
+    public async Task<PermissionDto> Create([FromBody] CreatePermissionRequest request, CancellationToken cancellationToken) =>
+        await sender.Send(new CreatePermissionCommand(request.Code, request.Description), cancellationToken);
 
     [HttpPut("{id:guid}")]
     [HasPermissionIn("system", "system.permissions.update")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePermissionRequest request, CancellationToken cancellationToken)
     {
-        var updated = await permissionService.UpdateAsync(id, request, cancellationToken);
+        var updated = await sender.Send(new UpdatePermissionCommand(id, request.Description), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -40,7 +48,7 @@ public sealed class PermissionsController(IPermissionService permissionService, 
     [HasPermissionIn("system", "system.permissions.update")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] PatchPermissionRequest request, CancellationToken cancellationToken)
     {
-        var updated = await permissionService.PatchAsync(id, request, cancellationToken);
+        var updated = await sender.Send(new PatchPermissionCommand(id, request.Description), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -48,12 +56,12 @@ public sealed class PermissionsController(IPermissionService permissionService, 
     [HasPermissionIn("system", "system.permissions.delete")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var deleted = await permissionService.SoftDeleteAsync(id, cancellationToken);
+        var deleted = await sender.Send(new SoftDeletePermissionCommand(id), cancellationToken);
         return deleted ? NoContent() : NotFound();
     }
 
     [HttpPost("search")]
     [HasPermissionIn("system", "system.permissions.view")]
-    public Task<SearchResponse<PermissionDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
-        searchService.SearchPermissionsAsync(request, cancellationToken);
+    public async Task<SearchResponse<PermissionDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
+        await sender.Send(new SearchPermissionsQuery(request), cancellationToken);
 }

@@ -1,5 +1,15 @@
 using Auth.Application;
+using Auth.Application.Roles.Commands.CreateRole;
+using Auth.Application.Roles.Commands.PatchRole;
+using Auth.Application.Roles.Commands.SetRolePermissions;
+using Auth.Application.Roles.Commands.SoftDeleteRole;
+using Auth.Application.Roles.Commands.UpdateRole;
+using Auth.Application.Roles.Queries.GetAllRoles;
+using Auth.Application.Roles.Queries.GetRoleById;
+using Auth.Application.Roles.Queries.GetRolePermissions;
+using Auth.Application.Roles.Queries.SearchRoles;
 using Auth.Api;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,31 +18,31 @@ namespace Auth.Api.Controllers;
 [ApiController]
 [Route("api/roles")]
 [Authorize]
-public sealed class RolesController(IRoleService roleService, ISearchService searchService) : ControllerBase
+public sealed class RolesController(ISender sender) : ControllerBase
 {
     [HttpGet]
     [HasPermissionIn("system", "system.roles.view")]
-    public Task<IReadOnlyCollection<RoleDto>> GetAll(CancellationToken cancellationToken) =>
-        roleService.GetAllAsync(cancellationToken);
+    public async Task<IReadOnlyCollection<RoleDto>> GetAll(CancellationToken cancellationToken) =>
+        await sender.Send(new GetAllRolesQuery(), cancellationToken);
 
     [HttpGet("{id:guid}")]
     [HasPermissionIn("system", "system.roles.view")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var item = await roleService.GetByIdAsync(id, cancellationToken);
+        var item = await sender.Send(new GetRoleByIdQuery(id), cancellationToken);
         return item is null ? NotFound() : Ok(item);
     }
 
     [HttpPost]
     [HasPermissionIn("system", "system.roles.create")]
-    public Task<RoleDto> Create([FromBody] CreateRoleRequest request, CancellationToken cancellationToken) =>
-        roleService.CreateAsync(request, cancellationToken);
+    public async Task<RoleDto> Create([FromBody] CreateRoleRequest request, CancellationToken cancellationToken) =>
+        await sender.Send(new CreateRoleCommand(request.Name, request.Description), cancellationToken);
 
     [HttpPut("{id:guid}")]
     [HasPermissionIn("system", "system.roles.update")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRoleRequest request, CancellationToken cancellationToken)
     {
-        var updated = await roleService.UpdateAsync(id, request, cancellationToken);
+        var updated = await sender.Send(new UpdateRoleCommand(id, request.Name, request.Description), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -40,7 +50,7 @@ public sealed class RolesController(IRoleService roleService, ISearchService sea
     [HasPermissionIn("system", "system.roles.update")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] PatchRoleRequest request, CancellationToken cancellationToken)
     {
-        var updated = await roleService.PatchAsync(id, request, cancellationToken);
+        var updated = await sender.Send(new PatchRoleCommand(id, request.Name, request.Description), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -48,7 +58,7 @@ public sealed class RolesController(IRoleService roleService, ISearchService sea
     [HasPermissionIn("system", "system.roles.delete")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var deleted = await roleService.SoftDeleteAsync(id, cancellationToken);
+        var deleted = await sender.Send(new SoftDeleteRoleCommand(id), cancellationToken);
         return deleted ? NoContent() : NotFound();
     }
 
@@ -56,7 +66,7 @@ public sealed class RolesController(IRoleService roleService, ISearchService sea
     [HasPermissionIn("system", "system.roles.view")]
     public async Task<IActionResult> GetPermissions(Guid id, CancellationToken cancellationToken)
     {
-        var permissions = await roleService.GetPermissionsAsync(id, cancellationToken);
+        var permissions = await sender.Send(new GetRolePermissionsQuery(id), cancellationToken);
         return permissions is null ? NotFound() : Ok(permissions);
     }
 
@@ -64,12 +74,12 @@ public sealed class RolesController(IRoleService roleService, ISearchService sea
     [HasPermissionIn("system", "system.roles.update")]
     public async Task<IActionResult> SetPermissions(Guid id, [FromBody] SetPermissionsRequest request, CancellationToken cancellationToken)
     {
-        await roleService.SetPermissionsAsync(id, request.Permissions, cancellationToken);
+        await sender.Send(new SetRolePermissionsCommand(id, request.Permissions), cancellationToken);
         return NoContent();
     }
 
     [HttpPost("search")]
     [HasPermissionIn("system", "system.roles.view")]
-    public Task<SearchResponse<RoleDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
-        searchService.SearchRolesAsync(request, cancellationToken);
+    public async Task<SearchResponse<RoleDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
+        await sender.Send(new SearchRolesQuery(request), cancellationToken);
 }
