@@ -33,6 +33,12 @@ public sealed class OpenSearchIndexService(
     public Task DeleteWorkspaceAsync(Guid id, CancellationToken cancellationToken) =>
         DeleteAsync(indexNames.Workspaces, id, cancellationToken);
 
+    public Task IndexApiClientAsync(ApiClientDto apiClient, CancellationToken cancellationToken) =>
+        IndexAsync(indexNames.ApiClients, apiClient.Id, apiClient, cancellationToken);
+
+    public Task DeleteApiClientAsync(Guid id, CancellationToken cancellationToken) =>
+        DeleteAsync(indexNames.ApiClients, id, cancellationToken);
+
     private async Task IndexAsync<TDocument>(string indexName, Guid id, TDocument document, CancellationToken cancellationToken)
         where TDocument : class
     {

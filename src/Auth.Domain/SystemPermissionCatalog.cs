@@ -27,6 +27,10 @@ public static class SystemPermissionCatalog
         (20, "system.identity-sources.view", "View identity sources"),
         (21, "system.identity-sources.create", "Create identity sources"),
         (22, "system.identity-sources.update", "Update identity sources"),
-        (23, "system.identity-sources.delete", "Delete identity sources")
+        (23, "system.identity-sources.delete", "Delete identity sources"),
+        (24, "system.api-clients.view", "View API clients"),
+        (25, "system.api-clients.create", "Create API clients"),
+        (26, "system.api-clients.update", "Update API clients"),
+        (27, "system.api-clients.delete", "Delete API clients")
     ];
 }

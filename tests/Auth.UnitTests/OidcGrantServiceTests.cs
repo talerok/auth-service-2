@@ -3,6 +3,7 @@ using Auth.Application;
 using Auth.Domain;
 using Auth.Infrastructure;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -246,15 +247,27 @@ public sealed class OidcGrantServiceTests
     private static OidcGrantService CreateService(
         Mock<IAuthService>? authService = null,
         Mock<ITwoFactorAuthService>? twoFactorService = null,
-        Mock<IWorkspaceMaskService>? workspaceMaskService = null)
+        Mock<IWorkspaceMaskService>? workspaceMaskService = null,
+        AuthDbContext? dbContext = null)
     {
         authService ??= new Mock<IAuthService>();
         twoFactorService ??= new Mock<ITwoFactorAuthService>();
         workspaceMaskService ??= new Mock<IWorkspaceMaskService>();
+        dbContext ??= CreateDbContext();
 
         return new OidcGrantService(
             authService.Object,
             twoFactorService.Object,
-            workspaceMaskService.Object);
+            workspaceMaskService.Object,
+            dbContext);
+    }
+
+    private static AuthDbContext CreateDbContext()
+    {
+        var options = new DbContextOptionsBuilder<AuthDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+            .Options;
+
+        return new AuthDbContext(options);
     }
 }

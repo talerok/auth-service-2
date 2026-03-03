@@ -14,4 +14,7 @@ public interface IOidcGrantService
 
     Task<ClaimsPrincipal> BuildPrincipalAsync(
         Guid userId, IEnumerable<string> scopes, CancellationToken cancellationToken);
+
+    Task<ClaimsPrincipal> HandleClientCredentialsGrantAsync(
+        string clientId, IReadOnlyCollection<string> scopes, CancellationToken cancellationToken);
 }

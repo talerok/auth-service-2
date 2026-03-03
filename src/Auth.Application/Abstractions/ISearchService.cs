@@ -6,6 +6,7 @@ public interface ISearchService
     Task<SearchResponse<RoleDto>> SearchRolesAsync(SearchRequest request, CancellationToken cancellationToken);
     Task<SearchResponse<PermissionDto>> SearchPermissionsAsync(SearchRequest request, CancellationToken cancellationToken);
     Task<SearchResponse<WorkspaceDto>> SearchWorkspacesAsync(SearchRequest request, CancellationToken cancellationToken);
+    Task<SearchResponse<ApiClientDto>> SearchApiClientsAsync(SearchRequest request, CancellationToken cancellationToken);
 }
 
 public interface ISearchIndexService
@@ -21,6 +22,9 @@ public interface ISearchIndexService
 
     Task IndexWorkspaceAsync(WorkspaceDto workspace, CancellationToken cancellationToken);
     Task DeleteWorkspaceAsync(Guid id, CancellationToken cancellationToken);
+
+    Task IndexApiClientAsync(ApiClientDto apiClient, CancellationToken cancellationToken);
+    Task DeleteApiClientAsync(Guid id, CancellationToken cancellationToken);
 }
 
 public interface ISearchMaintenanceService
@@ -31,4 +35,5 @@ public interface ISearchMaintenanceService
     Task ReindexRolesAsync(CancellationToken cancellationToken);
     Task ReindexPermissionsAsync(CancellationToken cancellationToken);
     Task ReindexWorkspacesAsync(CancellationToken cancellationToken);
+    Task ReindexApiClientsAsync(CancellationToken cancellationToken);
 }

@@ -23,4 +23,6 @@ public static class AuthErrorCatalog
     public const string IdentitySourceDuplicateLink = "AUTH_IDENTITY_SOURCE_DUPLICATE_LINK";
     public const string IdentitySourceTypeMismatch = "AUTH_IDENTITY_SOURCE_TYPE_MISMATCH";
     public const string IdentitySourceUsernameRequired = "AUTH_IDENTITY_SOURCE_USERNAME_REQUIRED";
+    public const string ApiClientNotFound = "AUTH_API_CLIENT_NOT_FOUND";
+    public const string ApiClientInactive = "AUTH_API_CLIENT_INACTIVE";
 }

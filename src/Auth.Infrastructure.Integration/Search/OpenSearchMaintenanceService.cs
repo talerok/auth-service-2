@@ -51,6 +51,16 @@ public sealed class OpenSearchMaintenanceService(
         {
             await ReindexWorkspacesAsync(cancellationToken);
         }
+
+        if (await EnsureIndexExistsAsync<ApiClientDto>(indexNames.ApiClients, p => p
+                .Keyword(k => k.Name(n => n.Id))
+                .Keyword(k => k.Name(n => n.Name))
+                .Keyword(k => k.Name(n => n.Description))
+                .Keyword(k => k.Name(n => n.ClientId))
+                .Boolean(b => b.Name(n => n.IsActive)), cancellationToken))
+        {
+            await ReindexApiClientsAsync(cancellationToken);
+        }
     }
 
     public async Task ReindexAllAsync(CancellationToken cancellationToken)
@@ -59,6 +69,7 @@ public sealed class OpenSearchMaintenanceService(
         await ReindexRolesAsync(cancellationToken);
         await ReindexPermissionsAsync(cancellationToken);
         await ReindexWorkspacesAsync(cancellationToken);
+        await ReindexApiClientsAsync(cancellationToken);
     }
 
     public async Task ReindexUsersAsync(CancellationToken cancellationToken)
@@ -102,6 +113,17 @@ public sealed class OpenSearchMaintenanceService(
         foreach (var workspace in workspaces)
         {
             await searchIndexService.IndexWorkspaceAsync(workspace, cancellationToken);
+        }
+    }
+
+    public async Task ReindexApiClientsAsync(CancellationToken cancellationToken)
+    {
+        var apiClients = await dbContext.ApiClients.AsNoTracking()
+            .Select(x => new ApiClientDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive))
+            .ToListAsync(cancellationToken);
+        foreach (var apiClient in apiClients)
+        {
+            await searchIndexService.IndexApiClientAsync(apiClient, cancellationToken);
         }
     }
 

@@ -212,6 +212,9 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
 
         public Task<SearchResponse<WorkspaceDto>> SearchWorkspacesAsync(SearchRequest request, CancellationToken cancellationToken) =>
             Task.FromResult(new SearchResponse<WorkspaceDto>(Array.Empty<WorkspaceDto>(), request.Page, request.PageSize, 0));
+
+        public Task<SearchResponse<ApiClientDto>> SearchApiClientsAsync(SearchRequest request, CancellationToken cancellationToken) =>
+            Task.FromResult(new SearchResponse<ApiClientDto>(Array.Empty<ApiClientDto>(), request.Page, request.PageSize, 0));
     }
 
     private sealed class StubPermissionBitCache : IPermissionBitCache

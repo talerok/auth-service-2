@@ -19,4 +19,8 @@ public sealed class NullSearchIndexService : ISearchIndexService
     public Task IndexWorkspaceAsync(WorkspaceDto workspace, CancellationToken cancellationToken) => Task.CompletedTask;
 
     public Task DeleteWorkspaceAsync(Guid id, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task IndexApiClientAsync(ApiClientDto apiClient, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task DeleteApiClientAsync(Guid id, CancellationToken cancellationToken) => Task.CompletedTask;
 }

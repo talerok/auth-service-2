@@ -34,6 +34,9 @@ public sealed class AuthorizationController(
         if (request.GrantType == OidcConstants.TokenExchangeGrantType)
             return await HandleTokenExchange(request, cancellationToken);
 
+        if (request.IsClientCredentialsGrantType())
+            return await HandleClientCredentialsGrant(request, cancellationToken);
+
         return OidcForbid(Errors.UnsupportedGrantType, "The specified grant type is not supported.");
     }
 
@@ -197,6 +200,27 @@ public sealed class AuthorizationController(
 
             _ => throw new InvalidOperationException($"Unexpected grant result: {result.GetType().Name}")
         };
+    }
+
+    private async Task<IActionResult> HandleClientCredentialsGrant(
+        OpenIddictRequest request, CancellationToken cancellationToken)
+    {
+        var clientId = request.ClientId;
+        if (string.IsNullOrWhiteSpace(clientId))
+            return OidcForbid(Errors.InvalidRequest, "The client_id parameter is required.");
+
+        ClaimsPrincipal principal;
+        try
+        {
+            principal = await oidcGrantService.HandleClientCredentialsGrantAsync(
+                clientId, request.GetScopes().ToList(), cancellationToken);
+        }
+        catch (AuthException)
+        {
+            return OidcForbid(Errors.InvalidGrant, "The client credentials are invalid.");
+        }
+
+        return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
     private IActionResult OidcForbid(string error, string description) =>

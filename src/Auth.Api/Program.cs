@@ -47,6 +47,7 @@ builder.Services.AddOpenIddict()
 
         options.AllowPasswordFlow()
               .AllowRefreshTokenFlow()
+              .AllowClientCredentialsFlow()
               .AllowCustomFlow(OidcConstants.MfaOtpGrantType)
               .AllowCustomFlow(OidcConstants.TokenExchangeGrantType);
 

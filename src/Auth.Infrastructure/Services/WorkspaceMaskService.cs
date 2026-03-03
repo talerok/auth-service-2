@@ -26,4 +26,26 @@ public sealed class WorkspaceMaskService(AuthDbContext dbContext) : IWorkspaceMa
 
         return result;
     }
+
+    public async Task<Dictionary<string, byte[]>> BuildApiClientWorkspaceMasksAsync(Guid apiClientId, CancellationToken cancellationToken)
+    {
+        var matrix = await dbContext.ApiClientWorkspaces
+            .Where(acw => acw.ApiClientId == apiClientId)
+            .Select(acw => new
+            {
+                acw.Workspace!.Code,
+                Bits = acw.ApiClientWorkspaceRoles
+                    .SelectMany(acwr => acwr.Role!.RolePermissions)
+                    .Select(rp => rp.Permission!.Bit)
+            })
+            .ToListAsync(cancellationToken);
+
+        var result = new Dictionary<string, byte[]>();
+        foreach (var row in matrix)
+        {
+            result[row.Code] = PermissionBitmask.BuildMask(row.Bits);
+        }
+
+        return result;
+    }
 }

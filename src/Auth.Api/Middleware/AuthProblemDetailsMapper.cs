@@ -41,6 +41,8 @@ public static class AuthProblemDetailsMapper
             AuthErrorCatalog.IdentitySourceUserInactive => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Linked user is inactive"),
             AuthErrorCatalog.IdentitySourceDuplicateLink => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "This identity link already exists"),
             AuthErrorCatalog.IdentitySourceTypeMismatch => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Config type does not match identity source type"),
+            AuthErrorCatalog.ApiClientNotFound => new AuthProblemDescriptor(StatusCodes.Status404NotFound, "Resource not found", "API client not found"),
+            AuthErrorCatalog.ApiClientInactive => new AuthProblemDescriptor(StatusCodes.Status403Forbidden, "Forbidden", "API client is inactive"),
             _ => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Business rule violation")
         };
     }
