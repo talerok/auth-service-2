@@ -23,6 +23,7 @@ cp .env.example .env
 ## Full pipeline script
 
 Скрипт `scripts/run-docker.py` выполняет:
+
 - `dotnet restore`
 - `dotnet build`
 - `dotnet test`
@@ -53,6 +54,7 @@ COMPOSE_PROFILES=local-opensearch docker compose up --build -d
 ```
 
 Поднимаются контейнеры:
+
 - `auth-api`
 - `postgres`
 - `opensearch`
@@ -89,6 +91,7 @@ docker compose up --build -d
 ```
 
 В этом режиме запускаются:
+
 - `auth-api`
 - `postgres`
 

@@ -20,6 +20,7 @@ JWT содержит claim `ws` в формате `workspaceCode -> base64(bitma
 ## Runtime configuration
 
 Проект использует Docker-only runtime-конфигурацию:
+
 - значения секции `Integration` приходят из env-переменных `Integration__...`;
 - источник значений для локального запуска в Docker: `.env` (или `.env.example` через `--env-file`);
 - режимы OpenSearch переключаются через `COMPOSE_PROFILES=local-opensearch` и `OPENSEARCH_URL`.

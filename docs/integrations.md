@@ -62,12 +62,12 @@ Request:
 
 Responses:
 
-| HTTP    | Body                                          | → `TwoFactorDeliveryResult` |
-| ------- | --------------------------------------------- | --------------------------- |
-| `200`   | `{"status":"accepted"}`                       | `Delivered`                 |
+| HTTP    | Body                                         | → `TwoFactorDeliveryResult` |
+| ------- | -------------------------------------------- | --------------------------- |
+| `200`   | `{"status":"accepted"}`                      | `Delivered`                 |
 | `422`   | `{"status":"rejected","reason":"<причина>"}` | `DeliveryFailed`            |
-| `503`   | `{"status":"unavailable"}`                    | `ProviderUnavailable`       |
-| timeout | —                                             | `ProviderUnavailable`       |
+| `503`   | `{"status":"unavailable"}`                   | `ProviderUnavailable`       |
+| timeout | —                                            | `ProviderUnavailable`       |
 
 Причины `422`: `invalid_phone`, `phone_blocked`, `rate_limited`, `message_too_long`.
 
