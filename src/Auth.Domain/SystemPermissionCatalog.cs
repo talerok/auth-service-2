@@ -39,6 +39,10 @@ public static class SystemPermissionCatalog
         (26, "system.api-clients.update", "Update API clients"),
         (27, "system.api-clients.delete", "Delete API clients"),
         (28, "system.permissions.import", "Import permissions"),
-        (29, "system.permissions.export", "Export permissions")
+        (29, "system.permissions.export", "Export permissions"),
+        (30, "system.roles.import", "Import roles"),
+        (31, "system.roles.export", "Export roles"),
+        (32, "system.workspaces.import", "Import workspaces"),
+        (33, "system.workspaces.export", "Export workspaces")
     ];
 }

@@ -26,4 +26,6 @@ public static class AuthErrorCatalog
     public const string IdentitySourceUsernameRequired = "AUTH_IDENTITY_SOURCE_USERNAME_REQUIRED";
     public const string ApiClientNotFound = "AUTH_API_CLIENT_NOT_FOUND";
     public const string ApiClientInactive = "AUTH_API_CLIENT_INACTIVE";
+    public const string PermissionCodeNotFound = "AUTH_PERMISSION_CODE_NOT_FOUND";
+    public const string SystemWorkspaceImportForbidden = "AUTH_SYSTEM_WORKSPACE_IMPORT_FORBIDDEN";
 }

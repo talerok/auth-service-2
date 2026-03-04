@@ -38,6 +38,10 @@
 | 27  | `system.api-clients.delete` | Delete API clients |
 | 28  | `system.permissions.import` | Import permissions |
 | 29  | `system.permissions.export` | Export permissions |
+| 30  | `system.roles.import` | Import roles |
+| 31  | `system.roles.export` | Export roles |
+| 32  | `system.workspaces.import` | Import workspaces |
+| 33  | `system.workspaces.export` | Export workspaces |
 
 ## Упаковка в байты
 
@@ -65,4 +69,6 @@ bitmask = [0x11, 0x01]
 
 - Системные полномочия (`is_system = true`) нельзя удалить — `AUTH_SYSTEM_PERMISSION_DELETE_FORBIDDEN`.
 - Импорт полномочий с битом < 128 запрещён — `AUTH_SYSTEM_PERMISSION_IMPORT_FORBIDDEN`.
+- Импорт системных рабочих окружений запрещён — `AUTH_SYSTEM_WORKSPACE_IMPORT_FORBIDDEN`.
+- Импорт ролей с несуществующими кодами полномочий — `AUTH_PERMISSION_CODE_NOT_FOUND`.
 - Новые системные полномочия добавляются через `SystemPermissionCatalog` с уникальным номером бита в диапазоне 0–127.

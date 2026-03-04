@@ -1,9 +1,12 @@
+using System.Text.Json;
 using Auth.Application;
 using Auth.Application.Roles.Commands.CreateRole;
+using Auth.Application.Roles.Commands.ImportRoles;
 using Auth.Application.Roles.Commands.PatchRole;
 using Auth.Application.Roles.Commands.SetRolePermissions;
 using Auth.Application.Roles.Commands.SoftDeleteRole;
 using Auth.Application.Roles.Commands.UpdateRole;
+using Auth.Application.Roles.Queries.ExportRoles;
 using Auth.Application.Roles.Queries.GetAllRoles;
 using Auth.Application.Roles.Queries.GetRoleById;
 using Auth.Application.Roles.Queries.GetRolePermissions;
@@ -20,6 +23,8 @@ namespace Auth.Api.Controllers;
 [Authorize]
 public sealed class RolesController(ISender sender) : ControllerBase
 {
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
     [HttpGet]
     [HasPermissionIn("system", "system.roles.view")]
     public async Task<IReadOnlyCollection<RoleDto>> GetAll(CancellationToken cancellationToken) =>
@@ -82,4 +87,24 @@ public sealed class RolesController(ISender sender) : ControllerBase
     [HasPermissionIn("system", "system.roles.view")]
     public async Task<SearchResponse<RoleDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
         await sender.Send(new SearchRolesQuery(request), cancellationToken);
+
+    [HttpGet("export")]
+    [HasPermissionIn("system", "system.roles.export")]
+    public async Task<IActionResult> Export(CancellationToken cancellationToken)
+    {
+        var items = await sender.Send(new ExportRolesQuery(), cancellationToken);
+        var json = JsonSerializer.SerializeToUtf8Bytes(items, JsonOptions);
+        return File(json, "application/json", "roles.json");
+    }
+
+    [HttpPost("import")]
+    [HasPermissionIn("system", "system.roles.import")]
+    public async Task<ImportRolesResult> Import(IFormFile file, CancellationToken cancellationToken)
+    {
+        await using var stream = file.OpenReadStream();
+        var items = await JsonSerializer.DeserializeAsync<IReadOnlyCollection<ImportRoleItem>>(stream,
+            JsonOptions, cancellationToken)
+            ?? [];
+        return await sender.Send(new ImportRolesCommand(items), cancellationToken);
+    }
 }

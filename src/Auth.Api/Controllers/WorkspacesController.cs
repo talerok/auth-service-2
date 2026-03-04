@@ -1,8 +1,11 @@
+using System.Text.Json;
 using Auth.Application;
 using Auth.Application.Workspaces.Commands.CreateWorkspace;
+using Auth.Application.Workspaces.Commands.ImportWorkspaces;
 using Auth.Application.Workspaces.Commands.PatchWorkspace;
 using Auth.Application.Workspaces.Commands.SoftDeleteWorkspace;
 using Auth.Application.Workspaces.Commands.UpdateWorkspace;
+using Auth.Application.Workspaces.Queries.ExportWorkspaces;
 using Auth.Application.Workspaces.Queries.GetAllWorkspaces;
 using Auth.Application.Workspaces.Queries.GetWorkspaceById;
 using Auth.Application.Workspaces.Queries.SearchWorkspaces;
@@ -18,6 +21,8 @@ namespace Auth.Api.Controllers;
 [Authorize]
 public sealed class WorkspacesController(ISender sender) : ControllerBase
 {
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
     [HttpGet]
     [HasPermissionIn("system", "system.workspaces.view")]
     public async Task<IReadOnlyCollection<WorkspaceDto>> GetAll(CancellationToken cancellationToken) =>
@@ -64,4 +69,24 @@ public sealed class WorkspacesController(ISender sender) : ControllerBase
     [HasPermissionIn("system", "system.workspaces.view")]
     public async Task<SearchResponse<WorkspaceDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
         await sender.Send(new SearchWorkspacesQuery(request), cancellationToken);
+
+    [HttpGet("export")]
+    [HasPermissionIn("system", "system.workspaces.export")]
+    public async Task<IActionResult> Export(CancellationToken cancellationToken)
+    {
+        var items = await sender.Send(new ExportWorkspacesQuery(), cancellationToken);
+        var json = JsonSerializer.SerializeToUtf8Bytes(items, JsonOptions);
+        return File(json, "application/json", "workspaces.json");
+    }
+
+    [HttpPost("import")]
+    [HasPermissionIn("system", "system.workspaces.import")]
+    public async Task<ImportWorkspacesResult> Import(IFormFile file, CancellationToken cancellationToken)
+    {
+        await using var stream = file.OpenReadStream();
+        var items = await JsonSerializer.DeserializeAsync<IReadOnlyCollection<ImportWorkspaceItem>>(stream,
+            JsonOptions, cancellationToken)
+            ?? [];
+        return await sender.Send(new ImportWorkspacesCommand(items), cancellationToken);
+    }
 }
