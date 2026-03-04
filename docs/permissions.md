@@ -32,6 +32,12 @@
 | 21  | `system.identity-sources.create` | Create identity sources |
 | 22  | `system.identity-sources.update` | Update identity sources |
 | 23  | `system.identity-sources.delete` | Delete identity sources |
+| 24  | `system.api-clients.view` | View API clients |
+| 25  | `system.api-clients.create` | Create API clients |
+| 26  | `system.api-clients.update` | Update API clients |
+| 27  | `system.api-clients.delete` | Delete API clients |
+| 28  | `system.permissions.import` | Import permissions |
+| 29  | `system.permissions.export` | Export permissions |
 
 ## Упаковка в байты
 
@@ -58,4 +64,5 @@ bitmask = [0x11, 0x01]
 ## Системные ограничения
 
 - Системные полномочия (`is_system = true`) нельзя удалить — `AUTH_SYSTEM_PERMISSION_DELETE_FORBIDDEN`.
+- Импорт полномочий с битом < 128 запрещён — `AUTH_SYSTEM_PERMISSION_IMPORT_FORBIDDEN`.
 - Новые системные полномочия добавляются через `SystemPermissionCatalog` с уникальным номером бита в диапазоне 0–127.

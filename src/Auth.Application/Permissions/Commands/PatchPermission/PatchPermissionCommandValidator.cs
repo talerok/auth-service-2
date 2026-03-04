@@ -7,5 +7,6 @@ public sealed class PatchPermissionCommandValidator : AbstractValidator<PatchPer
     public PatchPermissionCommandValidator()
     {
         RuleFor(x => x.Id).NotEmpty();
+        RuleFor(x => x.Code).MaximumLength(200).When(x => x.Code is not null);
     }
 }

@@ -1,17 +1,21 @@
 using Auth.Application;
 using Auth.Application.Permissions.Commands.CreatePermission;
+using Auth.Application.Permissions.Commands.ImportPermissions;
 using Auth.Application.Permissions.Commands.UpdatePermission;
 using Auth.Application.Permissions.Commands.PatchPermission;
 using Auth.Application.Permissions.Commands.SoftDeletePermission;
+using Auth.Application.Permissions.Queries.ExportPermissions;
 using Auth.Application.Permissions.Queries.GetAllPermissions;
 using Auth.Application.Permissions.Queries.GetPermissionById;
 using Auth.Application.Permissions.Queries.SearchPermissions;
 using Auth.Domain;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Permissions.Commands.CreatePermission;
+using Auth.Infrastructure.Permissions.Commands.ImportPermissions;
 using Auth.Infrastructure.Permissions.Commands.UpdatePermission;
 using Auth.Infrastructure.Permissions.Commands.PatchPermission;
 using Auth.Infrastructure.Permissions.Commands.SoftDeletePermission;
+using Auth.Infrastructure.Permissions.Queries.ExportPermissions;
 using Auth.Infrastructure.Permissions.Queries.GetAllPermissions;
 using Auth.Infrastructure.Permissions.Queries.GetPermissionById;
 using Auth.Infrastructure.Permissions.Queries.SearchPermissions;
@@ -130,15 +134,16 @@ public sealed class PermissionHandlerTests
         var handler = new UpdatePermissionCommandHandler(dbContext, searchIndex.Object);
 
         var result = await handler.Handle(
-            new UpdatePermissionCommand(permission.Id, "NewDesc"),
+            new UpdatePermissionCommand(permission.Id, "new.code", "NewDesc"),
             CancellationToken.None);
 
         result.Should().NotBeNull();
         result!.Description.Should().Be("NewDesc");
-        result.Code.Should().Be("perm.code");
+        result.Code.Should().Be("new.code");
 
         var entity = await dbContext.Permissions.FirstAsync(x => x.Id == permission.Id);
         entity.Description.Should().Be("NewDesc");
+        entity.Code.Should().Be("new.code");
 
         searchIndex.Verify(
             x => x.IndexPermissionAsync(It.Is<PermissionDto>(p => p.Id == permission.Id), It.IsAny<CancellationToken>()),
@@ -153,7 +158,7 @@ public sealed class PermissionHandlerTests
         var handler = new UpdatePermissionCommandHandler(dbContext, searchIndex.Object);
 
         var result = await handler.Handle(
-            new UpdatePermissionCommand(Guid.NewGuid(), "Desc"),
+            new UpdatePermissionCommand(Guid.NewGuid(), "code", "Desc"),
             CancellationToken.None);
 
         result.Should().BeNull();
@@ -174,7 +179,7 @@ public sealed class PermissionHandlerTests
         var handler = new PatchPermissionCommandHandler(dbContext, searchIndex.Object);
 
         var result = await handler.Handle(
-            new PatchPermissionCommand(permission.Id, "UpdatedDesc"),
+            new PatchPermissionCommand(permission.Id, null, "UpdatedDesc"),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -200,11 +205,12 @@ public sealed class PermissionHandlerTests
         var handler = new PatchPermissionCommandHandler(dbContext, searchIndex.Object);
 
         var result = await handler.Handle(
-            new PatchPermissionCommand(permission.Id, null),
+            new PatchPermissionCommand(permission.Id, null, null),
             CancellationToken.None);
 
         result.Should().NotBeNull();
         result!.Description.Should().Be("OriginalDesc");
+        result.Code.Should().Be("perm.code");
     }
 
     [Fact]
@@ -215,7 +221,7 @@ public sealed class PermissionHandlerTests
         var handler = new PatchPermissionCommandHandler(dbContext, searchIndex.Object);
 
         var result = await handler.Handle(
-            new PatchPermissionCommand(Guid.NewGuid(), "Desc"),
+            new PatchPermissionCommand(Guid.NewGuid(), null, "Desc"),
             CancellationToken.None);
 
         result.Should().BeNull();
@@ -367,6 +373,178 @@ public sealed class PermissionHandlerTests
         searchService.Verify(
             x => x.SearchPermissionsAsync(request, It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    // ── ExportPermissionsQueryHandler ───────────────────────────────────
+
+    [Fact]
+    public async Task Export_ReturnsOnlyCustomPermissions()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Permissions.AddRange(
+            new Permission { Bit = 5, Code = "system.perm", Description = "System", IsSystem = true },
+            new Permission { Bit = 130, Code = "custom.a", Description = "Custom A" },
+            new Permission { Bit = 131, Code = "custom.b", Description = "Custom B" });
+        await dbContext.SaveChangesAsync();
+        var handler = new ExportPermissionsQueryHandler(dbContext);
+
+        var result = await handler.Handle(new ExportPermissionsQuery(), CancellationToken.None);
+
+        result.Should().HaveCount(2);
+        result.Select(x => x.Code).Should().BeEquivalentTo("custom.a", "custom.b");
+        result.Should().AllSatisfy(x => x.Bit.Should().BeGreaterThanOrEqualTo(SystemPermissionCatalog.CustomBitStart));
+    }
+
+    [Fact]
+    public async Task Export_ExcludesSoftDeleted()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Permissions.AddRange(
+            new Permission { Bit = 128, Code = "active", Description = "Active" },
+            new Permission { Bit = 129, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
+        await dbContext.SaveChangesAsync();
+        var handler = new ExportPermissionsQueryHandler(dbContext);
+
+        var result = await handler.Handle(new ExportPermissionsQuery(), CancellationToken.None);
+
+        result.Should().HaveCount(1);
+        result.Single().Code.Should().Be("active");
+    }
+
+    [Fact]
+    public async Task Export_OrdersByBit()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Permissions.AddRange(
+            new Permission { Bit = 200, Code = "later", Description = "Later" },
+            new Permission { Bit = 128, Code = "first", Description = "First" });
+        await dbContext.SaveChangesAsync();
+        var handler = new ExportPermissionsQueryHandler(dbContext);
+
+        var result = await handler.Handle(new ExportPermissionsQuery(), CancellationToken.None);
+
+        result.Select(x => x.Bit).Should().BeInAscendingOrder();
+    }
+
+    // ── ImportPermissionsCommandHandler ──────────────────────────────────
+
+    [Fact]
+    public async Task Import_CreatesNewPermissions()
+    {
+        await using var dbContext = CreateDbContext();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
+
+        var items = new List<ImportPermissionItem>
+        {
+            new(128, "perm.a", "A"),
+            new(129, "perm.b", "B")
+        };
+        var result = await handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
+
+        result.Created.Should().Be(2);
+        result.Updated.Should().Be(0);
+        var all = await dbContext.Permissions.ToListAsync();
+        all.Should().HaveCount(2);
+        all.Should().AllSatisfy(x => x.IsSystem.Should().BeFalse());
+    }
+
+    [Fact]
+    public async Task Import_UpdatesExistingPermissions()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Permissions.Add(new Permission { Bit = 128, Code = "old.code", Description = "Old" });
+        await dbContext.SaveChangesAsync();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
+
+        var items = new List<ImportPermissionItem> { new(128, "new.code", "New") };
+        var result = await handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
+
+        result.Created.Should().Be(0);
+        result.Updated.Should().Be(1);
+        var entity = await dbContext.Permissions.FirstAsync(x => x.Bit == 128);
+        entity.Code.Should().Be("new.code");
+        entity.Description.Should().Be("New");
+    }
+
+    [Fact]
+    public async Task Import_MixedNewAndExisting_ReturnsCorrectCounts()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Permissions.Add(new Permission { Bit = 128, Code = "existing", Description = "Existing" });
+        await dbContext.SaveChangesAsync();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
+
+        var items = new List<ImportPermissionItem>
+        {
+            new(128, "updated", "Updated"),
+            new(129, "created", "Created")
+        };
+        var result = await handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
+
+        result.Created.Should().Be(1);
+        result.Updated.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Import_SystemBit_ThrowsAuthException()
+    {
+        await using var dbContext = CreateDbContext();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
+
+        var items = new List<ImportPermissionItem> { new(5, "system.hack", "Hack") };
+        var act = () => handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
+
+        var exception = await act.Should().ThrowAsync<AuthException>();
+        exception.Which.Code.Should().Be(AuthErrorCatalog.SystemPermissionImportForbidden);
+    }
+
+    [Fact]
+    public async Task Import_BitAtBoundary127_ThrowsAuthException()
+    {
+        await using var dbContext = CreateDbContext();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
+
+        var items = new List<ImportPermissionItem> { new(127, "boundary", "Boundary") };
+        var act = () => handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
+
+        var exception = await act.Should().ThrowAsync<AuthException>();
+        exception.Which.Code.Should().Be(AuthErrorCatalog.SystemPermissionImportForbidden);
+    }
+
+    [Fact]
+    public async Task Import_BitAtBoundary128_Succeeds()
+    {
+        await using var dbContext = CreateDbContext();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
+
+        var items = new List<ImportPermissionItem> { new(128, "boundary.ok", "Boundary OK") };
+        var result = await handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
+
+        result.Created.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Import_RestoresSoftDeletedPermission()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Permissions.Add(new Permission { Bit = 128, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
+        await dbContext.SaveChangesAsync();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
+
+        var items = new List<ImportPermissionItem> { new(128, "restored", "Restored") };
+        var result = await handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
+
+        result.Updated.Should().Be(1);
+        var entity = await dbContext.Permissions.IgnoreQueryFilters().FirstAsync(x => x.Bit == 128);
+        entity.DeletedAt.Should().BeNull();
+        entity.Code.Should().Be("restored");
     }
 
     // ── Helper ──────────────────────────────────────────────────────────

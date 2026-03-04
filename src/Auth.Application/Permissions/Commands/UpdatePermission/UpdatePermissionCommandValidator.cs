@@ -7,6 +7,7 @@ public sealed class UpdatePermissionCommandValidator : AbstractValidator<UpdateP
     public UpdatePermissionCommandValidator()
     {
         RuleFor(x => x.Id).NotEmpty();
+        RuleFor(x => x.Code).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Description).MaximumLength(500);
     }
 }

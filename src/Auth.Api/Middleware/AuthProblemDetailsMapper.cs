@@ -21,6 +21,7 @@ public static class AuthProblemDetailsMapper
             AuthErrorCatalog.DuplicateIdsNotAllowed => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Duplicate ids are not allowed"),
             AuthErrorCatalog.SystemWorkspaceDeleteForbidden => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "System workspaces cannot be deleted"),
             AuthErrorCatalog.SystemPermissionDeleteForbidden => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "System permissions cannot be deleted"),
+            AuthErrorCatalog.SystemPermissionImportForbidden => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Cannot import system permissions (bit < 128)"),
             AuthErrorCatalog.InvalidPasswordChangeChallenge => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Invalid or expired password change token"),
             TwoFactorErrorCatalog.UnsupportedChannel => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Validation error", "Unsupported two-factor channel"),
             TwoFactorErrorCatalog.ChallengeNotFound => new AuthProblemDescriptor(StatusCodes.Status404NotFound, "Resource not found", "Two-factor challenge not found"),

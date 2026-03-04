@@ -15,6 +15,7 @@ internal sealed class UpdatePermissionCommandHandler(
         if (entity is null)
             return null;
 
+        entity.Code = command.Code;
         entity.Description = command.Description;
         entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);

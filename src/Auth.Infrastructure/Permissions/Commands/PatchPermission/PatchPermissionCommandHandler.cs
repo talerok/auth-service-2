@@ -15,6 +15,8 @@ internal sealed class PatchPermissionCommandHandler(
         if (entity is null)
             return null;
 
+        if (command.Code is not null)
+            entity.Code = command.Code;
         if (command.Description is not null)
             entity.Description = command.Description;
 
