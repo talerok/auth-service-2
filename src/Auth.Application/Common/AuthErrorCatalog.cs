@@ -29,4 +29,14 @@ public static class AuthErrorCatalog
     public const string PermissionCodeNotFound = "AUTH_PERMISSION_CODE_NOT_FOUND";
     public const string SystemWorkspaceImportForbidden = "AUTH_SYSTEM_WORKSPACE_IMPORT_FORBIDDEN";
     public const string InternalAuthDisabled = "AUTH_INTERNAL_AUTH_DISABLED";
+
+    public const string ImportUserInvalidUsername = "IMPORT_USER_INVALID_USERNAME";
+    public const string ImportUserInvalidFullName = "IMPORT_USER_INVALID_FULL_NAME";
+    public const string ImportUserInvalidEmail = "IMPORT_USER_INVALID_EMAIL";
+    public const string ImportUserDuplicateUsername = "IMPORT_USER_DUPLICATE_USERNAME";
+    public const string ImportUserDuplicateEmail = "IMPORT_USER_DUPLICATE_EMAIL";
+    public const string ImportUserEmailConflict = "IMPORT_USER_EMAIL_CONFLICT";
+    public const string ImportUserWorkspaceNotFound = "IMPORT_USER_WORKSPACE_NOT_FOUND";
+    public const string ImportUserRoleNotFound = "IMPORT_USER_ROLE_NOT_FOUND";
+    public const string ImportUserIdentitySourceNotFound = "IMPORT_USER_IDENTITY_SOURCE_NOT_FOUND";
 }

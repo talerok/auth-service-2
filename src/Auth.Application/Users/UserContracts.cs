@@ -62,3 +62,20 @@ public sealed record ExportUserDto(
     TwoFactorChannel? TwoFactorChannel,
     IReadOnlyCollection<ExportUserWorkspaceDto> Workspaces,
     IReadOnlyCollection<ExportUserIdentitySourceDto> IdentitySources);
+
+public sealed record ImportUserItem(
+    string Username,
+    string FullName,
+    string Email,
+    string? Phone,
+    bool IsActive,
+    bool IsInternalAuthEnabled,
+    bool MustChangePassword,
+    bool TwoFactorEnabled,
+    TwoFactorChannel? TwoFactorChannel,
+    IReadOnlyCollection<ImportUserWorkspaceItem>? Workspaces,
+    IReadOnlyCollection<ImportUserIdentitySourceItem>? IdentitySources);
+public sealed record ImportUserWorkspaceItem(string WorkspaceCode, IReadOnlyCollection<string> RoleCodes);
+public sealed record ImportUserIdentitySourceItem(string IdentitySourceCode, string ExternalIdentity);
+public sealed record ImportUsersResult(IReadOnlyCollection<ImportUserResultItem> Items, int Blocked);
+public sealed record ImportUserResultItem(string Username, string? TemporaryPassword, string Status, string? Error);

@@ -11,6 +11,7 @@ using Auth.Application.Users.Queries.GetAllUsers;
 using Auth.Application.Users.Queries.GetUserById;
 using Auth.Application.Users.Queries.GetUserIdentitySourceLinks;
 using Auth.Application.Users.Queries.GetUserWorkspaces;
+using Auth.Application.Users.Commands.ImportUsers;
 using Auth.Application.Users.Queries.ExportUsers;
 using Auth.Application.Users.Queries.SearchUsers;
 using MediatR;
@@ -128,5 +129,16 @@ public sealed class UsersController(ISender sender) : ControllerBase
         var items = await sender.Send(new ExportUsersQuery(), cancellationToken);
         var json = JsonSerializer.SerializeToUtf8Bytes(items, JsonOptions);
         return File(json, "application/json", "users.json");
+    }
+
+    [HttpPost("import")]
+    [HasPermissionIn("system", "system.users.import")]
+    public async Task<ImportUsersResult> Import(IFormFile file, [FromQuery] bool add = true, [FromQuery] bool edit = true, [FromQuery] bool blockMissing = false, CancellationToken cancellationToken = default)
+    {
+        await using var stream = file.OpenReadStream();
+        var items = await JsonSerializer.DeserializeAsync<IReadOnlyCollection<ImportUserItem>>(stream,
+            JsonOptions, cancellationToken)
+            ?? [];
+        return await sender.Send(new ImportUsersCommand(items, add, edit, blockMissing), cancellationToken);
     }
 }
