@@ -8,6 +8,8 @@ public sealed record SetRolesRequest(IReadOnlyCollection<RoleDto> Roles);
 public sealed record SetPermissionsRequest(IReadOnlyCollection<PermissionDto> Permissions);
 public sealed record UserWorkspaceRolesItem(Guid WorkSpaceId, IReadOnlyCollection<Guid> RoleIds);
 public sealed record SetUserWorkspacesRequest(IReadOnlyCollection<UserWorkspaceRolesItem> Workspaces);
+public sealed record UserIdentitySourceLinkItem(Guid IdentitySourceId, string ExternalIdentity);
+public sealed record SetUserIdentitySourceLinksRequest(IReadOnlyCollection<UserIdentitySourceLinkItem> Links);
 
 public sealed record SearchFieldFilter(
     [property: JsonPropertyName("eq")] string? Eq = null,

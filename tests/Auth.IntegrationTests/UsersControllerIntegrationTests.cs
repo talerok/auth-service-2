@@ -1,5 +1,8 @@
+using Auth.Application;
 using Auth.Domain;
 using FluentAssertions;
+using System.Net;
+using System.Net.Http.Json;
 
 namespace Auth.IntegrationTests;
 
@@ -311,5 +314,66 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
         result.Should().HaveCount(1);
         result!.Single().WorkSpaceId.Should().Be(workspace.Id);
         result.Single().RoleIds.Should().ContainSingle(id => id == role.Id);
+    }
+
+    [Fact]
+    public async Task SetIdentitySourceLinks_SetsAndReadsLinks()
+    {
+        var admin = await fixture.LoginAsync("admin", "admin");
+        fixture.SetBearerToken(admin.AccessToken);
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var createUserResponse = await fixture.Client.PostAsJsonAsync("/api/users", new
+        {
+            username = $"user_{suffix}",
+            fullName = $"User {suffix}",
+            email = $"user_{suffix}@example.com",
+            password = "strong-password",
+            isActive = true
+        });
+        createUserResponse.EnsureSuccessStatusCode();
+        var user = await createUserResponse.Content.ReadFromJsonAsync<UserDto>(IntegrationTestFixture.JsonOptions);
+
+        var createSourceResponse = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
+        {
+            name = $"keycloak-{suffix}",
+            code = $"keycloak-{suffix}",
+            displayName = "Keycloak",
+            type = "oidc",
+            oidcConfig = new
+            {
+                authority = "https://idp.example.com",
+                clientId = "my-client"
+            }
+        });
+        createSourceResponse.EnsureSuccessStatusCode();
+        var source = await createSourceResponse.Content.ReadFromJsonAsync<IdentitySourceDetailDto>(IntegrationTestFixture.JsonOptions);
+
+        // Set links
+        var setResponse = await fixture.Client.PutAsJsonAsync($"/api/users/{user!.Id}/identity-sources", new
+        {
+            links = new[] { new { identitySourceId = source!.Id, externalIdentity = "ext-sub-123" } }
+        });
+        setResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // Get links
+        var getResponse = await fixture.Client.GetAsync($"/api/users/{user.Id}/identity-sources");
+        getResponse.IsSuccessStatusCode.Should().BeTrue();
+        var links = await getResponse.Content.ReadFromJsonAsync<UserIdentitySourceLinkDto[]>(IntegrationTestFixture.JsonOptions);
+        links.Should().HaveCount(1);
+        links![0].IdentitySourceId.Should().Be(source.Id);
+        links[0].ExternalIdentity.Should().Be("ext-sub-123");
+
+        // Clear links
+        var clearResponse = await fixture.Client.PutAsJsonAsync($"/api/users/{user.Id}/identity-sources", new
+        {
+            links = Array.Empty<object>()
+        });
+        clearResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var getAfterClear = await fixture.Client.GetAsync($"/api/users/{user.Id}/identity-sources");
+        getAfterClear.IsSuccessStatusCode.Should().BeTrue();
+        var linksAfterClear = await getAfterClear.Content.ReadFromJsonAsync<UserIdentitySourceLinkDto[]>(IntegrationTestFixture.JsonOptions);
+        linksAfterClear.Should().BeEmpty();
     }
 }

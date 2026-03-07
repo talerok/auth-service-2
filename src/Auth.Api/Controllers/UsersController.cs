@@ -2,6 +2,7 @@ using Auth.Application;
 using Auth.Application.Users.Commands.CreateUser;
 using Auth.Application.Users.Commands.PatchUser;
 using Auth.Application.Users.Commands.ResetPassword;
+using Auth.Application.Users.Commands.SetUserIdentitySourceLinks;
 using Auth.Application.Users.Commands.SetUserWorkspaces;
 using Auth.Application.Users.Commands.SoftDeleteUser;
 using Auth.Application.Users.Commands.UpdateUser;
@@ -102,6 +103,14 @@ public sealed class UsersController(ISender sender) : ControllerBase
     {
         var links = await sender.Send(new GetUserIdentitySourceLinksQuery(id), cancellationToken);
         return links is null ? NotFound() : Ok(links);
+    }
+
+    [HttpPut("{id:guid}/identity-sources")]
+    [HasPermissionIn("system", "system.users.update")]
+    public async Task<IActionResult> SetIdentitySourceLinks(Guid id, [FromBody] SetUserIdentitySourceLinksRequest request, CancellationToken cancellationToken)
+    {
+        await sender.Send(new SetUserIdentitySourceLinksCommand(id, request.Links), cancellationToken);
+        return NoContent();
     }
 
     [HttpPost("search")]

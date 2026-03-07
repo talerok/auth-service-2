@@ -62,13 +62,6 @@ public sealed record CreateLdapConfigRequest(
     bool UseSsl = false,
     string SearchFilter = "(uid={username})");
 
-public sealed record IdentitySourceLinkDto(
-    Guid Id,
-    Guid UserId,
-    Guid IdentitySourceId,
-    string ExternalIdentity,
-    DateTime CreatedAt);
-
 public sealed record UserIdentitySourceLinkDto(
     Guid LinkId,
     Guid IdentitySourceId,
@@ -77,10 +70,6 @@ public sealed record UserIdentitySourceLinkDto(
     IdentitySourceType IdentitySourceType,
     string ExternalIdentity,
     DateTime CreatedAt);
-
-public sealed record CreateIdentitySourceLinkRequest(
-    Guid UserId,
-    string ExternalIdentity);
 
 public sealed record TokenExchangeRequest(
     string IdentitySource,

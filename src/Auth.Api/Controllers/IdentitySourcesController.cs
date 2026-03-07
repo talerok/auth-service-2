@@ -1,12 +1,9 @@
 using Auth.Application;
 using Auth.Application.IdentitySources.Commands.CreateIdentitySource;
-using Auth.Application.IdentitySources.Commands.CreateIdentitySourceLink;
 using Auth.Application.IdentitySources.Commands.DeleteIdentitySource;
-using Auth.Application.IdentitySources.Commands.DeleteIdentitySourceLink;
 using Auth.Application.IdentitySources.Commands.UpdateIdentitySource;
 using Auth.Application.IdentitySources.Queries.GetAllIdentitySources;
 using Auth.Application.IdentitySources.Queries.GetIdentitySourceById;
-using Auth.Application.IdentitySources.Queries.GetIdentitySourceLinks;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -46,24 +43,6 @@ public sealed class IdentitySourcesController(ISender sender) : ControllerBase
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         await sender.Send(new DeleteIdentitySourceCommand(id), cancellationToken);
-        return NoContent();
-    }
-
-    [HttpGet("{id:guid}/links")]
-    [HasPermissionIn("system", "system.identity-sources.view")]
-    public Task<IReadOnlyCollection<IdentitySourceLinkDto>> GetLinks(Guid id, CancellationToken cancellationToken) =>
-        sender.Send(new GetIdentitySourceLinksQuery(id), cancellationToken);
-
-    [HttpPost("{id:guid}/links")]
-    [HasPermissionIn("system", "system.identity-sources.update")]
-    public Task<IdentitySourceLinkDto> CreateLink(Guid id, [FromBody] CreateIdentitySourceLinkRequest request, CancellationToken cancellationToken) =>
-        sender.Send(new CreateIdentitySourceLinkCommand(id, request.UserId, request.ExternalIdentity), cancellationToken);
-
-    [HttpDelete("{id:guid}/links/{linkId:guid}")]
-    [HasPermissionIn("system", "system.identity-sources.update")]
-    public async Task<IActionResult> DeleteLink(Guid id, Guid linkId, CancellationToken cancellationToken)
-    {
-        await sender.Send(new DeleteIdentitySourceLinkCommand(id, linkId), cancellationToken);
         return NoContent();
     }
 }
