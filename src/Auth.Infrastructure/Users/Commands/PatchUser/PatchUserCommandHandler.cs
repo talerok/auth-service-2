@@ -31,6 +31,9 @@ internal sealed class PatchUserCommandHandler(
         if (command.IsActive.HasValue)
             user.IsActive = command.IsActive.Value;
 
+        if (command.IsInternalAuthEnabled.HasValue)
+            user.IsInternalAuthEnabled = command.IsInternalAuthEnabled.Value;
+
         if (command.TwoFactorEnabled.HasValue)
         {
             if (command.TwoFactorEnabled.Value)
@@ -43,7 +46,7 @@ internal sealed class PatchUserCommandHandler(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var dto = new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone,
-            user.IsActive, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel);
+            user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel);
 
         await searchIndexService.IndexUserAsync(dto, cancellationToken);
         return dto;

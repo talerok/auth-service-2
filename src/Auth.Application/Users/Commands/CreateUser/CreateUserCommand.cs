@@ -10,6 +10,7 @@ public sealed record CreateUserCommand(
     string Password,
     string? Phone = null,
     bool IsActive = true,
+    bool IsInternalAuthEnabled = true,
     bool MustChangePassword = false,
     bool TwoFactorEnabled = false,
     TwoFactorChannel? TwoFactorChannel = null) : IRequest<UserDto>;

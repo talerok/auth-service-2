@@ -28,4 +28,5 @@ public static class AuthErrorCatalog
     public const string ApiClientInactive = "AUTH_API_CLIENT_INACTIVE";
     public const string PermissionCodeNotFound = "AUTH_PERMISSION_CODE_NOT_FOUND";
     public const string SystemWorkspaceImportForbidden = "AUTH_SYSTEM_WORKSPACE_IMPORT_FORBIDDEN";
+    public const string InternalAuthDisabled = "AUTH_INTERNAL_AUTH_DISABLED";
 }

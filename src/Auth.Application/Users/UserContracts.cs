@@ -9,6 +9,7 @@ public sealed record UserDto(
     string Email,
     string? Phone,
     bool IsActive,
+    bool IsInternalAuthEnabled,
     bool MustChangePassword,
     bool TwoFactorEnabled,
     TwoFactorChannel? TwoFactorChannel);
@@ -20,6 +21,7 @@ public sealed record CreateUserRequest(
     string Password,
     string? Phone = null,
     bool IsActive = true,
+    bool IsInternalAuthEnabled = true,
     bool MustChangePassword = false,
     bool TwoFactorEnabled = false,
     TwoFactorChannel? TwoFactorChannel = null);
@@ -30,6 +32,7 @@ public sealed record UpdateUserRequest(
     string Email,
     string? Phone,
     bool IsActive,
+    bool IsInternalAuthEnabled = true,
     bool TwoFactorEnabled = false,
     TwoFactorChannel? TwoFactorChannel = null);
 
@@ -39,6 +42,7 @@ public sealed record PatchUserRequest(
     string? Email,
     string? Phone,
     bool? IsActive,
+    bool? IsInternalAuthEnabled = null,
     bool? TwoFactorEnabled = null,
     TwoFactorChannel? TwoFactorChannel = null);
 

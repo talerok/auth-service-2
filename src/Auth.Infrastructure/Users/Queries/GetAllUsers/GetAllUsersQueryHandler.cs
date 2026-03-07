@@ -12,7 +12,7 @@ internal sealed class GetAllUsersQueryHandler(
     {
         return await dbContext.Users.AsNoTracking()
             .Select(x => new UserDto(x.Id, x.Username, x.FullName, x.Email, x.Phone,
-                x.IsActive, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel))
+                x.IsActive, x.IsInternalAuthEnabled, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel))
             .ToListAsync(cancellationToken);
     }
 }

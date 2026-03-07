@@ -20,6 +20,11 @@ internal sealed class ValidateCredentialsCommandHandler(
             throw new AuthException(AuthErrorCatalog.InvalidCredentials);
         }
 
+        if (!user.IsInternalAuthEnabled)
+        {
+            throw new AuthException(AuthErrorCatalog.InternalAuthDisabled);
+        }
+
         return user;
     }
 }

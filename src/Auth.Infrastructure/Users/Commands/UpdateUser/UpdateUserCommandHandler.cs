@@ -21,6 +21,7 @@ internal sealed class UpdateUserCommandHandler(
         user.Email = command.Email;
         user.Phone = command.Phone;
         user.IsActive = command.IsActive;
+        user.IsInternalAuthEnabled = command.IsInternalAuthEnabled;
 
         if (command.TwoFactorEnabled)
             user.EnableTwoFactor(command.TwoFactorChannel ?? TwoFactorChannel.Email);
@@ -31,7 +32,7 @@ internal sealed class UpdateUserCommandHandler(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var dto = new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone,
-            user.IsActive, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel);
+            user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel);
 
         await searchIndexService.IndexUserAsync(dto, cancellationToken);
         return dto;

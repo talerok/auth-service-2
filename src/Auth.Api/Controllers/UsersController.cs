@@ -39,7 +39,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     public Task<UserDto> Create([FromBody] CreateUserRequest request, CancellationToken cancellationToken) =>
         sender.Send(new CreateUserCommand(
             request.Username, request.FullName, request.Email, request.Password,
-            request.Phone, request.IsActive, request.MustChangePassword,
+            request.Phone, request.IsActive, request.IsInternalAuthEnabled, request.MustChangePassword,
             request.TwoFactorEnabled, request.TwoFactorChannel), cancellationToken);
 
     [HttpPut("{id:guid}")]
@@ -48,7 +48,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     {
         var updated = await sender.Send(new UpdateUserCommand(
             id, request.Username, request.FullName, request.Email,
-            request.Phone, request.IsActive, request.TwoFactorEnabled,
+            request.Phone, request.IsActive, request.IsInternalAuthEnabled, request.TwoFactorEnabled,
             request.TwoFactorChannel), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
@@ -59,7 +59,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     {
         var updated = await sender.Send(new PatchUserCommand(
             id, request.Username, request.FullName, request.Email,
-            request.Phone, request.IsActive, request.TwoFactorEnabled,
+            request.Phone, request.IsActive, request.IsInternalAuthEnabled, request.TwoFactorEnabled,
             request.TwoFactorChannel), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }

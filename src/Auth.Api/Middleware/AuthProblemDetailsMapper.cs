@@ -46,6 +46,7 @@ public static class AuthProblemDetailsMapper
             AuthErrorCatalog.ApiClientInactive => new AuthProblemDescriptor(StatusCodes.Status403Forbidden, "Forbidden", "API client is inactive"),
             AuthErrorCatalog.PermissionCodeNotFound => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Permission code not found"),
             AuthErrorCatalog.SystemWorkspaceImportForbidden => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Cannot import system workspaces"),
+            AuthErrorCatalog.InternalAuthDisabled => new AuthProblemDescriptor(StatusCodes.Status403Forbidden, "Forbidden", "Internal authentication is disabled for this user"),
             _ => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Business rule violation")
         };
     }

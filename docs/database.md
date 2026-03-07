@@ -25,19 +25,20 @@
 
 ### Таблица `users`
 
-| Колонка                | Тип          | Nullable | Описание                                       |
-| ---------------------- | ------------ | -------- | ---------------------------------------------- |
-| `id`                   | uuid         | NO       | PK                                             |
-| `username`             | varchar(100) | NO       | Уникальное имя пользователя (partial index)    |
-| `email`                | varchar(255) | NO       | Email пользователя (partial index)             |
-| `password_hash`        | varchar(200) | NO       | Хэш пароля                                     |
-| `is_active`            | boolean      | NO       | Признак активности аккаунта                    |
-| `must_change_password` | boolean      | NO       | Флаг обязательной смены пароля (DEFAULT false) |
-| `two_factor_enabled`   | boolean      | NO       | Включена ли двухфакторная аутентификация       |
-| `two_factor_channel`   | varchar(16)  | YES      | Канал 2FA (например, Email, SMS)               |
-| `created_at`           | timestamptz  | NO       |                                                |
-| `updated_at`           | timestamptz  | NO       |                                                |
-| `deleted_at`           | timestamptz  | YES      | Soft delete                                    |
+| Колонка                    | Тип          | Nullable | Описание                                             |
+| -------------------------- | ------------ | -------- | ---------------------------------------------------- |
+| `id`                       | uuid         | NO       | PK                                                   |
+| `username`                 | varchar(100) | NO       | Уникальное имя пользователя (partial index)          |
+| `email`                    | varchar(255) | NO       | Email пользователя (partial index)                   |
+| `password_hash`            | varchar(200) | NO       | Хэш пароля                                           |
+| `is_active`                | boolean      | NO       | Признак активности аккаунта                          |
+| `is_internal_auth_enabled` | boolean      | NO       | Разрешена ли аутентификация по паролю (DEFAULT true)  |
+| `must_change_password`     | boolean      | NO       | Флаг обязательной смены пароля (DEFAULT false)        |
+| `two_factor_enabled`       | boolean      | NO       | Включена ли двухфакторная аутентификация              |
+| `two_factor_channel`       | varchar(16)  | YES      | Канал 2FA (например, Email, SMS)                     |
+| `created_at`               | timestamptz  | NO       |                                                      |
+| `updated_at`               | timestamptz  | NO       |                                                      |
+| `deleted_at`               | timestamptz  | YES      | Soft delete                                          |
 
 Индексы:
 

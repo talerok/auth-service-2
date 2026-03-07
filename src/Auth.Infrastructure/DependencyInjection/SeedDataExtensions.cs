@@ -71,7 +71,8 @@ public static class SeedDataExtensions
                 Username = "admin",
                 Email = "admin@local",
                 PasswordHash = hasher.Hash("admin"),
-                IsActive = true
+                IsActive = true,
+                IsInternalAuthEnabled = true
             };
             db.Users.Add(admin);
             await db.SaveChangesAsync(cancellationToken);

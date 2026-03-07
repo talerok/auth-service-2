@@ -36,7 +36,8 @@ public sealed class OidcGrantServiceTests
         Email = "test@example.com",
         Phone = "+1234567890",
         PasswordHash = "hash",
-        IsActive = true
+        IsActive = true,
+        IsInternalAuthEnabled = true
     };
 
     // HandlePasswordGrantCommandHandler tests

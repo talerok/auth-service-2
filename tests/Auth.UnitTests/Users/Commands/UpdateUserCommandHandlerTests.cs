@@ -50,6 +50,27 @@ public sealed class UpdateUserCommandHandlerTests
         result.TwoFactorChannel.Should().BeNull();
     }
 
+    [Fact]
+    public async Task Handle_WithInternalAuthDisabled_SetsFlag()
+    {
+        await using var dbContext = CreateDbContext();
+        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hash", IsActive = true, IsInternalAuthEnabled = true };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+        var handler = CreateHandler(dbContext);
+
+        var result = await handler.Handle(
+            new UpdateUserCommand(user.Id, "alice", "Alice", "alice@example.com", null, true,
+                IsInternalAuthEnabled: false),
+            CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.IsInternalAuthEnabled.Should().BeFalse();
+
+        var updated = await dbContext.Users.FirstAsync(x => x.Id == user.Id);
+        updated.IsInternalAuthEnabled.Should().BeFalse();
+    }
+
     private static UpdateUserCommandHandler CreateHandler(AuthDbContext dbContext)
     {
         var searchIndex = new Mock<ISearchIndexService>();

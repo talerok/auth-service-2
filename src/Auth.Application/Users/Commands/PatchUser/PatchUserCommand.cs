@@ -10,5 +10,6 @@ public sealed record PatchUserCommand(
     string? Email,
     string? Phone,
     bool? IsActive,
+    bool? IsInternalAuthEnabled = null,
     bool? TwoFactorEnabled = null,
     TwoFactorChannel? TwoFactorChannel = null) : IRequest<UserDto?>;

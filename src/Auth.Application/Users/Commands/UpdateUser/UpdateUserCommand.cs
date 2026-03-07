@@ -10,5 +10,6 @@ public sealed record UpdateUserCommand(
     string Email,
     string? Phone,
     bool IsActive,
+    bool IsInternalAuthEnabled = true,
     bool TwoFactorEnabled = false,
     TwoFactorChannel? TwoFactorChannel = null) : IRequest<UserDto?>;

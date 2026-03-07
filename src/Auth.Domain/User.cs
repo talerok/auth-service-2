@@ -8,6 +8,7 @@ public sealed class User : EntityBase
     public string? Phone { get; set; }
     public string PasswordHash { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
+    public bool IsInternalAuthEnabled { get; set; } = true;
     public bool MustChangePassword { get; private set; }
     public bool TwoFactorEnabled { get; private set; }
     public TwoFactorChannel? TwoFactorChannel { get; private set; }

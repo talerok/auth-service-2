@@ -17,7 +17,7 @@ public sealed class ValidateCredentialsCommandHandlerTests
         await using var dbContext = CreateDbContext();
         var hasher = new Mock<IPasswordHasher>();
         hasher.Setup(x => x.Verify("correctPassword", "hashed")).Returns(true);
-        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hashed", IsActive = true };
+        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hashed", IsActive = true, IsInternalAuthEnabled = true };
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync();
         var handler = new ValidateCredentialsCommandHandler(dbContext, hasher.Object);
@@ -28,6 +28,25 @@ public sealed class ValidateCredentialsCommandHandlerTests
 
         result.Id.Should().Be(user.Id);
         result.Username.Should().Be("alice");
+    }
+
+    [Fact]
+    public async Task Handle_InternalAuthDisabled_ThrowsInternalAuthDisabled()
+    {
+        await using var dbContext = CreateDbContext();
+        var hasher = new Mock<IPasswordHasher>();
+        hasher.Setup(x => x.Verify("correctPassword", "hashed")).Returns(true);
+        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hashed", IsActive = true, IsInternalAuthEnabled = false };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+        var handler = new ValidateCredentialsCommandHandler(dbContext, hasher.Object);
+
+        var act = () => handler.Handle(
+            new ValidateCredentialsCommand("alice", "correctPassword"),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<AuthException>()
+            .Where(x => x.Code == AuthErrorCatalog.InternalAuthDisabled);
     }
 
     [Fact]

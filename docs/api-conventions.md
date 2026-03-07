@@ -105,4 +105,5 @@ Batch-операции выделяем как подресурсы: `PUT /api/r
 | code                                      | HTTP status |
 | ----------------------------------------- | ----------- |
 | `AUTH_INVALID_PASSWORD_CHANGE_CHALLENGE`  | 401         |
+| `AUTH_INTERNAL_AUTH_DISABLED`             | 403         |
 | `AUTH_SYSTEM_PERMISSION_DELETE_FORBIDDEN` | 400         |

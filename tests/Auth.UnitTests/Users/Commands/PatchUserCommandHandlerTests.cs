@@ -104,6 +104,44 @@ public sealed class PatchUserCommandHandlerTests
         result.Phone.Should().Be("+1111111111");
     }
 
+    [Fact]
+    public async Task Handle_WithInternalAuthEnabled_SetsFlag()
+    {
+        await using var dbContext = CreateDbContext();
+        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hash", IsActive = true, IsInternalAuthEnabled = true };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+        var handler = CreateHandler(dbContext);
+
+        var result = await handler.Handle(
+            new PatchUserCommand(user.Id, null, null, null, null, null, IsInternalAuthEnabled: false),
+            CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.IsInternalAuthEnabled.Should().BeFalse();
+
+        var updated = await dbContext.Users.FirstAsync(x => x.Id == user.Id);
+        updated.IsInternalAuthEnabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_WithoutInternalAuth_DoesNotChange()
+    {
+        await using var dbContext = CreateDbContext();
+        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hash", IsActive = true, IsInternalAuthEnabled = false };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+        var handler = CreateHandler(dbContext);
+
+        var result = await handler.Handle(
+            new PatchUserCommand(user.Id, null, null, "newemail@example.com", null, null),
+            CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.Email.Should().Be("newemail@example.com");
+        result.IsInternalAuthEnabled.Should().BeFalse();
+    }
+
     private static PatchUserCommandHandler CreateHandler(AuthDbContext dbContext)
     {
         var searchIndex = new Mock<ISearchIndexService>();

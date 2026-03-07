@@ -75,7 +75,7 @@ public sealed class OpenSearchMaintenanceService(
     public async Task ReindexUsersAsync(CancellationToken cancellationToken)
     {
         var users = await dbContext.Users.AsNoTracking()
-            .Select(x => new UserDto(x.Id, x.Username, x.FullName, x.Email, x.Phone, x.IsActive, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel))
+            .Select(x => new UserDto(x.Id, x.Username, x.FullName, x.Email, x.Phone, x.IsActive, x.IsInternalAuthEnabled, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel))
             .ToListAsync(cancellationToken);
         foreach (var user in users)
         {

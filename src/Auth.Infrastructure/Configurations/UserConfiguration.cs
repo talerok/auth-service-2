@@ -20,6 +20,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
                 value => value.HasValue ? value.Value.ToString().ToLowerInvariant() : null,
                 value => string.IsNullOrWhiteSpace(value) ? null : Enum.Parse<TwoFactorChannel>(value, true))
             .HasMaxLength(16);
+        builder.Property(x => x.IsInternalAuthEnabled).IsRequired().HasDefaultValue(true);
         builder.Property(x => x.MustChangePassword).IsRequired().HasDefaultValue(false);
         builder.HasQueryFilter(x => x.DeletedAt == null);
         builder.HasIndex(x => x.Username).IsUnique().HasFilter("\"DeletedAt\" IS NULL");

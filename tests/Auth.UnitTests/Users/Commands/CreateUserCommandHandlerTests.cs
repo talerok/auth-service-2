@@ -83,6 +83,39 @@ public sealed class CreateUserCommandHandlerTests
         user.Phone.Should().Be("+1234567890");
     }
 
+    [Fact]
+    public async Task Handle_WithInternalAuthDisabled_SetsFlag()
+    {
+        await using var dbContext = CreateDbContext();
+        var hasher = new Mock<IPasswordHasher>();
+        hasher.Setup(x => x.Hash(It.IsAny<string>())).Returns("hashed");
+        var handler = CreateHandler(dbContext, hasher);
+
+        var result = await handler.Handle(
+            new CreateUserCommand("bob", "Bob", "bob@example.com", "pwd", IsInternalAuthEnabled: false),
+            CancellationToken.None);
+
+        result.IsInternalAuthEnabled.Should().BeFalse();
+
+        var user = await dbContext.Users.FirstAsync(x => x.Id == result.Id);
+        user.IsInternalAuthEnabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_DefaultInternalAuth_IsTrue()
+    {
+        await using var dbContext = CreateDbContext();
+        var hasher = new Mock<IPasswordHasher>();
+        hasher.Setup(x => x.Hash(It.IsAny<string>())).Returns("hashed");
+        var handler = CreateHandler(dbContext, hasher);
+
+        var result = await handler.Handle(
+            new CreateUserCommand("bob", "Bob", "bob@example.com", "pwd"),
+            CancellationToken.None);
+
+        result.IsInternalAuthEnabled.Should().BeTrue();
+    }
+
     private static CreateUserCommandHandler CreateHandler(
         AuthDbContext dbContext,
         Mock<IPasswordHasher>? passwordHasher = null)
