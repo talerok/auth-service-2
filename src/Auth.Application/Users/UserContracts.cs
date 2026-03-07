@@ -47,3 +47,18 @@ public sealed record PatchUserRequest(
     TwoFactorChannel? TwoFactorChannel = null);
 
 public sealed record AdminResetPasswordRequest(string Password);
+
+public sealed record ExportUserWorkspaceDto(string WorkspaceCode, IReadOnlyCollection<string> RoleCodes);
+public sealed record ExportUserIdentitySourceDto(string IdentitySourceCode, string ExternalIdentity);
+public sealed record ExportUserDto(
+    string Username,
+    string FullName,
+    string Email,
+    string? Phone,
+    bool IsActive,
+    bool IsInternalAuthEnabled,
+    bool MustChangePassword,
+    bool TwoFactorEnabled,
+    TwoFactorChannel? TwoFactorChannel,
+    IReadOnlyCollection<ExportUserWorkspaceDto> Workspaces,
+    IReadOnlyCollection<ExportUserIdentitySourceDto> IdentitySources);

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Auth.Application;
 using Auth.Application.Users.Commands.CreateUser;
 using Auth.Application.Users.Commands.PatchUser;
@@ -10,6 +11,7 @@ using Auth.Application.Users.Queries.GetAllUsers;
 using Auth.Application.Users.Queries.GetUserById;
 using Auth.Application.Users.Queries.GetUserIdentitySourceLinks;
 using Auth.Application.Users.Queries.GetUserWorkspaces;
+using Auth.Application.Users.Queries.ExportUsers;
 using Auth.Application.Users.Queries.SearchUsers;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -22,6 +24,7 @@ namespace Auth.Api.Controllers;
 [Authorize]
 public sealed class UsersController(ISender sender) : ControllerBase
 {
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     [HttpGet]
     [HasPermissionIn("system", "system.users.view")]
     public Task<IReadOnlyCollection<UserDto>> GetAll(CancellationToken cancellationToken) =>
@@ -117,4 +120,13 @@ public sealed class UsersController(ISender sender) : ControllerBase
     [HasPermissionIn("system", "system.users.view")]
     public Task<SearchResponse<UserDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
         sender.Send(new SearchUsersQuery(request), cancellationToken);
+
+    [HttpGet("export")]
+    [HasPermissionIn("system", "system.users.export")]
+    public async Task<IActionResult> Export(CancellationToken cancellationToken)
+    {
+        var items = await sender.Send(new ExportUsersQuery(), cancellationToken);
+        var json = JsonSerializer.SerializeToUtf8Bytes(items, JsonOptions);
+        return File(json, "application/json", "users.json");
+    }
 }

@@ -42,6 +42,8 @@
 | 31  | `system.roles.export`                  | Export roles                  |
 | 32  | `system.workspaces.import`             | Import workspaces             |
 | 33  | `system.workspaces.export`             | Export workspaces             |
+| 34  | `system.users.import`                  | Import users                  |
+| 35  | `system.users.export`                  | Export users                  |
 
 ## Упаковка в байты
 
