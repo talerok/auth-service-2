@@ -81,12 +81,12 @@ public sealed class WorkspacesController(ISender sender) : ControllerBase
 
     [HttpPost("import")]
     [HasPermissionIn("system", "system.workspaces.import")]
-    public async Task<ImportWorkspacesResult> Import(IFormFile file, CancellationToken cancellationToken)
+    public async Task<ImportWorkspacesResult> Import(IFormFile file, [FromQuery] bool add = true, [FromQuery] bool edit = true, CancellationToken cancellationToken = default)
     {
         await using var stream = file.OpenReadStream();
         var items = await JsonSerializer.DeserializeAsync<IReadOnlyCollection<ImportWorkspaceItem>>(stream,
             JsonOptions, cancellationToken)
             ?? [];
-        return await sender.Send(new ImportWorkspacesCommand(items), cancellationToken);
+        return await sender.Send(new ImportWorkspacesCommand(items, add, edit), cancellationToken);
     }
 }

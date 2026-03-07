@@ -21,42 +21,71 @@ internal sealed class ImportPermissionsCommandHandler(
             .Where(x => bits.Contains(x.Bit))
             .ToDictionaryAsync(x => x.Bit, cancellationToken);
 
+        var (created, updated, skipped, processed) = ApplyChanges(command, existing);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await IndexAsync(processed, existing, cancellationToken);
+
+        return new ImportPermissionsResult(created, updated, skipped);
+    }
+
+    private (int Created, int Updated, int Skipped, List<int> Processed) ApplyChanges(
+        ImportPermissionsCommand command, Dictionary<int, Permission> existing)
+    {
         var created = 0;
         var updated = 0;
+        var skipped = 0;
+        var processed = new List<int>();
 
         foreach (var item in command.Items)
         {
             if (existing.TryGetValue(item.Bit, out var entity))
             {
-                entity.Code = item.Code;
-                entity.Description = item.Description;
-                entity.DeletedAt = null;
-                entity.UpdatedAt = DateTime.UtcNow;
+                if (!command.Edit) { skipped++; continue; }
+                UpdatePermission(entity, item);
                 updated++;
             }
             else
             {
-                entity = new Permission
-                {
-                    Bit = item.Bit,
-                    Code = item.Code,
-                    Description = item.Description,
-                    IsSystem = false
-                };
-                dbContext.Permissions.Add(entity);
+                if (!command.Add) { skipped++; continue; }
+                CreatePermission(item);
                 created++;
             }
+
+            processed.Add(item.Bit);
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return (created, updated, skipped, processed);
+    }
 
-        foreach (var item in command.Items)
+    private static void UpdatePermission(Permission entity, ImportPermissionItem item)
+    {
+        entity.Code = item.Code;
+        entity.Description = item.Description;
+        entity.DeletedAt = null;
+        entity.UpdatedAt = DateTime.UtcNow;
+    }
+
+    private void CreatePermission(ImportPermissionItem item)
+    {
+        dbContext.Permissions.Add(new Permission
         {
-            var e = existing.TryGetValue(item.Bit, out var ex) ? ex : await dbContext.Permissions.FirstAsync(x => x.Bit == item.Bit, cancellationToken);
-            var dto = new PermissionDto(e.Id, e.Bit, e.Code, e.Description, e.IsSystem);
-            await searchIndexService.IndexPermissionAsync(dto, cancellationToken);
-        }
+            Bit = item.Bit,
+            Code = item.Code,
+            Description = item.Description,
+            IsSystem = false
+        });
+    }
 
-        return new ImportPermissionsResult(created, updated);
+    private async Task IndexAsync(List<int> processed, Dictionary<int, Permission> existing, CancellationToken cancellationToken)
+    {
+        foreach (var bit in processed)
+        {
+            var e = existing.TryGetValue(bit, out var ex)
+                ? ex
+                : await dbContext.Permissions.FirstAsync(x => x.Bit == bit, cancellationToken);
+            await searchIndexService.IndexPermissionAsync(
+                new PermissionDto(e.Id, e.Bit, e.Code, e.Description, e.IsSystem), cancellationToken);
+        }
     }
 }

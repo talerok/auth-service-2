@@ -7,4 +7,4 @@ public sealed record PatchWorkspaceRequest(string? Name, string? Code, string? D
 
 public sealed record ExportWorkspaceDto(string Name, string Code, string Description);
 public sealed record ImportWorkspaceItem(string Name, string Code, string Description);
-public sealed record ImportWorkspacesResult(int Created, int Updated);
+public sealed record ImportWorkspacesResult(int Created, int Updated, int Skipped);

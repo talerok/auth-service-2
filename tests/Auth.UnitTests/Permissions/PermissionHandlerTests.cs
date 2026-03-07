@@ -547,6 +547,72 @@ public sealed class PermissionHandlerTests
         entity.Code.Should().Be("restored");
     }
 
+    [Fact]
+    public async Task Import_AddFalse_SkipsNewPermissions()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Permissions.Add(new Permission { Bit = 128, Code = "existing", Description = "Existing" });
+        await dbContext.SaveChangesAsync();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
+
+        var items = new List<ImportPermissionItem>
+        {
+            new(128, "updated", "Updated"),
+            new(129, "new.perm", "New")
+        };
+        var result = await handler.Handle(new ImportPermissionsCommand(items, Add: false), CancellationToken.None);
+
+        result.Created.Should().Be(0);
+        result.Updated.Should().Be(1);
+        result.Skipped.Should().Be(1);
+        (await dbContext.Permissions.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Import_EditFalse_SkipsExistingPermissions()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Permissions.Add(new Permission { Bit = 128, Code = "existing", Description = "Existing" });
+        await dbContext.SaveChangesAsync();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
+
+        var items = new List<ImportPermissionItem>
+        {
+            new(128, "updated", "Updated"),
+            new(129, "new.perm", "New")
+        };
+        var result = await handler.Handle(new ImportPermissionsCommand(items, Edit: false), CancellationToken.None);
+
+        result.Created.Should().Be(1);
+        result.Updated.Should().Be(0);
+        result.Skipped.Should().Be(1);
+        var entity = await dbContext.Permissions.FirstAsync(x => x.Bit == 128);
+        entity.Code.Should().Be("existing");
+    }
+
+    [Fact]
+    public async Task Import_BothFalse_SkipsAll()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Permissions.Add(new Permission { Bit = 128, Code = "existing", Description = "Existing" });
+        await dbContext.SaveChangesAsync();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
+
+        var items = new List<ImportPermissionItem>
+        {
+            new(128, "updated", "Updated"),
+            new(129, "new.perm", "New")
+        };
+        var result = await handler.Handle(new ImportPermissionsCommand(items, Add: false, Edit: false), CancellationToken.None);
+
+        result.Created.Should().Be(0);
+        result.Updated.Should().Be(0);
+        result.Skipped.Should().Be(2);
+    }
+
     // ── Helper ──────────────────────────────────────────────────────────
 
     private static AuthDbContext CreateDbContext()

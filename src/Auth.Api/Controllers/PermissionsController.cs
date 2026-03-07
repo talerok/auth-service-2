@@ -81,12 +81,12 @@ public sealed class PermissionsController(ISender sender) : ControllerBase
 
     [HttpPost("import")]
     [HasPermissionIn("system", "system.permissions.import")]
-    public async Task<ImportPermissionsResult> Import(IFormFile file, CancellationToken cancellationToken)
+    public async Task<ImportPermissionsResult> Import(IFormFile file, [FromQuery] bool add = true, [FromQuery] bool edit = true, CancellationToken cancellationToken = default)
     {
         await using var stream = file.OpenReadStream();
         var items = await JsonSerializer.DeserializeAsync<IReadOnlyCollection<ImportPermissionItem>>(stream,
             JsonOptions, cancellationToken)
             ?? [];
-        return await sender.Send(new ImportPermissionsCommand(items), cancellationToken);
+        return await sender.Send(new ImportPermissionsCommand(items, add, edit), cancellationToken);
     }
 }

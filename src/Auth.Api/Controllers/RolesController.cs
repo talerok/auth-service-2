@@ -99,12 +99,12 @@ public sealed class RolesController(ISender sender) : ControllerBase
 
     [HttpPost("import")]
     [HasPermissionIn("system", "system.roles.import")]
-    public async Task<ImportRolesResult> Import(IFormFile file, CancellationToken cancellationToken)
+    public async Task<ImportRolesResult> Import(IFormFile file, [FromQuery] bool add = true, [FromQuery] bool edit = true, CancellationToken cancellationToken = default)
     {
         await using var stream = file.OpenReadStream();
         var items = await JsonSerializer.DeserializeAsync<IReadOnlyCollection<ImportRoleItem>>(stream,
             JsonOptions, cancellationToken)
             ?? [];
-        return await sender.Send(new ImportRolesCommand(items), cancellationToken);
+        return await sender.Send(new ImportRolesCommand(items, add, edit), cancellationToken);
     }
 }

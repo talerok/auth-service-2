@@ -8,4 +8,4 @@ public sealed record PatchPermissionRequest(string? Code, string? Description);
 public sealed record ExportPermissionDto(int Bit, string Code, string Description);
 public sealed record ImportPermissionItem(int Bit, string Code, string Description);
 public sealed record ImportPermissionsRequest(IReadOnlyCollection<ImportPermissionItem> Items);
-public sealed record ImportPermissionsResult(int Created, int Updated);
+public sealed record ImportPermissionsResult(int Created, int Updated, int Skipped);

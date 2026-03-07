@@ -7,4 +7,4 @@ public sealed record PatchRoleRequest(string? Name, string? Description);
 
 public sealed record ExportRoleDto(string Name, string Description, IReadOnlyCollection<string> Permissions);
 public sealed record ImportRoleItem(string Name, string Description, IReadOnlyCollection<string> Permissions);
-public sealed record ImportRolesResult(int Created, int Updated);
+public sealed record ImportRolesResult(int Created, int Updated, int Skipped);

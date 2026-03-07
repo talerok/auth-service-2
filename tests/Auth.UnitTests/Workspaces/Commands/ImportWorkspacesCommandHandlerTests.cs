@@ -101,6 +101,72 @@ public sealed class ImportWorkspacesCommandHandlerTests
         ws.Name.Should().Be("Restored");
     }
 
+    [Fact]
+    public async Task Import_AddFalse_SkipsNewWorkspaces()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Workspaces.Add(new Workspace { Name = "Existing", Code = "existing", Description = "Old" });
+        await dbContext.SaveChangesAsync();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object);
+
+        var items = new List<ImportWorkspaceItem>
+        {
+            new("Updated", "existing", "Updated"),
+            new("Brand New", "new-ws", "New workspace")
+        };
+        var result = await handler.Handle(new ImportWorkspacesCommand(items, Add: false), CancellationToken.None);
+
+        result.Created.Should().Be(0);
+        result.Updated.Should().Be(1);
+        result.Skipped.Should().Be(1);
+        (await dbContext.Workspaces.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Import_EditFalse_SkipsExistingWorkspaces()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Workspaces.Add(new Workspace { Name = "Existing", Code = "existing", Description = "Old" });
+        await dbContext.SaveChangesAsync();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object);
+
+        var items = new List<ImportWorkspaceItem>
+        {
+            new("Updated", "existing", "Updated"),
+            new("Brand New", "new-ws", "New workspace")
+        };
+        var result = await handler.Handle(new ImportWorkspacesCommand(items, Edit: false), CancellationToken.None);
+
+        result.Created.Should().Be(1);
+        result.Updated.Should().Be(0);
+        result.Skipped.Should().Be(1);
+        var existing = await dbContext.Workspaces.FirstAsync(w => w.Code == "existing");
+        existing.Name.Should().Be("Existing");
+    }
+
+    [Fact]
+    public async Task Import_BothFalse_SkipsAll()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Workspaces.Add(new Workspace { Name = "Existing", Code = "existing", Description = "Old" });
+        await dbContext.SaveChangesAsync();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object);
+
+        var items = new List<ImportWorkspaceItem>
+        {
+            new("Updated", "existing", "Updated"),
+            new("Brand New", "new-ws", "New workspace")
+        };
+        var result = await handler.Handle(new ImportWorkspacesCommand(items, Add: false, Edit: false), CancellationToken.None);
+
+        result.Created.Should().Be(0);
+        result.Updated.Should().Be(0);
+        result.Skipped.Should().Be(2);
+    }
+
     private static AuthDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AuthDbContext>()

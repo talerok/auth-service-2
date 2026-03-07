@@ -12,6 +12,26 @@ internal sealed class ImportRolesCommandHandler(
 {
     public async Task<ImportRolesResult> Handle(ImportRolesCommand command, CancellationToken cancellationToken)
     {
+        var permissionsByCode = await LoadAndValidatePermissions(command, cancellationToken);
+
+        var roleNames = command.Items.Select(x => x.Name).ToList();
+        var existingRoles = await dbContext.Roles
+            .IgnoreQueryFilters()
+            .Include(r => r.RolePermissions)
+            .Where(r => roleNames.Contains(r.Name))
+            .ToDictionaryAsync(r => r.Name, cancellationToken);
+
+        var (created, updated, skipped, processed) = ApplyChanges(command, existingRoles, permissionsByCode);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await IndexAsync(processed, existingRoles, cancellationToken);
+
+        return new ImportRolesResult(created, updated, skipped);
+    }
+
+    private async Task<Dictionary<string, Permission>> LoadAndValidatePermissions(
+        ImportRolesCommand command, CancellationToken cancellationToken)
+    {
         var allPermissionCodes = command.Items
             .SelectMany(x => x.Permissions)
             .Distinct()
@@ -25,53 +45,70 @@ internal sealed class ImportRolesCommandHandler(
         if (missingCodes.Count > 0)
             throw new AuthException(AuthErrorCatalog.PermissionCodeNotFound);
 
-        var roleNames = command.Items.Select(x => x.Name).ToList();
-        var existingRoles = await dbContext.Roles
-            .IgnoreQueryFilters()
-            .Include(r => r.RolePermissions)
-            .Where(r => roleNames.Contains(r.Name))
-            .ToDictionaryAsync(r => r.Name, cancellationToken);
+        return permissionsByCode;
+    }
 
+    private (int Created, int Updated, int Skipped, List<string> Processed) ApplyChanges(
+        ImportRolesCommand command, Dictionary<string, Role> existingRoles, Dictionary<string, Permission> permissionsByCode)
+    {
         var created = 0;
         var updated = 0;
+        var skipped = 0;
+        var processed = new List<string>();
 
         foreach (var item in command.Items)
         {
             if (existingRoles.TryGetValue(item.Name, out var role))
             {
-                role.Description = item.Description;
-                role.DeletedAt = null;
-                role.UpdatedAt = DateTime.UtcNow;
-
-                dbContext.RolePermissions.RemoveRange(role.RolePermissions);
-                foreach (var code in item.Permissions)
-                    dbContext.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = permissionsByCode[code].Id });
-
+                if (!command.Edit) { skipped++; continue; }
+                UpdateRole(role, item, permissionsByCode);
                 updated++;
             }
             else
             {
-                role = new Role
-                {
-                    Name = item.Name,
-                    Description = item.Description
-                };
-                dbContext.Roles.Add(role);
-                foreach (var code in item.Permissions)
-                    dbContext.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = permissionsByCode[code].Id });
-
+                if (!command.Add) { skipped++; continue; }
+                CreateRole(item, permissionsByCode);
                 created++;
             }
+
+            processed.Add(item.Name);
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return (created, updated, skipped, processed);
+    }
 
-        foreach (var item in command.Items)
+    private void UpdateRole(Role role, ImportRoleItem item, Dictionary<string, Permission> permissionsByCode)
+    {
+        role.Description = item.Description;
+        role.DeletedAt = null;
+        role.UpdatedAt = DateTime.UtcNow;
+
+        dbContext.RolePermissions.RemoveRange(role.RolePermissions);
+        foreach (var code in item.Permissions)
+            dbContext.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = permissionsByCode[code].Id });
+    }
+
+    private void CreateRole(ImportRoleItem item, Dictionary<string, Permission> permissionsByCode)
+    {
+        var role = new Role
         {
-            var role = existingRoles.TryGetValue(item.Name, out var r) ? r : await dbContext.Roles.FirstAsync(x => x.Name == item.Name, cancellationToken);
-            await searchIndexService.IndexRoleAsync(new RoleDto(role.Id, role.Name, role.Description), cancellationToken);
-        }
+            Name = item.Name,
+            Description = item.Description
+        };
+        dbContext.Roles.Add(role);
+        foreach (var code in item.Permissions)
+            dbContext.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = permissionsByCode[code].Id });
+    }
 
-        return new ImportRolesResult(created, updated);
+    private async Task IndexAsync(List<string> processed, Dictionary<string, Role> existingRoles, CancellationToken cancellationToken)
+    {
+        foreach (var name in processed)
+        {
+            var role = existingRoles.TryGetValue(name, out var r)
+                ? r
+                : await dbContext.Roles.FirstAsync(x => x.Name == name, cancellationToken);
+            await searchIndexService.IndexRoleAsync(
+                new RoleDto(role.Id, role.Name, role.Description), cancellationToken);
+        }
     }
 }

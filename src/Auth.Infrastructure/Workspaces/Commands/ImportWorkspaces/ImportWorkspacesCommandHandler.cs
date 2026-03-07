@@ -22,41 +22,71 @@ internal sealed class ImportWorkspacesCommandHandler(
         if (systemCodes.Count > 0)
             throw new AuthException(AuthErrorCatalog.SystemWorkspaceImportForbidden);
 
+        var (created, updated, skipped, processed) = ApplyChanges(command, existing);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await IndexAsync(processed, existing, cancellationToken);
+
+        return new ImportWorkspacesResult(created, updated, skipped);
+    }
+
+    private (int Created, int Updated, int Skipped, List<string> Processed) ApplyChanges(
+        ImportWorkspacesCommand command, Dictionary<string, Workspace> existing)
+    {
         var created = 0;
         var updated = 0;
+        var skipped = 0;
+        var processed = new List<string>();
 
         foreach (var item in command.Items)
         {
             if (existing.TryGetValue(item.Code, out var workspace))
             {
-                workspace.Name = item.Name;
-                workspace.Description = item.Description;
-                workspace.DeletedAt = null;
-                workspace.UpdatedAt = DateTime.UtcNow;
+                if (!command.Edit) { skipped++; continue; }
+                UpdateWorkspace(workspace, item);
                 updated++;
             }
             else
             {
-                workspace = new Workspace
-                {
-                    Name = item.Name,
-                    Code = item.Code,
-                    Description = item.Description,
-                    IsSystem = false
-                };
-                dbContext.Workspaces.Add(workspace);
+                if (!command.Add) { skipped++; continue; }
+                CreateWorkspace(item);
                 created++;
             }
+
+            processed.Add(item.Code);
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return (created, updated, skipped, processed);
+    }
 
-        foreach (var item in command.Items)
+    private static void UpdateWorkspace(Workspace workspace, ImportWorkspaceItem item)
+    {
+        workspace.Name = item.Name;
+        workspace.Description = item.Description;
+        workspace.DeletedAt = null;
+        workspace.UpdatedAt = DateTime.UtcNow;
+    }
+
+    private void CreateWorkspace(ImportWorkspaceItem item)
+    {
+        dbContext.Workspaces.Add(new Workspace
         {
-            var w = existing.TryGetValue(item.Code, out var ex) ? ex : await dbContext.Workspaces.FirstAsync(x => x.Code == item.Code, cancellationToken);
-            await searchIndexService.IndexWorkspaceAsync(new WorkspaceDto(w.Id, w.Name, w.Code, w.Description, w.IsSystem), cancellationToken);
-        }
+            Name = item.Name,
+            Code = item.Code,
+            Description = item.Description,
+            IsSystem = false
+        });
+    }
 
-        return new ImportWorkspacesResult(created, updated);
+    private async Task IndexAsync(List<string> processed, Dictionary<string, Workspace> existing, CancellationToken cancellationToken)
+    {
+        foreach (var code in processed)
+        {
+            var w = existing.TryGetValue(code, out var ex)
+                ? ex
+                : await dbContext.Workspaces.FirstAsync(x => x.Code == code, cancellationToken);
+            await searchIndexService.IndexWorkspaceAsync(
+                new WorkspaceDto(w.Id, w.Name, w.Code, w.Description, w.IsSystem), cancellationToken);
+        }
     }
 }
