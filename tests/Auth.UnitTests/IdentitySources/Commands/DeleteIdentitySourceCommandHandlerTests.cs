@@ -14,7 +14,7 @@ public sealed class DeleteIdentitySourceCommandHandlerTests
     public async Task Handle_SoftDeletesSource()
     {
         await using var dbContext = CreateDbContext();
-        var source = new IdentitySource { Name = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
+        var source = new IdentitySource { Name = "keycloak", Code = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
         dbContext.IdentitySources.Add(source);
         await dbContext.SaveChangesAsync();
         var handler = new DeleteIdentitySourceCommandHandler(dbContext);

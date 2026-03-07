@@ -7,6 +7,7 @@ public sealed class UpdateIdentitySourceCommandValidator : AbstractValidator<Upd
     public UpdateIdentitySourceCommandValidator()
     {
         RuleFor(x => x.Id).NotEmpty();
+        RuleFor(x => x.Code).NotEmpty().MaximumLength(64);
         RuleFor(x => x.DisplayName).NotEmpty().MaximumLength(200);
     }
 }

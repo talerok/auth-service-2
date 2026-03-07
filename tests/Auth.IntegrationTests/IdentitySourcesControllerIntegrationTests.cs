@@ -40,6 +40,7 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
         var response = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
         {
             name = $"keycloak-{suffix}",
+            code = $"keycloak-{suffix}",
             displayName = "Keycloak Test",
             type = "oidc",
             oidcConfig = new
@@ -54,6 +55,7 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
         var created = await response.Content.ReadFromJsonAsync<IdentitySourceDetailDto>(IntegrationTestFixture.JsonOptions);
         created.Should().NotBeNull();
         created!.Name.Should().Be($"keycloak-{suffix}");
+        created.Code.Should().Be($"keycloak-{suffix}");
         created.Type.Should().Be(IdentitySourceType.Oidc);
         created.IsEnabled.Should().BeTrue();
         created.OidcConfig.Should().NotBeNull();
@@ -71,6 +73,7 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
         var createResponse = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
         {
             name = $"keycloak-{suffix}",
+            code = $"keycloak-{suffix}",
             displayName = "Keycloak Test",
             type = "oidc",
             oidcConfig = new
@@ -112,6 +115,7 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
         var createResponse = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
         {
             name = $"keycloak-{suffix}",
+            code = $"keycloak-{suffix}",
             displayName = "Old Name",
             type = "oidc",
             oidcConfig = new
@@ -125,6 +129,7 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
 
         var updateResponse = await fixture.Client.PutAsJsonAsync($"/api/identity-sources/{created!.Id}", new
         {
+            code = $"keycloak-{suffix}-updated",
             displayName = "New Name",
             isEnabled = false,
             oidcConfig = new
@@ -151,6 +156,7 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
         var createResponse = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
         {
             name = $"keycloak-{suffix}",
+            code = $"keycloak-{suffix}",
             displayName = "Keycloak",
             type = "oidc",
             oidcConfig = new
@@ -193,6 +199,7 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
         var createSourceResponse = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
         {
             name = $"keycloak-{suffix}",
+            code = $"keycloak-{suffix}",
             displayName = "Keycloak",
             type = "oidc",
             oidcConfig = new
@@ -253,6 +260,7 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
         var createSourceResponse = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
         {
             name = $"keycloak-{suffix}",
+            code = $"keycloak-{suffix}",
             displayName = "Keycloak",
             type = "oidc",
             oidcConfig = new
@@ -303,6 +311,7 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
         var response = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
         {
             name = "test-source",
+            code = "test-source",
             displayName = "Test",
             type = "oidc",
             oidcConfig = new
@@ -325,6 +334,7 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
         var response = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
         {
             name = $"ldap-{suffix}",
+            code = $"ldap-{suffix}",
             displayName = "Corporate LDAP",
             type = "ldap",
             ldapConfig = new
@@ -361,6 +371,7 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
         var response = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
         {
             name = $"ldap-{suffix}",
+            code = $"ldap-{suffix}",
             displayName = "LDAP No Config",
             type = "ldap"
         });
@@ -378,6 +389,7 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
         var createResponse = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
         {
             name = $"ldap-{suffix}",
+            code = $"ldap-{suffix}",
             displayName = "Corporate LDAP",
             type = "ldap",
             ldapConfig = new
@@ -415,6 +427,7 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
         var createResponse = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new
         {
             name = $"ldap-{suffix}",
+            code = $"ldap-{suffix}",
             displayName = "Old LDAP",
             type = "ldap",
             ldapConfig = new
@@ -433,6 +446,7 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
 
         var updateResponse = await fixture.Client.PutAsJsonAsync($"/api/identity-sources/{created!.Id}", new
         {
+            code = $"ldap-{suffix}-updated",
             displayName = "New LDAP",
             isEnabled = false,
             ldapConfig = new

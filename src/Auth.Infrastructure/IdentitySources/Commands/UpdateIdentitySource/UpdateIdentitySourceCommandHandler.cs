@@ -17,6 +17,7 @@ internal sealed class UpdateIdentitySourceCommandHandler(
             .FirstOrDefaultAsync(x => x.Id == command.Id, cancellationToken)
             ?? throw new AuthException(AuthErrorCatalog.IdentitySourceNotFound);
 
+        source.Code = command.Code;
         source.DisplayName = command.DisplayName;
         source.IsEnabled = command.IsEnabled;
         source.UpdatedAt = DateTime.UtcNow;

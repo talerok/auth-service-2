@@ -14,7 +14,7 @@ public sealed class DeleteIdentitySourceLinkCommandHandlerTests
     public async Task Handle_RemovesLink()
     {
         await using var dbContext = CreateDbContext();
-        var source = new IdentitySource { Name = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
+        var source = new IdentitySource { Name = "keycloak", Code = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
         var user = new User { Username = "testuser", Email = "test@example.com", PasswordHash = "hash", IsActive = true };
         var link = new IdentitySourceLink { UserId = user.Id, IdentitySourceId = source.Id, ExternalIdentity = "ext-sub-123" };
         dbContext.IdentitySources.Add(source);
@@ -32,7 +32,7 @@ public sealed class DeleteIdentitySourceLinkCommandHandlerTests
     public async Task Handle_WhenNotFound_ThrowsException()
     {
         await using var dbContext = CreateDbContext();
-        var source = new IdentitySource { Name = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
+        var source = new IdentitySource { Name = "keycloak", Code = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
         dbContext.IdentitySources.Add(source);
         await dbContext.SaveChangesAsync();
         var handler = new DeleteIdentitySourceLinkCommandHandler(dbContext);

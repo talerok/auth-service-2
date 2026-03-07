@@ -5,6 +5,7 @@ namespace Auth.Application;
 public sealed record IdentitySourceDto(
     Guid Id,
     string Name,
+    string Code,
     string DisplayName,
     IdentitySourceType Type,
     bool IsEnabled,
@@ -13,6 +14,7 @@ public sealed record IdentitySourceDto(
 public sealed record IdentitySourceDetailDto(
     Guid Id,
     string Name,
+    string Code,
     string DisplayName,
     IdentitySourceType Type,
     bool IsEnabled,
@@ -33,12 +35,14 @@ public sealed record IdentitySourceLdapConfigDto(
 
 public sealed record CreateIdentitySourceRequest(
     string Name,
+    string Code,
     string DisplayName,
     IdentitySourceType Type,
     CreateOidcConfigRequest? OidcConfig = null,
     CreateLdapConfigRequest? LdapConfig = null);
 
 public sealed record UpdateIdentitySourceRequest(
+    string Code,
     string DisplayName,
     bool IsEnabled,
     CreateOidcConfigRequest? OidcConfig = null,

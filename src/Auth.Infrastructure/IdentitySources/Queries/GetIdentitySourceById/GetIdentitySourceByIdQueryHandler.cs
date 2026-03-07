@@ -15,7 +15,7 @@ internal sealed class GetIdentitySourceByIdQueryHandler(
             .Include(x => x.LdapConfig)
             .Where(x => x.Id == query.Id)
             .Select(x => new IdentitySourceDetailDto(
-                x.Id, x.Name, x.DisplayName, x.Type, x.IsEnabled, x.CreatedAt,
+                x.Id, x.Name, x.Code, x.DisplayName, x.Type, x.IsEnabled, x.CreatedAt,
                 x.OidcConfig != null
                     ? new IdentitySourceOidcConfigDto(x.OidcConfig.Authority, x.OidcConfig.ClientId, x.OidcConfig.ClientSecret != null)
                     : null,

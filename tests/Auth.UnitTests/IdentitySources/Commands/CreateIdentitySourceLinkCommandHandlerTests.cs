@@ -14,7 +14,7 @@ public sealed class CreateIdentitySourceLinkCommandHandlerTests
     public async Task Handle_CreatesLink()
     {
         await using var dbContext = CreateDbContext();
-        var source = new IdentitySource { Name = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
+        var source = new IdentitySource { Name = "keycloak", Code = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
         var user = new User { Username = "testuser", Email = "test@example.com", PasswordHash = "hash", IsActive = true };
         dbContext.IdentitySources.Add(source);
         dbContext.Users.Add(user);
@@ -34,7 +34,7 @@ public sealed class CreateIdentitySourceLinkCommandHandlerTests
     public async Task Handle_DuplicateLink_ThrowsException()
     {
         await using var dbContext = CreateDbContext();
-        var source = new IdentitySource { Name = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
+        var source = new IdentitySource { Name = "keycloak", Code = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
         var user = new User { Username = "testuser", Email = "test@example.com", PasswordHash = "hash", IsActive = true };
         dbContext.IdentitySources.Add(source);
         dbContext.Users.Add(user);

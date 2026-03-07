@@ -15,7 +15,7 @@ public sealed class GetIdentitySourceByIdQueryHandlerTests
         await using var dbContext = CreateDbContext();
         var source = new IdentitySource
         {
-            Name = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true,
+            Name = "keycloak", Code = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true,
             OidcConfig = new IdentitySourceOidcConfig { Authority = "https://idp.example.com", ClientId = "my-client", ClientSecret = "secret" }
         };
         source.OidcConfig.IdentitySourceId = source.Id;
@@ -48,7 +48,7 @@ public sealed class GetIdentitySourceByIdQueryHandlerTests
         await using var dbContext = CreateDbContext();
         var source = new IdentitySource
         {
-            Name = "corporate-ldap", DisplayName = "Corporate LDAP", Type = IdentitySourceType.Ldap, IsEnabled = true,
+            Name = "corporate-ldap", Code = "corporate-ldap", DisplayName = "Corporate LDAP", Type = IdentitySourceType.Ldap, IsEnabled = true,
             LdapConfig = new IdentitySourceLdapConfig
             {
                 Host = "ldap.example.com", Port = 636, BaseDn = "dc=example,dc=com",

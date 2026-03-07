@@ -34,12 +34,12 @@ public sealed class IdentitySourcesController(ISender sender) : ControllerBase
     [HttpPost]
     [HasPermissionIn("system", "system.identity-sources.create")]
     public Task<IdentitySourceDetailDto> Create([FromBody] CreateIdentitySourceRequest request, CancellationToken cancellationToken) =>
-        sender.Send(new CreateIdentitySourceCommand(request.Name, request.DisplayName, request.Type, request.OidcConfig, request.LdapConfig), cancellationToken);
+        sender.Send(new CreateIdentitySourceCommand(request.Name, request.Code, request.DisplayName, request.Type, request.OidcConfig, request.LdapConfig), cancellationToken);
 
     [HttpPut("{id:guid}")]
     [HasPermissionIn("system", "system.identity-sources.update")]
     public Task<IdentitySourceDetailDto> Update(Guid id, [FromBody] UpdateIdentitySourceRequest request, CancellationToken cancellationToken) =>
-        sender.Send(new UpdateIdentitySourceCommand(id, request.DisplayName, request.IsEnabled, request.OidcConfig, request.LdapConfig), cancellationToken);
+        sender.Send(new UpdateIdentitySourceCommand(id, request.Code, request.DisplayName, request.IsEnabled, request.OidcConfig, request.LdapConfig), cancellationToken);
 
     [HttpDelete("{id:guid}")]
     [HasPermissionIn("system", "system.identity-sources.delete")]

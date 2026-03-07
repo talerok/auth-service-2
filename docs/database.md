@@ -194,6 +194,7 @@
 | -------------- | ------------ | -------- | ---------------------------------------- |
 | `id`           | uuid         | NO       | PK                                       |
 | `name`         | varchar(120) | NO       | Уникальное имя источника (partial index) |
+| `code`         | varchar(64)  | NO       | Уникальный код источника (partial index) |
 | `display_name` | varchar(200) | NO       | Отображаемое имя                         |
 | `type`         | varchar(16)  | NO       | Тип источника (oidc, ldap)               |
 | `is_enabled`   | boolean      | NO       | Активен ли источник                      |
@@ -204,6 +205,7 @@
 Индексы:
 
 - `IX_identity_sources_Name` UNIQUE WHERE `"DeletedAt" IS NULL`
+- `IX_identity_sources_Code` UNIQUE WHERE `"DeletedAt" IS NULL`
 
 ### Таблица `identity_source_oidc_configs`
 

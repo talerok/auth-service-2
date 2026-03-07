@@ -5,6 +5,7 @@ namespace Auth.Application.IdentitySources.Commands.CreateIdentitySource;
 
 public sealed record CreateIdentitySourceCommand(
     string Name,
+    string Code,
     string DisplayName,
     IdentitySourceType Type,
     CreateOidcConfigRequest? OidcConfig = null,

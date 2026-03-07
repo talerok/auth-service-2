@@ -11,7 +11,7 @@ internal sealed class GetAllIdentitySourcesQueryHandler(
     public async Task<IReadOnlyCollection<IdentitySourceDto>> Handle(GetAllIdentitySourcesQuery query, CancellationToken cancellationToken)
     {
         return await dbContext.IdentitySources.AsNoTracking()
-            .Select(x => new IdentitySourceDto(x.Id, x.Name, x.DisplayName, x.Type, x.IsEnabled, x.CreatedAt))
+            .Select(x => new IdentitySourceDto(x.Id, x.Name, x.Code, x.DisplayName, x.Type, x.IsEnabled, x.CreatedAt))
             .ToListAsync(cancellationToken);
     }
 }

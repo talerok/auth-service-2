@@ -55,6 +55,7 @@ public sealed class IdentitySourceAuthServiceTests
         var source = new IdentitySource
         {
             Name = "oidc-no-config",
+            Code = "oidc-no-config",
             DisplayName = "OIDC No Config",
             Type = IdentitySourceType.Oidc,
             IsEnabled = true
@@ -340,6 +341,7 @@ public sealed class IdentitySourceAuthServiceTests
         var source = new IdentitySource
         {
             Name = "ldap-no-config",
+            Code = "ldap-no-config",
             DisplayName = "LDAP No Config",
             Type = IdentitySourceType.Ldap,
             IsEnabled = true
@@ -464,6 +466,7 @@ public sealed class IdentitySourceAuthServiceTests
     private static IdentitySource CreateOidcSource(string name, bool isEnabled = true) => new()
     {
         Name = name,
+        Code = name,
         DisplayName = name,
         Type = IdentitySourceType.Oidc,
         IsEnabled = isEnabled,
@@ -477,6 +480,7 @@ public sealed class IdentitySourceAuthServiceTests
     private static IdentitySource CreateLdapSource(string name, bool isEnabled = true) => new()
     {
         Name = name,
+        Code = name,
         DisplayName = name,
         Type = IdentitySourceType.Ldap,
         IsEnabled = isEnabled,

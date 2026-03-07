@@ -11,6 +11,7 @@ public sealed class IdentitySourceConfiguration : IEntityTypeConfiguration<Ident
         builder.ToTable("identity_sources");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Name).IsRequired().HasMaxLength(120);
+        builder.Property(x => x.Code).IsRequired().HasMaxLength(64);
         builder.Property(x => x.DisplayName).IsRequired().HasMaxLength(200);
         builder.Property(x => x.Type)
             .IsRequired()
@@ -21,5 +22,6 @@ public sealed class IdentitySourceConfiguration : IEntityTypeConfiguration<Ident
         builder.Property(x => x.IsEnabled).IsRequired();
         builder.HasQueryFilter(x => x.DeletedAt == null);
         builder.HasIndex(x => x.Name).IsUnique().HasFilter("\"DeletedAt\" IS NULL");
+        builder.HasIndex(x => x.Code).IsUnique().HasFilter("\"DeletedAt\" IS NULL");
     }
 }

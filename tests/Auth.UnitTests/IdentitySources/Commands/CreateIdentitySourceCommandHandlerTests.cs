@@ -17,11 +17,12 @@ public sealed class CreateIdentitySourceCommandHandlerTests
         var handler = new CreateIdentitySourceCommandHandler(dbContext);
 
         var result = await handler.Handle(
-            new CreateIdentitySourceCommand("keycloak", "Keycloak", IdentitySourceType.Oidc,
+            new CreateIdentitySourceCommand("keycloak", "keycloak", "Keycloak", IdentitySourceType.Oidc,
                 new CreateOidcConfigRequest("https://idp.example.com", "my-client", "secret")),
             CancellationToken.None);
 
         result.Name.Should().Be("keycloak");
+        result.Code.Should().Be("keycloak");
         result.OidcConfig.Should().NotBeNull();
         result.OidcConfig!.Authority.Should().Be("https://idp.example.com");
         (await dbContext.IdentitySources.CountAsync()).Should().Be(1);
@@ -35,7 +36,7 @@ public sealed class CreateIdentitySourceCommandHandlerTests
         var handler = new CreateIdentitySourceCommandHandler(dbContext);
 
         var result = await handler.Handle(
-            new CreateIdentitySourceCommand("corporate-ldap", "Corporate LDAP", IdentitySourceType.Ldap,
+            new CreateIdentitySourceCommand("corporate-ldap", "corporate-ldap", "Corporate LDAP", IdentitySourceType.Ldap,
                 LdapConfig: new CreateLdapConfigRequest("ldap.example.com", 389, "dc=example,dc=com", "cn=admin,dc=example,dc=com", "secret")),
             CancellationToken.None);
 
@@ -52,7 +53,7 @@ public sealed class CreateIdentitySourceCommandHandlerTests
         var handler = new CreateIdentitySourceCommandHandler(dbContext);
 
         var act = () => handler.Handle(
-            new CreateIdentitySourceCommand("keycloak", "Keycloak", IdentitySourceType.Oidc),
+            new CreateIdentitySourceCommand("keycloak", "keycloak", "Keycloak", IdentitySourceType.Oidc),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
@@ -66,7 +67,7 @@ public sealed class CreateIdentitySourceCommandHandlerTests
         var handler = new CreateIdentitySourceCommandHandler(dbContext);
 
         var act = () => handler.Handle(
-            new CreateIdentitySourceCommand("ldap", "LDAP", IdentitySourceType.Ldap),
+            new CreateIdentitySourceCommand("ldap", "ldap", "LDAP", IdentitySourceType.Ldap),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()

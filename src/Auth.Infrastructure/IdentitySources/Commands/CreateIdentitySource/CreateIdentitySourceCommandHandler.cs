@@ -19,6 +19,7 @@ internal sealed class CreateIdentitySourceCommandHandler(
         var source = new IdentitySource
         {
             Name = command.Name,
+            Code = command.Code,
             DisplayName = command.DisplayName,
             Type = command.Type,
             IsEnabled = true

@@ -14,7 +14,7 @@ public sealed class GetIdentitySourceLinksQueryHandlerTests
     public async Task Handle_ReturnsLinksForSource()
     {
         await using var dbContext = CreateDbContext();
-        var source = new IdentitySource { Name = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
+        var source = new IdentitySource { Name = "keycloak", Code = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
         var user = new User { Username = "testuser", Email = "test@example.com", PasswordHash = "hash", IsActive = true };
         dbContext.IdentitySources.Add(source);
         dbContext.Users.Add(user);

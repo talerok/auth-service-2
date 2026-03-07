@@ -13,7 +13,7 @@ public sealed class GetAllIdentitySourcesQueryHandlerTests
     public async Task Handle_ReturnsAllSources()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.IdentitySources.Add(new IdentitySource { Name = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true });
+        dbContext.IdentitySources.Add(new IdentitySource { Name = "keycloak", Code = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true });
         await dbContext.SaveChangesAsync();
         var handler = new GetAllIdentitySourcesQueryHandler(dbContext);
 

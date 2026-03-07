@@ -43,7 +43,7 @@ public sealed class GetUserIdentitySourceLinksQueryHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hash", IsActive = true };
-        var source = new IdentitySource { Name = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
+        var source = new IdentitySource { Name = "keycloak", Code = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
         dbContext.Users.Add(user);
         dbContext.IdentitySources.Add(source);
         await dbContext.SaveChangesAsync();
@@ -74,8 +74,8 @@ public sealed class GetUserIdentitySourceLinksQueryHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hash", IsActive = true };
-        var source1 = new IdentitySource { Name = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
-        var source2 = new IdentitySource { Name = "corporate-ldap", DisplayName = "Corporate LDAP", Type = IdentitySourceType.Ldap, IsEnabled = true };
+        var source1 = new IdentitySource { Name = "keycloak", Code = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
+        var source2 = new IdentitySource { Name = "corporate-ldap", Code = "corporate-ldap", DisplayName = "Corporate LDAP", Type = IdentitySourceType.Ldap, IsEnabled = true };
         dbContext.Users.Add(user);
         dbContext.IdentitySources.AddRange(source1, source2);
         await dbContext.SaveChangesAsync();
