@@ -67,6 +67,7 @@
 | ------------- | ------------ | -------- | ---------------------------------------- |
 | `id`          | uuid         | NO       | PK                                       |
 | `name`        | varchar(120) | NO       | Уникальное название роли (partial index) |
+| `code`        | varchar(64)  | NO       | Уникальный код роли (partial index)      |
 | `description` | varchar(500) | NO       | Описание роли                            |
 | `created_at`  | timestamptz  | NO       |                                          |
 | `updated_at`  | timestamptz  | NO       |                                          |
@@ -75,6 +76,7 @@
 Индексы:
 
 - `IX_roles_Name` UNIQUE WHERE `"DeletedAt" IS NULL`
+- `IX_roles_Code` UNIQUE WHERE `"DeletedAt" IS NULL`
 
 ### Таблица `permissions`
 

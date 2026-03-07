@@ -9,5 +9,5 @@ internal sealed class GetAllRolesQueryHandler(
     AuthDbContext dbContext) : IRequestHandler<GetAllRolesQuery, IReadOnlyCollection<RoleDto>>
 {
     public async Task<IReadOnlyCollection<RoleDto>> Handle(GetAllRolesQuery query, CancellationToken cancellationToken) =>
-        await dbContext.Roles.AsNoTracking().Select(x => new RoleDto(x.Id, x.Name, x.Description)).ToListAsync(cancellationToken);
+        await dbContext.Roles.AsNoTracking().Select(x => new RoleDto(x.Id, x.Name, x.Code, x.Description)).ToListAsync(cancellationToken);
 }

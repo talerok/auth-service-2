@@ -7,6 +7,7 @@ public sealed class CreateRoleCommandValidator : AbstractValidator<CreateRoleCom
     public CreateRoleCommandValidator()
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Code).NotEmpty().MaximumLength(64);
         RuleFor(x => x.Description).MaximumLength(500);
     }
 }

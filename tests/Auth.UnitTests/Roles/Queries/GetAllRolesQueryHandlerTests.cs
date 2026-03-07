@@ -15,8 +15,8 @@ public sealed class GetAllRolesQueryHandlerTests
     {
         await using var dbContext = CreateDbContext();
         dbContext.Roles.AddRange(
-            new Role { Name = "Admin", Description = "Administrator" },
-            new Role { Name = "Reader", Description = "Read-only access" });
+            new Role { Name = "Admin", Code = "admin", Description = "Administrator" },
+            new Role { Name = "Reader", Code = "reader", Description = "Read-only access" });
         await dbContext.SaveChangesAsync();
         var handler = new GetAllRolesQueryHandler(dbContext);
 

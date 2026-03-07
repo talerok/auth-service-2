@@ -20,12 +20,13 @@ public sealed class ImportRolesCommandHandlerTests
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportRolesCommandHandler(dbContext, searchIndex.Object);
 
-        var items = new List<ImportRoleItem> { new("Editor", "Can edit", ["perm.a"]) };
+        var items = new List<ImportRoleItem> { new("Editor", "editor", "Can edit", ["perm.a"]) };
         var result = await handler.Handle(new ImportRolesCommand(items), CancellationToken.None);
 
         result.Created.Should().Be(1);
         result.Updated.Should().Be(0);
         var role = await dbContext.Roles.FirstAsync(r => r.Name == "Editor");
+        role.Code.Should().Be("editor");
         role.Description.Should().Be("Can edit");
         var rp = await dbContext.RolePermissions.Where(x => x.RoleId == role.Id).ToListAsync();
         rp.Should().HaveCount(1);
@@ -37,14 +38,14 @@ public sealed class ImportRolesCommandHandlerTests
         await using var dbContext = CreateDbContext();
         var perm = new Permission { Bit = 128, Code = "perm.a", Description = "A" };
         dbContext.Permissions.Add(perm);
-        var role = new Role { Name = "Editor", Description = "Old" };
+        var role = new Role { Name = "Editor", Code = "editor", Description = "Old" };
         dbContext.Roles.Add(role);
         dbContext.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = perm.Id });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportRolesCommandHandler(dbContext, searchIndex.Object);
 
-        var items = new List<ImportRoleItem> { new("Editor", "New desc", ["perm.a"]) };
+        var items = new List<ImportRoleItem> { new("Editor", "editor", "New desc", ["perm.a"]) };
         var result = await handler.Handle(new ImportRolesCommand(items), CancellationToken.None);
 
         result.Created.Should().Be(0);
@@ -60,7 +61,7 @@ public sealed class ImportRolesCommandHandlerTests
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportRolesCommandHandler(dbContext, searchIndex.Object);
 
-        var items = new List<ImportRoleItem> { new("Role", "Desc", ["nonexistent.perm"]) };
+        var items = new List<ImportRoleItem> { new("Role", "role", "Desc", ["nonexistent.perm"]) };
         var act = () => handler.Handle(new ImportRolesCommand(items), CancellationToken.None);
 
         var exception = await act.Should().ThrowAsync<AuthException>();
@@ -72,15 +73,15 @@ public sealed class ImportRolesCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Bit = 128, Code = "perm.a", Description = "A" });
-        dbContext.Roles.Add(new Role { Name = "Existing", Description = "Old" });
+        dbContext.Roles.Add(new Role { Name = "Existing", Code = "existing", Description = "Old" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportRolesCommandHandler(dbContext, searchIndex.Object);
 
         var items = new List<ImportRoleItem>
         {
-            new("Existing", "Updated", ["perm.a"]),
-            new("NewRole", "Brand new", ["perm.a"])
+            new("Existing", "existing", "Updated", ["perm.a"]),
+            new("NewRole", "new-role", "Brand new", ["perm.a"])
         };
         var result = await handler.Handle(new ImportRolesCommand(items), CancellationToken.None);
 
@@ -95,14 +96,14 @@ public sealed class ImportRolesCommandHandlerTests
         var permA = new Permission { Bit = 128, Code = "perm.a", Description = "A" };
         var permB = new Permission { Bit = 129, Code = "perm.b", Description = "B" };
         dbContext.Permissions.AddRange(permA, permB);
-        var role = new Role { Name = "Editor", Description = "Desc" };
+        var role = new Role { Name = "Editor", Code = "editor", Description = "Desc" };
         dbContext.Roles.Add(role);
         dbContext.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = permA.Id });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportRolesCommandHandler(dbContext, searchIndex.Object);
 
-        var items = new List<ImportRoleItem> { new("Editor", "Desc", ["perm.b"]) };
+        var items = new List<ImportRoleItem> { new("Editor", "editor", "Desc", ["perm.b"]) };
         await handler.Handle(new ImportRolesCommand(items), CancellationToken.None);
 
         var rps = await dbContext.RolePermissions.Where(x => x.RoleId == role.Id).Include(x => x.Permission).ToListAsync();
@@ -115,12 +116,12 @@ public sealed class ImportRolesCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Bit = 128, Code = "perm.a", Description = "A" });
-        dbContext.Roles.Add(new Role { Name = "Deleted", Description = "Old", DeletedAt = DateTime.UtcNow });
+        dbContext.Roles.Add(new Role { Name = "Deleted", Code = "deleted", Description = "Old", DeletedAt = DateTime.UtcNow });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportRolesCommandHandler(dbContext, searchIndex.Object);
 
-        var items = new List<ImportRoleItem> { new("Deleted", "Restored", ["perm.a"]) };
+        var items = new List<ImportRoleItem> { new("Deleted", "deleted", "Restored", ["perm.a"]) };
         var result = await handler.Handle(new ImportRolesCommand(items), CancellationToken.None);
 
         result.Updated.Should().Be(1);
@@ -134,15 +135,15 @@ public sealed class ImportRolesCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Bit = 128, Code = "perm.a", Description = "A" });
-        dbContext.Roles.Add(new Role { Name = "Existing", Description = "Old" });
+        dbContext.Roles.Add(new Role { Name = "Existing", Code = "existing", Description = "Old" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportRolesCommandHandler(dbContext, searchIndex.Object);
 
         var items = new List<ImportRoleItem>
         {
-            new("Existing", "Updated", ["perm.a"]),
-            new("NewRole", "Brand new", ["perm.a"])
+            new("Existing", "existing", "Updated", ["perm.a"]),
+            new("NewRole", "new-role", "Brand new", ["perm.a"])
         };
         var result = await handler.Handle(new ImportRolesCommand(items, Add: false), CancellationToken.None);
 
@@ -157,15 +158,15 @@ public sealed class ImportRolesCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Bit = 128, Code = "perm.a", Description = "A" });
-        dbContext.Roles.Add(new Role { Name = "Existing", Description = "Old" });
+        dbContext.Roles.Add(new Role { Name = "Existing", Code = "existing", Description = "Old" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportRolesCommandHandler(dbContext, searchIndex.Object);
 
         var items = new List<ImportRoleItem>
         {
-            new("Existing", "Updated", ["perm.a"]),
-            new("NewRole", "Brand new", ["perm.a"])
+            new("Existing", "existing", "Updated", ["perm.a"]),
+            new("NewRole", "new-role", "Brand new", ["perm.a"])
         };
         var result = await handler.Handle(new ImportRolesCommand(items, Edit: false), CancellationToken.None);
 
@@ -181,15 +182,15 @@ public sealed class ImportRolesCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Bit = 128, Code = "perm.a", Description = "A" });
-        dbContext.Roles.Add(new Role { Name = "Existing", Description = "Old" });
+        dbContext.Roles.Add(new Role { Name = "Existing", Code = "existing", Description = "Old" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportRolesCommandHandler(dbContext, searchIndex.Object);
 
         var items = new List<ImportRoleItem>
         {
-            new("Existing", "Updated", ["perm.a"]),
-            new("NewRole", "Brand new", ["perm.a"])
+            new("Existing", "existing", "Updated", ["perm.a"]),
+            new("NewRole", "new-role", "Brand new", ["perm.a"])
         };
         var result = await handler.Handle(new ImportRolesCommand(items, Add: false, Edit: false), CancellationToken.None);
 

@@ -14,7 +14,7 @@ public sealed class GetRoleByIdQueryHandlerTests
     public async Task Handle_ExistingRole_ReturnsDto()
     {
         await using var dbContext = CreateDbContext();
-        var role = new Role { Name = "Admin", Description = "Administrator" };
+        var role = new Role { Name = "Admin", Code = "admin", Description = "Administrator" };
         dbContext.Roles.Add(role);
         await dbContext.SaveChangesAsync();
         var handler = new GetRoleByIdQueryHandler(dbContext);

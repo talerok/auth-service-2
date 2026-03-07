@@ -86,7 +86,7 @@ public sealed class OpenSearchMaintenanceService(
     public async Task ReindexRolesAsync(CancellationToken cancellationToken)
     {
         var roles = await dbContext.Roles.AsNoTracking()
-            .Select(x => new RoleDto(x.Id, x.Name, x.Description))
+            .Select(x => new RoleDto(x.Id, x.Name, x.Code, x.Description))
             .ToListAsync(cancellationToken);
         foreach (var role in roles)
         {

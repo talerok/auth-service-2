@@ -22,6 +22,11 @@ internal sealed class PatchRoleCommandHandler(
             entity.Name = command.Name;
         }
 
+        if (command.Code is not null)
+        {
+            entity.Code = command.Code;
+        }
+
         if (command.Description is not null)
         {
             entity.Description = command.Description;
@@ -29,7 +34,7 @@ internal sealed class PatchRoleCommandHandler(
 
         entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = new RoleDto(entity.Id, entity.Name, entity.Description);
+        var dto = new RoleDto(entity.Id, entity.Name, entity.Code, entity.Description);
         await searchIndexService.IndexRoleAsync(dto, cancellationToken);
         return dto;
     }

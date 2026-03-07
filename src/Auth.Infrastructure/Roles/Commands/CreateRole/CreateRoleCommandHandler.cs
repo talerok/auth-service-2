@@ -11,10 +11,10 @@ internal sealed class CreateRoleCommandHandler(
 {
     public async Task<RoleDto> Handle(CreateRoleCommand command, CancellationToken cancellationToken)
     {
-        var entity = new Role { Name = command.Name, Description = command.Description };
+        var entity = new Role { Name = command.Name, Code = command.Code, Description = command.Description };
         dbContext.Roles.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = new RoleDto(entity.Id, entity.Name, entity.Description);
+        var dto = new RoleDto(entity.Id, entity.Name, entity.Code, entity.Description);
         await searchIndexService.IndexRoleAsync(dto, cancellationToken);
         return dto;
     }

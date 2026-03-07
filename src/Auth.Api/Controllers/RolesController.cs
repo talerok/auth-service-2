@@ -41,13 +41,13 @@ public sealed class RolesController(ISender sender) : ControllerBase
     [HttpPost]
     [HasPermissionIn("system", "system.roles.create")]
     public async Task<RoleDto> Create([FromBody] CreateRoleRequest request, CancellationToken cancellationToken) =>
-        await sender.Send(new CreateRoleCommand(request.Name, request.Description), cancellationToken);
+        await sender.Send(new CreateRoleCommand(request.Name, request.Code, request.Description), cancellationToken);
 
     [HttpPut("{id:guid}")]
     [HasPermissionIn("system", "system.roles.update")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRoleRequest request, CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(new UpdateRoleCommand(id, request.Name, request.Description), cancellationToken);
+        var updated = await sender.Send(new UpdateRoleCommand(id, request.Name, request.Code, request.Description), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -55,7 +55,7 @@ public sealed class RolesController(ISender sender) : ControllerBase
     [HasPermissionIn("system", "system.roles.update")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] PatchRoleRequest request, CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(new PatchRoleCommand(id, request.Name, request.Description), cancellationToken);
+        var updated = await sender.Send(new PatchRoleCommand(id, request.Name, request.Code, request.Description), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 

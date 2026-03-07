@@ -15,7 +15,7 @@ public sealed class PatchRoleCommandHandlerTests
     public async Task Handle_PatchName_OnlyUpdatesName()
     {
         await using var dbContext = CreateDbContext();
-        var role = new Role { Name = "Original", Description = "OriginalDesc" };
+        var role = new Role { Name = "Original", Code = "original", Description = "OriginalDesc" };
         dbContext.Roles.Add(role);
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
@@ -24,15 +24,17 @@ public sealed class PatchRoleCommandHandlerTests
         var handler = new PatchRoleCommandHandler(dbContext, searchIndex.Object);
 
         var result = await handler.Handle(
-            new PatchRoleCommand(role.Id, "Updated", null),
+            new PatchRoleCommand(role.Id, "Updated", null, null),
             CancellationToken.None);
 
         result.Should().NotBeNull();
         result!.Name.Should().Be("Updated");
+        result.Code.Should().Be("original");
         result.Description.Should().Be("OriginalDesc");
 
         var entity = await dbContext.Roles.FirstAsync(x => x.Id == role.Id);
         entity.Name.Should().Be("Updated");
+        entity.Code.Should().Be("original");
         entity.Description.Should().Be("OriginalDesc");
 
         searchIndex.Verify(x => x.IndexRoleAsync(It.Is<RoleDto>(r => r.Id == role.Id), It.IsAny<CancellationToken>()), Times.Once);
@@ -46,7 +48,7 @@ public sealed class PatchRoleCommandHandlerTests
         var handler = new PatchRoleCommandHandler(dbContext, searchIndex.Object);
 
         var result = await handler.Handle(
-            new PatchRoleCommand(Guid.NewGuid(), "Name", null),
+            new PatchRoleCommand(Guid.NewGuid(), "Name", null, null),
             CancellationToken.None);
 
         result.Should().BeNull();

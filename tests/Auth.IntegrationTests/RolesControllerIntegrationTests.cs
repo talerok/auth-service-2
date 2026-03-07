@@ -16,6 +16,7 @@ public sealed class RolesControllerIntegrationTests(IntegrationTestFixture fixtu
         var createRoleResponse = await fixture.Client.PostAsJsonAsync("/api/roles", new
         {
             name = $"role_{suffix}",
+            code = $"role_{suffix}",
             description = "integration test role"
         });
         createRoleResponse.EnsureSuccessStatusCode();
@@ -67,6 +68,7 @@ public sealed class RolesControllerIntegrationTests(IntegrationTestFixture fixtu
         var createRoleResponse = await fixture.Client.PostAsJsonAsync("/api/roles", new
         {
             name = $"role_{suffix}",
+            code = $"role_{suffix}",
             description = "integration test role"
         });
         createRoleResponse.EnsureSuccessStatusCode();
@@ -91,6 +93,7 @@ public sealed class RolesControllerIntegrationTests(IntegrationTestFixture fixtu
         var createRoleResponse = await fixture.Client.PostAsJsonAsync("/api/roles", new
         {
             name = $"role_{suffix}",
+            code = $"role_{suffix}",
             description = "integration test role"
         });
         createRoleResponse.EnsureSuccessStatusCode();

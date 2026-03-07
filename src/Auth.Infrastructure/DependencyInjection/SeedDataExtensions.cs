@@ -49,7 +49,7 @@ public static class SeedDataExtensions
         var role = await db.Roles.FirstOrDefaultAsync(x => x.Name == "admin", cancellationToken);
         if (role is null)
         {
-            role = new Role { Name = "admin", Description = "System administrator" };
+            role = new Role { Name = "admin", Code = "admin", Description = "System administrator" };
             db.Roles.Add(role);
             await db.SaveChangesAsync(cancellationToken);
         }

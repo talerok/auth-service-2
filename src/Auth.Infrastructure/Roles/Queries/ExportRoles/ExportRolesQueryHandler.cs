@@ -18,6 +18,7 @@ internal sealed class ExportRolesQueryHandler(
 
         return roles.Select(r => new ExportRoleDto(
             r.Name,
+            r.Code,
             r.Description,
             r.RolePermissions
                 .Where(rp => rp.Permission is not null)

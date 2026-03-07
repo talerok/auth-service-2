@@ -18,10 +18,11 @@ internal sealed class UpdateRoleCommandHandler(
         }
 
         entity.Name = command.Name;
+        entity.Code = command.Code;
         entity.Description = command.Description;
         entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = new RoleDto(entity.Id, entity.Name, entity.Description);
+        var dto = new RoleDto(entity.Id, entity.Name, entity.Code, entity.Description);
         await searchIndexService.IndexRoleAsync(dto, cancellationToken);
         return dto;
     }

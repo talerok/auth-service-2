@@ -16,7 +16,7 @@ public sealed class ExportRolesQueryHandlerTests
         await using var dbContext = CreateDbContext();
         var perm = new Permission { Bit = 128, Code = "perm.a", Description = "A" };
         dbContext.Permissions.Add(perm);
-        var role = new Role { Name = "Editor", Description = "Can edit" };
+        var role = new Role { Name = "Editor", Code = "editor", Description = "Can edit" };
         dbContext.Roles.Add(role);
         dbContext.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = perm.Id });
         await dbContext.SaveChangesAsync();
@@ -36,8 +36,8 @@ public sealed class ExportRolesQueryHandlerTests
     {
         await using var dbContext = CreateDbContext();
         dbContext.Roles.AddRange(
-            new Role { Name = "Active", Description = "Active" },
-            new Role { Name = "Deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
+            new Role { Name = "Active", Code = "active", Description = "Active" },
+            new Role { Name = "Deleted", Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
         await dbContext.SaveChangesAsync();
         var handler = new ExportRolesQueryHandler(dbContext);
 
@@ -52,8 +52,8 @@ public sealed class ExportRolesQueryHandlerTests
     {
         await using var dbContext = CreateDbContext();
         dbContext.Roles.AddRange(
-            new Role { Name = "Zebra", Description = "Z" },
-            new Role { Name = "Alpha", Description = "A" });
+            new Role { Name = "Zebra", Code = "zebra", Description = "Z" },
+            new Role { Name = "Alpha", Code = "alpha", Description = "A" });
         await dbContext.SaveChangesAsync();
         var handler = new ExportRolesQueryHandler(dbContext);
 

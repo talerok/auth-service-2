@@ -15,7 +15,7 @@ public sealed class UpdateRoleCommandHandlerTests
     public async Task Handle_ExistingRole_UpdatesAndReturns()
     {
         await using var dbContext = CreateDbContext();
-        var role = new Role { Name = "OldName", Description = "OldDesc" };
+        var role = new Role { Name = "OldName", Code = "old-code", Description = "OldDesc" };
         dbContext.Roles.Add(role);
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
@@ -24,15 +24,17 @@ public sealed class UpdateRoleCommandHandlerTests
         var handler = new UpdateRoleCommandHandler(dbContext, searchIndex.Object);
 
         var result = await handler.Handle(
-            new UpdateRoleCommand(role.Id, "NewName", "NewDesc"),
+            new UpdateRoleCommand(role.Id, "NewName", "new-code", "NewDesc"),
             CancellationToken.None);
 
         result.Should().NotBeNull();
         result!.Name.Should().Be("NewName");
+        result.Code.Should().Be("new-code");
         result.Description.Should().Be("NewDesc");
 
         var entity = await dbContext.Roles.FirstAsync(x => x.Id == role.Id);
         entity.Name.Should().Be("NewName");
+        entity.Code.Should().Be("new-code");
         entity.Description.Should().Be("NewDesc");
 
         searchIndex.Verify(x => x.IndexRoleAsync(It.Is<RoleDto>(r => r.Id == role.Id), It.IsAny<CancellationToken>()), Times.Once);
@@ -46,7 +48,7 @@ public sealed class UpdateRoleCommandHandlerTests
         var handler = new UpdateRoleCommandHandler(dbContext, searchIndex.Object);
 
         var result = await handler.Handle(
-            new UpdateRoleCommand(Guid.NewGuid(), "Name", "Desc"),
+            new UpdateRoleCommand(Guid.NewGuid(), "Name", "code", "Desc"),
             CancellationToken.None);
 
         result.Should().BeNull();

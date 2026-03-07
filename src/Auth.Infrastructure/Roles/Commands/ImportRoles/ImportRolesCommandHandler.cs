@@ -79,6 +79,7 @@ internal sealed class ImportRolesCommandHandler(
 
     private void UpdateRole(Role role, ImportRoleItem item, Dictionary<string, Permission> permissionsByCode)
     {
+        role.Code = item.Code;
         role.Description = item.Description;
         role.DeletedAt = null;
         role.UpdatedAt = DateTime.UtcNow;
@@ -93,6 +94,7 @@ internal sealed class ImportRolesCommandHandler(
         var role = new Role
         {
             Name = item.Name,
+            Code = item.Code,
             Description = item.Description
         };
         dbContext.Roles.Add(role);
@@ -108,7 +110,7 @@ internal sealed class ImportRolesCommandHandler(
                 ? r
                 : await dbContext.Roles.FirstAsync(x => x.Name == name, cancellationToken);
             await searchIndexService.IndexRoleAsync(
-                new RoleDto(role.Id, role.Name, role.Description), cancellationToken);
+                new RoleDto(role.Id, role.Name, role.Code, role.Description), cancellationToken);
         }
     }
 }
