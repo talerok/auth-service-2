@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text.RegularExpressions;
 using Auth.Application;
 using Auth.Application.Users.Commands.ImportUsers;
 using Auth.Domain;
@@ -43,15 +41,16 @@ internal sealed class ImportUsersCommandHandler(
 
         var takenIdentityLinks = await LoadTakenIdentityLinks(command, existingUserIds, identitySourcesByCode, cancellationToken);
 
+        var validator = new ImportUserValidator(
+            existingUsers, existingEmailSet, workspacesByCode, rolesByCode, identitySourcesByCode, takenIdentityLinks);
+        var builder = new UserImportBuilder(dbContext, passwordHasher);
+
         var results = new List<ImportUserResultItem>();
         var processedUserIds = new HashSet<Guid>();
 
-        var validationContext = new ValidationContext(
-            existingUsers, existingEmailSet, workspacesByCode, rolesByCode, identitySourcesByCode, takenIdentityLinks);
-
         foreach (var item in command.Items)
         {
-            var error = validationContext.Validate(item);
+            var error = validator.Validate(item);
 
             if (error is not null)
             {
@@ -68,7 +67,7 @@ internal sealed class ImportUsersCommandHandler(
                     continue;
                 }
 
-                UpdateUser(user, item, workspacesByCode, rolesByCode, identitySourcesByCode,
+                builder.UpdateUser(user, item, workspacesByCode, rolesByCode, identitySourcesByCode,
                     linksByUserId.GetValueOrDefault(user.Id) ?? []);
                 processedUserIds.Add(user.Id);
                 results.Add(new ImportUserResultItem(item.Username, null, "updated", null));
@@ -81,8 +80,8 @@ internal sealed class ImportUsersCommandHandler(
                     continue;
                 }
 
-                var tempPassword = GenerateTemporaryPassword();
-                var newUser = CreateUser(item, tempPassword, workspacesByCode, rolesByCode, identitySourcesByCode);
+                var tempPassword = PasswordGenerator.GenerateTemporaryPassword();
+                var newUser = builder.CreateUser(item, tempPassword, workspacesByCode, rolesByCode, identitySourcesByCode);
                 processedUserIds.Add(newUser.Id);
                 results.Add(new ImportUserResultItem(item.Username, tempPassword, "created", null));
             }
@@ -96,159 +95,6 @@ internal sealed class ImportUsersCommandHandler(
         await IndexProcessedUsers(processedUserIds, existingUsers, cancellationToken);
 
         return new ImportUsersResult(results, blocked);
-    }
-
-    private User CreateUser(
-        ImportUserItem item,
-        string tempPassword,
-        Dictionary<string, Workspace> workspacesByCode,
-        Dictionary<string, Role> rolesByCode,
-        Dictionary<string, IdentitySource> identitySourcesByCode)
-    {
-        var user = new User
-        {
-            Username = item.Username,
-            FullName = item.FullName,
-            Email = item.Email,
-            Phone = item.Phone,
-            PasswordHash = passwordHasher.Hash(tempPassword),
-            IsActive = item.IsActive,
-            IsInternalAuthEnabled = item.IsInternalAuthEnabled
-        };
-
-        user.MarkMustChangePassword();
-
-        if (item.TwoFactorEnabled)
-            user.EnableTwoFactor(item.TwoFactorChannel ?? TwoFactorChannel.Email);
-
-        dbContext.Users.Add(user);
-
-        if (item.Workspaces is not null)
-            AddWorkspaces(user, item.Workspaces, workspacesByCode, rolesByCode);
-
-        if (item.IdentitySources is not null)
-            AddIdentitySourceLinks(user, item.IdentitySources, identitySourcesByCode);
-
-        return user;
-    }
-
-    private void UpdateUser(
-        User user,
-        ImportUserItem item,
-        Dictionary<string, Workspace> workspacesByCode,
-        Dictionary<string, Role> rolesByCode,
-        Dictionary<string, IdentitySource> identitySourcesByCode,
-        List<IdentitySourceLink> existingLinks)
-    {
-        user.FullName = item.FullName;
-        user.Email = item.Email;
-        user.Phone = item.Phone;
-        user.IsActive = item.IsActive;
-        user.IsInternalAuthEnabled = item.IsInternalAuthEnabled;
-        user.DeletedAt = null;
-        user.UpdatedAt = DateTime.UtcNow;
-
-        if (item.MustChangePassword)
-            user.MarkMustChangePassword();
-        else
-            user.ClearMustChangePassword();
-
-        if (item.TwoFactorEnabled)
-            user.EnableTwoFactor(item.TwoFactorChannel ?? TwoFactorChannel.Email);
-        else
-            user.DisableTwoFactor();
-
-        if (item.Workspaces is not null)
-            SyncWorkspaces(user, item.Workspaces, workspacesByCode, rolesByCode);
-
-        if (item.IdentitySources is not null)
-            SyncIdentitySourceLinks(user, item.IdentitySources, identitySourcesByCode, existingLinks);
-    }
-
-    private void AddWorkspaces(
-        User user,
-        IReadOnlyCollection<ImportUserWorkspaceItem> workspaces,
-        Dictionary<string, Workspace> workspacesByCode,
-        Dictionary<string, Role> rolesByCode)
-    {
-        foreach (var ws in workspaces)
-        {
-            var workspace = workspacesByCode[ws.WorkspaceCode];
-            var userWorkspace = new UserWorkspace { UserId = user.Id, WorkspaceId = workspace.Id };
-            dbContext.UserWorkspaces.Add(userWorkspace);
-
-            foreach (var roleCode in ws.RoleCodes)
-            {
-                var role = rolesByCode[roleCode];
-                dbContext.UserWorkspaceRoles.Add(new UserWorkspaceRole
-                {
-                    UserWorkspaceId = userWorkspace.Id,
-                    RoleId = role.Id
-                });
-            }
-        }
-    }
-
-    private void SyncWorkspaces(
-        User user,
-        IReadOnlyCollection<ImportUserWorkspaceItem> workspaces,
-        Dictionary<string, Workspace> workspacesByCode,
-        Dictionary<string, Role> rolesByCode)
-    {
-        var existingUws = user.UserWorkspaces.ToList();
-        foreach (var uw in existingUws)
-            dbContext.UserWorkspaceRoles.RemoveRange(uw.UserWorkspaceRoles);
-        dbContext.UserWorkspaces.RemoveRange(existingUws);
-
-        AddWorkspaces(user, workspaces, workspacesByCode, rolesByCode);
-    }
-
-    private void AddIdentitySourceLinks(
-        User user,
-        IReadOnlyCollection<ImportUserIdentitySourceItem> identitySources,
-        Dictionary<string, IdentitySource> identitySourcesByCode)
-    {
-        foreach (var src in identitySources)
-        {
-            var identitySource = identitySourcesByCode[src.IdentitySourceCode];
-            dbContext.IdentitySourceLinks.Add(new IdentitySourceLink
-            {
-                UserId = user.Id,
-                IdentitySourceId = identitySource.Id,
-                ExternalIdentity = src.ExternalIdentity
-            });
-        }
-    }
-
-    private void SyncIdentitySourceLinks(
-        User user,
-        IReadOnlyCollection<ImportUserIdentitySourceItem> identitySources,
-        Dictionary<string, IdentitySource> identitySourcesByCode,
-        List<IdentitySourceLink> existingLinks)
-    {
-        var desired = identitySources.ToDictionary(
-            s => identitySourcesByCode[s.IdentitySourceCode].Id,
-            s => s.ExternalIdentity);
-
-        var toRemove = existingLinks.Where(l => !desired.ContainsKey(l.IdentitySourceId)).ToList();
-        dbContext.IdentitySourceLinks.RemoveRange(toRemove);
-
-        foreach (var link in existingLinks.Where(l => desired.ContainsKey(l.IdentitySourceId)))
-        {
-            if (link.ExternalIdentity != desired[link.IdentitySourceId])
-                link.ExternalIdentity = desired[link.IdentitySourceId];
-            desired.Remove(link.IdentitySourceId);
-        }
-
-        foreach (var (sourceId, externalIdentity) in desired)
-        {
-            dbContext.IdentitySourceLinks.Add(new IdentitySourceLink
-            {
-                UserId = user.Id,
-                IdentitySourceId = sourceId,
-                ExternalIdentity = externalIdentity
-            });
-        }
     }
 
     private async Task<int> BlockMissingUsers(HashSet<Guid> processedUserIds, CancellationToken cancellationToken)
@@ -361,86 +207,6 @@ internal sealed class ImportUsersCommandHandler(
                     user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword,
                     user.TwoFactorEnabled, user.TwoFactorChannel),
                 cancellationToken);
-        }
-    }
-
-    internal static string GenerateTemporaryPassword()
-    {
-        const string chars = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*";
-        Span<byte> bytes = stackalloc byte[16];
-        RandomNumberGenerator.Fill(bytes);
-        return string.Create(16, bytes.ToArray(), (span, b) =>
-        {
-            for (var i = 0; i < span.Length; i++)
-                span[i] = chars[b[i] % chars.Length];
-        });
-    }
-
-    private sealed class ValidationContext(
-        Dictionary<string, User> existingUsers,
-        HashSet<string> existingEmailSet,
-        Dictionary<string, Workspace> workspacesByCode,
-        Dictionary<string, Role> rolesByCode,
-        Dictionary<string, IdentitySource> identitySourcesByCode,
-        HashSet<(Guid IdentitySourceId, string ExternalIdentity)> takenIdentityLinks)
-    {
-        private static readonly Regex EmailRegex = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled);
-        private readonly HashSet<string> _seenUsernames = new(StringComparer.OrdinalIgnoreCase);
-        private readonly HashSet<string> _seenEmails = new(StringComparer.OrdinalIgnoreCase);
-
-        public string? Validate(ImportUserItem item)
-        {
-            if (string.IsNullOrWhiteSpace(item.Username) || item.Username.Length > 100)
-                return AuthErrorCatalog.ImportUserInvalidUsername;
-
-            if (string.IsNullOrWhiteSpace(item.FullName) || item.FullName.Length > 200)
-                return AuthErrorCatalog.ImportUserInvalidFullName;
-
-            if (string.IsNullOrWhiteSpace(item.Email) || !EmailRegex.IsMatch(item.Email))
-                return AuthErrorCatalog.ImportUserInvalidEmail;
-
-            if (!_seenUsernames.Add(item.Username))
-                return AuthErrorCatalog.ImportUserDuplicateUsername;
-
-            if (!_seenEmails.Add(item.Email))
-                return AuthErrorCatalog.ImportUserDuplicateEmail;
-
-            var isNewUser = !existingUsers.ContainsKey(item.Username);
-            var emailTakenByOtherImportedUser = existingUsers.Values.Any(u =>
-                u.Email.Equals(item.Email, StringComparison.OrdinalIgnoreCase) &&
-                !u.Username.Equals(item.Username, StringComparison.OrdinalIgnoreCase));
-
-            if (emailTakenByOtherImportedUser || (isNewUser && existingEmailSet.Contains(item.Email)))
-                return AuthErrorCatalog.ImportUserEmailConflict;
-
-            if (item.Workspaces is not null)
-            {
-                foreach (var ws in item.Workspaces)
-                {
-                    if (!workspacesByCode.ContainsKey(ws.WorkspaceCode))
-                        return AuthErrorCatalog.ImportUserWorkspaceNotFound;
-
-                    foreach (var roleCode in ws.RoleCodes)
-                    {
-                        if (!rolesByCode.ContainsKey(roleCode))
-                            return AuthErrorCatalog.ImportUserRoleNotFound;
-                    }
-                }
-            }
-
-            if (item.IdentitySources is not null)
-            {
-                foreach (var src in item.IdentitySources)
-                {
-                    if (!identitySourcesByCode.TryGetValue(src.IdentitySourceCode, out var idSource))
-                        return AuthErrorCatalog.ImportUserIdentitySourceNotFound;
-
-                    if (takenIdentityLinks.Contains((idSource.Id, src.ExternalIdentity)))
-                        return AuthErrorCatalog.ImportUserIdentitySourceLinkConflict;
-                }
-            }
-
-            return null;
         }
     }
 }

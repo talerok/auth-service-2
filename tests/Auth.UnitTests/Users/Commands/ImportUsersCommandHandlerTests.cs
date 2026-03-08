@@ -526,7 +526,7 @@ public sealed class ImportUsersCommandHandlerTests
     [Fact]
     public void GenerateTemporaryPassword_Returns16CharString()
     {
-        var password = ImportUsersCommandHandler.GenerateTemporaryPassword();
+        var password = PasswordGenerator.GenerateTemporaryPassword();
 
         password.Should().HaveLength(16);
         password.Should().NotBeNullOrWhiteSpace();
@@ -536,7 +536,7 @@ public sealed class ImportUsersCommandHandlerTests
     public void GenerateTemporaryPassword_ReturnsDifferentPasswords()
     {
         var passwords = Enumerable.Range(0, 10)
-            .Select(_ => ImportUsersCommandHandler.GenerateTemporaryPassword())
+            .Select(_ => PasswordGenerator.GenerateTemporaryPassword())
             .ToList();
 
         passwords.Distinct().Count().Should().Be(10);
