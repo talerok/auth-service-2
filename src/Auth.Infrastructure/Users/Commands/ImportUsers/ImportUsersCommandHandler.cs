@@ -34,8 +34,9 @@ internal sealed class ImportUsersCommandHandler(
             .ToListAsync(cancellationToken);
         var existingEmailSet = new HashSet<string>(existingEmails, StringComparer.OrdinalIgnoreCase);
 
+        var existingUserIds = existingUsers.Values.Select(u => u.Id).ToList();
         var existingLinks = await dbContext.IdentitySourceLinks
-            .Where(l => existingUsers.Values.Select(u => u.Id).Contains(l.UserId))
+            .Where(l => existingUserIds.Contains(l.UserId))
             .ToListAsync(cancellationToken);
         var linksByUserId = existingLinks.GroupBy(l => l.UserId)
             .ToDictionary(g => g.Key, g => g.ToList());
