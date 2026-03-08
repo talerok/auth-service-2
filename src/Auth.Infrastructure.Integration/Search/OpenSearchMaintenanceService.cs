@@ -19,6 +19,7 @@ public sealed class OpenSearchMaintenanceService(
                 .Keyword(k => k.Name(n => n.FullName))
                 .Keyword(k => k.Name(n => n.Email))
                 .Boolean(b => b.Name(n => n.IsActive))
+                .Boolean(b => b.Name(n => n.IsInternalAuthEnabled))
                 .Boolean(b => b.Name(n => n.MustChangePassword)), cancellationToken))
         {
             await ReindexUsersAsync(cancellationToken);
