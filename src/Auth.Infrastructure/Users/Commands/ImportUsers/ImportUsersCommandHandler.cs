@@ -41,11 +41,13 @@ internal sealed class ImportUsersCommandHandler(
         var linksByUserId = existingLinks.GroupBy(l => l.UserId)
             .ToDictionary(g => g.Key, g => g.ToList());
 
+        var takenIdentityLinks = await LoadTakenIdentityLinks(command, existingUserIds, identitySourcesByCode, cancellationToken);
+
         var results = new List<ImportUserResultItem>();
         var processedUserIds = new HashSet<Guid>();
 
         var validationContext = new ValidationContext(
-            existingUsers, existingEmailSet, workspacesByCode, rolesByCode, identitySourcesByCode);
+            existingUsers, existingEmailSet, workspacesByCode, rolesByCode, identitySourcesByCode, takenIdentityLinks);
 
         foreach (var item in command.Items)
         {
@@ -224,10 +226,29 @@ internal sealed class ImportUsersCommandHandler(
         Dictionary<string, IdentitySource> identitySourcesByCode,
         List<IdentitySourceLink> existingLinks)
     {
-        if (existingLinks.Count > 0)
-            dbContext.IdentitySourceLinks.RemoveRange(existingLinks);
+        var desired = identitySources.ToDictionary(
+            s => identitySourcesByCode[s.IdentitySourceCode].Id,
+            s => s.ExternalIdentity);
 
-        AddIdentitySourceLinks(user, identitySources, identitySourcesByCode);
+        var toRemove = existingLinks.Where(l => !desired.ContainsKey(l.IdentitySourceId)).ToList();
+        dbContext.IdentitySourceLinks.RemoveRange(toRemove);
+
+        foreach (var link in existingLinks.Where(l => desired.ContainsKey(l.IdentitySourceId)))
+        {
+            if (link.ExternalIdentity != desired[link.IdentitySourceId])
+                link.ExternalIdentity = desired[link.IdentitySourceId];
+            desired.Remove(link.IdentitySourceId);
+        }
+
+        foreach (var (sourceId, externalIdentity) in desired)
+        {
+            dbContext.IdentitySourceLinks.Add(new IdentitySourceLink
+            {
+                UserId = user.Id,
+                IdentitySourceId = sourceId,
+                ExternalIdentity = externalIdentity
+            });
+        }
     }
 
     private async Task<int> BlockMissingUsers(HashSet<Guid> processedUserIds, CancellationToken cancellationToken)
@@ -299,6 +320,35 @@ internal sealed class ImportUsersCommandHandler(
             .ToDictionaryAsync(s => s.Code, cancellationToken);
     }
 
+    private async Task<HashSet<(Guid IdentitySourceId, string ExternalIdentity)>> LoadTakenIdentityLinks(
+        ImportUsersCommand command,
+        List<Guid> existingUserIds,
+        Dictionary<string, IdentitySource> identitySourcesByCode,
+        CancellationToken cancellationToken)
+    {
+        var pairs = command.Items
+            .Where(x => x.IdentitySources is not null)
+            .SelectMany(x => x.IdentitySources!)
+            .Where(s => identitySourcesByCode.ContainsKey(s.IdentitySourceCode))
+            .Select(s => (identitySourcesByCode[s.IdentitySourceCode].Id, s.ExternalIdentity))
+            .ToList();
+
+        if (pairs.Count == 0)
+            return [];
+
+        var sourceIds = pairs.Select(p => p.Id).Distinct().ToList();
+        var externalIds = pairs.Select(p => p.ExternalIdentity).Distinct().ToList();
+
+        var conflicting = await dbContext.IdentitySourceLinks
+            .Where(l => !existingUserIds.Contains(l.UserId)
+                        && sourceIds.Contains(l.IdentitySourceId)
+                        && externalIds.Contains(l.ExternalIdentity))
+            .Select(l => new { l.IdentitySourceId, l.ExternalIdentity })
+            .ToListAsync(cancellationToken);
+
+        return conflicting.Select(c => (c.IdentitySourceId, c.ExternalIdentity)).ToHashSet();
+    }
+
     private async Task IndexProcessedUsers(
         HashSet<Guid> processedUserIds, Dictionary<string, User> existingUsers, CancellationToken cancellationToken)
     {
@@ -331,7 +381,8 @@ internal sealed class ImportUsersCommandHandler(
         HashSet<string> existingEmailSet,
         Dictionary<string, Workspace> workspacesByCode,
         Dictionary<string, Role> rolesByCode,
-        Dictionary<string, IdentitySource> identitySourcesByCode)
+        Dictionary<string, IdentitySource> identitySourcesByCode,
+        HashSet<(Guid IdentitySourceId, string ExternalIdentity)> takenIdentityLinks)
     {
         private static readonly Regex EmailRegex = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled);
         private readonly HashSet<string> _seenUsernames = new(StringComparer.OrdinalIgnoreCase);
@@ -381,8 +432,11 @@ internal sealed class ImportUsersCommandHandler(
             {
                 foreach (var src in item.IdentitySources)
                 {
-                    if (!identitySourcesByCode.ContainsKey(src.IdentitySourceCode))
+                    if (!identitySourcesByCode.TryGetValue(src.IdentitySourceCode, out var idSource))
                         return AuthErrorCatalog.ImportUserIdentitySourceNotFound;
+
+                    if (takenIdentityLinks.Contains((idSource.Id, src.ExternalIdentity)))
+                        return AuthErrorCatalog.ImportUserIdentitySourceLinkConflict;
                 }
             }
 

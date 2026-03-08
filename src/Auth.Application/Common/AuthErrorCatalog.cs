@@ -39,4 +39,5 @@ public static class AuthErrorCatalog
     public const string ImportUserWorkspaceNotFound = "IMPORT_USER_WORKSPACE_NOT_FOUND";
     public const string ImportUserRoleNotFound = "IMPORT_USER_ROLE_NOT_FOUND";
     public const string ImportUserIdentitySourceNotFound = "IMPORT_USER_IDENTITY_SOURCE_NOT_FOUND";
+    public const string ImportUserIdentitySourceLinkConflict = "IMPORT_USER_IDENTITY_SOURCE_LINK_CONFLICT";
 }
