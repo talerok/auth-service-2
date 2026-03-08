@@ -23,7 +23,11 @@ namespace Auth.Api.Controllers;
 [Authorize]
 public sealed class RolesController(ISender sender) : ControllerBase
 {
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
 
     [HttpGet]
     [HasPermissionIn("system", "system.roles.view")]

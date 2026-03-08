@@ -21,7 +21,11 @@ namespace Auth.Api.Controllers;
 [Authorize]
 public sealed class PermissionsController(ISender sender) : ControllerBase
 {
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
 
     [HttpGet]
     [HasPermissionIn("system", "system.permissions.view")]
