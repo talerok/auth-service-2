@@ -1,14 +1,15 @@
 using FluentValidation;
+using Microsoft.Extensions.Options;
 
 namespace Auth.Application.Users.Commands.CreateUser;
 
 public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
 {
-    public CreateUserCommandValidator()
+    public CreateUserCommandValidator(IOptions<PasswordRequirementsOptions> passwordOptions)
     {
         RuleFor(x => x.Username).NotEmpty().MaximumLength(100);
         RuleFor(x => x.FullName).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
-        RuleFor(x => x.Password).NotEmpty().MinimumLength(6);
+        RuleFor(x => x.Password).MeetsPasswordRequirements(passwordOptions.Value);
     }
 }
