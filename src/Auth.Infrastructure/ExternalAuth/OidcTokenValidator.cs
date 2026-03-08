@@ -14,13 +14,14 @@ internal interface IOidcTokenValidator
 
 internal sealed class OidcTokenValidator : IOidcTokenValidator
 {
-    private static readonly ConcurrentDictionary<string, ConfigurationManager<OpenIdConnectConfiguration>> ConfigManagers = new();
     private static readonly JwtSecurityTokenHandler TokenHandler = new();
+
+    private readonly ConcurrentDictionary<string, ConfigurationManager<OpenIdConnectConfiguration>> _configManagers = new();
 
     public async Task<string> ValidateAndGetSubjectAsync(
         string authority, string clientId, string token, CancellationToken cancellationToken)
     {
-        var configManager = ConfigManagers.GetOrAdd(authority, key =>
+        var configManager = _configManagers.GetOrAdd(authority, key =>
             new ConfigurationManager<OpenIdConnectConfiguration>(
                 $"{key.TrimEnd('/')}/.well-known/openid-configuration",
                 new OpenIdConnectConfigurationRetriever(),
@@ -65,4 +66,5 @@ internal sealed class OidcTokenValidator : IOidcTokenValidator
             throw new AuthException(AuthErrorCatalog.IdentitySourceTokenInvalid);
         }
     }
+
 }
