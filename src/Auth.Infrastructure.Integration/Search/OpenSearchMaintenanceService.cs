@@ -27,6 +27,7 @@ public sealed class OpenSearchMaintenanceService(
         if (await EnsureIndexExistsAsync<RoleDto>(indexNames.Roles, p => p
                 .Keyword(k => k.Name(n => n.Id))
                 .Keyword(k => k.Name(n => n.Name))
+                .Keyword(k => k.Name(n => n.Code))
                 .Keyword(k => k.Name(n => n.Description)), cancellationToken))
         {
             await ReindexRolesAsync(cancellationToken);
