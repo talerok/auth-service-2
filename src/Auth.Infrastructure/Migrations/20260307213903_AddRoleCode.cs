@@ -18,6 +18,10 @@ namespace Auth.Infrastructure.Migrations
                 nullable: false,
                 defaultValue: "");
 
+            migrationBuilder.Sql("""
+                UPDATE roles SET "Code" = LOWER("Name") WHERE "Code" = '';
+                """);
+
             migrationBuilder.CreateIndex(
                 name: "IX_roles_Code",
                 table: "roles",

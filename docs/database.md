@@ -77,6 +77,7 @@
 
 - `IX_roles_Name` UNIQUE WHERE `"DeletedAt" IS NULL`
 - `IX_roles_Code` UNIQUE WHERE `"DeletedAt" IS NULL`
+- `IX_roles_Code` UNIQUE WHERE `"DeletedAt" IS NULL`
 
 ### Таблица `permissions`
 
