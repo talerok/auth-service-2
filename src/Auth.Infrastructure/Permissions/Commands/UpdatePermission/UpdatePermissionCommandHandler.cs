@@ -15,6 +15,9 @@ internal sealed class UpdatePermissionCommandHandler(
         if (entity is null)
             return null;
 
+        if (entity.IsSystem)
+            throw new AuthException(AuthErrorCatalog.SystemPermissionUpdateForbidden);
+
         entity.Code = command.Code;
         entity.Description = command.Description;
         entity.UpdatedAt = DateTime.UtcNow;
