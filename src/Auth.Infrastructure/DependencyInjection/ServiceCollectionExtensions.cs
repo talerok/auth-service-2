@@ -12,6 +12,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<IntegrationOptions>(configuration.GetSection("Integration"));
+        services.Configure<PasswordRequirementsOptions>(configuration.GetSection("Integration:PasswordRequirements"));
         var integration = configuration.GetSection("Integration").Get<IntegrationOptions>() ?? new IntegrationOptions();
 
         services.AddDbContext<AuthDbContext>(options => options.UseNpgsql(integration.PostgreSql.ConnectionString));

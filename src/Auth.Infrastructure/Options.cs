@@ -1,3 +1,5 @@
+using Auth.Application;
+
 namespace Auth.Infrastructure;
 
 public sealed class IntegrationOptions
@@ -12,6 +14,7 @@ public sealed class IntegrationOptions
     public SmsGatewayOptions SmsGateway { get; set; } = new();
     public CorsOptions Cors { get; set; } = new();
     public OidcOptions Oidc { get; set; } = new();
+    public PasswordRequirementsOptions PasswordRequirements { get; set; } = new();
 }
 
 public sealed class PostgreSqlOptions

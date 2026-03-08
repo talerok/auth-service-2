@@ -6,14 +6,21 @@ using Auth.Application.TwoFactor.Commands.EnableTwoFactor;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using OpenIddict.Abstractions;
 
 namespace Auth.Api.Controllers;
 
 [ApiController]
 [Route("api/account")]
-public sealed class AccountController(ISender sender) : ControllerBase
+public sealed class AccountController(ISender sender, IOptions<PasswordRequirementsOptions> passwordOptions) : ControllerBase
 {
+    [HttpGet("password-requirements")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(PasswordRequirementsOptions), StatusCodes.Status200OK)]
+    public ActionResult<PasswordRequirementsOptions> GetPasswordRequirements() =>
+        Ok(passwordOptions.Value);
+
     [HttpPost("2fa/enable")]
     [Authorize]
     [ProducesResponseType(typeof(EnableTwoFactorResponse), StatusCodes.Status200OK)]
