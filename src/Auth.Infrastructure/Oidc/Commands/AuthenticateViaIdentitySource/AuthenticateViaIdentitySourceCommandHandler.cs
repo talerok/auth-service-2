@@ -1,6 +1,5 @@
 using Auth.Application;
 using Auth.Application.Auth.Commands.CreateLoginChallenge;
-using Auth.Application.Auth.Commands.CreatePasswordChangeChallenge;
 using Auth.Application.Oidc.Commands.AuthenticateViaIdentitySource;
 using Auth.Application.Oidc.Queries.BuildPrincipal;
 using Auth.Domain;
@@ -62,12 +61,6 @@ internal sealed class AuthenticateViaIdentitySourceCommandHandler(
 
         if (!user.IsActive)
             throw new AuthException(AuthErrorCatalog.IdentitySourceUserInactive);
-
-        if (user.MustChangePassword)
-        {
-            var challenge = await sender.Send(new CreatePasswordChangeChallengeCommand(user.Id), cancellationToken);
-            return new PasswordGrantResult.PasswordChangeRequired(challenge.Id);
-        }
 
         if (user.TwoFactorEnabled)
         {
