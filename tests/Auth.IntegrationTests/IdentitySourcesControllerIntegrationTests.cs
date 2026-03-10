@@ -190,13 +190,13 @@ public sealed class IdentitySourcesControllerIntegrationTests(IntegrationTestFix
             username,
             fullName = username,
             email = $"{username}@example.com",
-            password = "password123",
+            password = "Password1",
             isActive = true
         });
         createResponse.EnsureSuccessStatusCode();
 
         fixture.ClearAuth();
-        var userTokens = await fixture.LoginAsync(username, "password123");
+        var userTokens = await fixture.LoginAsync(username, "Password1");
         fixture.SetBearerToken(userTokens.AccessToken);
 
         var response = await fixture.Client.PostAsJsonAsync("/api/identity-sources", new

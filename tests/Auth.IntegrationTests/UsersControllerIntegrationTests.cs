@@ -33,13 +33,13 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
             username,
             fullName = username,
             email = $"{username}@example.com",
-            password = "password123",
+            password = "Password1",
             isActive = true
         });
         createResponse.EnsureSuccessStatusCode();
 
         fixture.ClearAuth();
-        var userTokens = await fixture.LoginAsync(username, "password123");
+        var userTokens = await fixture.LoginAsync(username, "Password1");
         fixture.SetBearerToken(userTokens.AccessToken);
 
         var response = await fixture.Client.GetAsync("/api/users");
@@ -61,7 +61,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
             username,
             fullName = username,
             email = $"{username}@example.com",
-            password = "strong-password",
+            password = "Password1",
             isActive = true
         });
 
@@ -96,7 +96,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
             username = $"user_{suffix}",
             fullName = $"user_{suffix}",
             email = $"user_{suffix}@example.com",
-            password = "strong-password",
+            password = "Password1",
             isActive = true
         });
         createUserResponse.EnsureSuccessStatusCode();
@@ -125,7 +125,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
             username,
             fullName = username,
             email = $"{username}@example.com",
-            password = "strong-password",
+            password = "Password1",
             isActive = true,
             twoFactorEnabled = true,
             twoFactorChannel = "email"
@@ -150,7 +150,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
             username = $"user_{suffix}",
             fullName = $"user_{suffix}",
             email = $"user_{suffix}@example.com",
-            password = "strong-password",
+            password = "Password1",
             isActive = true
         });
         createResponse.EnsureSuccessStatusCode();
@@ -182,7 +182,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
             username = $"user_{suffix}",
             fullName = $"user_{suffix}",
             email = $"user_{suffix}@example.com",
-            password = "strong-password",
+            password = "Password1",
             isActive = true
         });
         createResponse.EnsureSuccessStatusCode();
@@ -225,7 +225,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
             username,
             fullName = username,
             email = $"{username}@example.com",
-            password = "strong-password",
+            password = "Password1",
             phone = "+1234567890",
             isActive = true
         });
@@ -248,7 +248,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
             username = $"user_{suffix}",
             fullName = $"user_{suffix}",
             email = $"user_{suffix}@example.com",
-            password = "strong-password",
+            password = "Password1",
             phone = "+1111111111",
             isActive = true
         });
@@ -279,7 +279,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
             username = $"user_{suffix}",
             fullName = $"user_{suffix}",
             email = $"user_{suffix}@example.com",
-            password = "strong-password",
+            password = "Password1",
             isActive = true
         });
         createUserResponse.EnsureSuccessStatusCode();
@@ -328,7 +328,7 @@ public sealed class UsersControllerIntegrationTests(IntegrationTestFixture fixtu
             username = $"user_{suffix}",
             fullName = $"User {suffix}",
             email = $"user_{suffix}@example.com",
-            password = "strong-password",
+            password = "Password1",
             isActive = true
         });
         createUserResponse.EnsureSuccessStatusCode();

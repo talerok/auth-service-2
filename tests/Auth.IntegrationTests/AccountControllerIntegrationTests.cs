@@ -94,7 +94,7 @@ public sealed class AccountControllerIntegrationTests(IntegrationTestFixture fix
         var suffix = Guid.NewGuid().ToString("N")[..8];
         var username = $"user_{suffix}";
         var email = $"{username}@example.com";
-        var password = "password123";
+        var password = "Password1";
 
         var admin = await fixture.LoginAsync("admin", "admin");
         fixture.SetBearerToken(admin.AccessToken);
@@ -185,7 +185,7 @@ public sealed class AccountControllerIntegrationTests(IntegrationTestFixture fix
         var suffix = Guid.NewGuid().ToString("N")[..8];
         var username = $"sms_{suffix}";
         var email = $"{username}@example.com";
-        var password = "password123";
+        var password = "Password1";
         var phone = "+71234567890";
 
         var admin = await fixture.LoginAsync("admin", "admin");
@@ -267,7 +267,7 @@ public sealed class AccountControllerIntegrationTests(IntegrationTestFixture fix
         var suffix = Guid.NewGuid().ToString("N")[..8];
         var username = $"nophone_{suffix}";
         var email = $"{username}@example.com";
-        var password = "password123";
+        var password = "Password1";
 
         var admin = await fixture.LoginAsync("admin", "admin");
         fixture.SetBearerToken(admin.AccessToken);
@@ -321,7 +321,7 @@ public sealed class AccountControllerIntegrationTests(IntegrationTestFixture fix
         fixture.ClearAuth();
         var suffix = Guid.NewGuid().ToString("N")[..8];
         var username = $"mcp_{suffix}";
-        const string password = "password123";
+        const string password = "Password1";
 
         var admin = await fixture.LoginAsync("admin", "admin");
         fixture.SetBearerToken(admin.AccessToken);
@@ -360,7 +360,7 @@ public sealed class AccountControllerIntegrationTests(IntegrationTestFixture fix
         fixture.ClearAuth();
         var suffix = Guid.NewGuid().ToString("N")[..8];
         var username = $"mcp_{suffix}";
-        const string password = "password123";
+        const string password = "Password1";
         const string newPassword = "NewSecurePassword1!";
 
         var admin = await fixture.LoginAsync("admin", "admin");
@@ -407,7 +407,7 @@ public sealed class AccountControllerIntegrationTests(IntegrationTestFixture fix
         fixture.ClearAuth();
         var suffix = Guid.NewGuid().ToString("N")[..8];
         var username = $"mcp_{suffix}";
-        const string password = "password123";
+        const string password = "Password1";
 
         var admin = await fixture.LoginAsync("admin", "admin");
         fixture.SetBearerToken(admin.AccessToken);
@@ -454,7 +454,7 @@ public sealed class AccountControllerIntegrationTests(IntegrationTestFixture fix
         fixture.ClearAuth();
         var suffix = Guid.NewGuid().ToString("N")[..8];
         var username = $"mcp_{suffix}";
-        const string password = "password123";
+        const string password = "Password1";
 
         var admin = await fixture.LoginAsync("admin", "admin");
         fixture.SetBearerToken(admin.AccessToken);
