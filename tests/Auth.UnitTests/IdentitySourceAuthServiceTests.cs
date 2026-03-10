@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Auth.Application;
 using Auth.Application.Auth.Commands.CreateLoginChallenge;
-using Auth.Application.Auth.Commands.CreatePasswordChangeChallenge;
 using Auth.Application.Oidc.Commands.AuthenticateViaIdentitySource;
 using Auth.Application.Oidc.Queries.BuildPrincipal;
 using Auth.Domain;
@@ -224,7 +223,7 @@ public sealed class IdentitySourceAuthServiceTests
     }
 
     [Fact]
-    public async Task AuthenticateAsync_WhenPasswordChangeRequired_ReturnsPasswordChangeRequired()
+    public async Task AuthenticateAsync_WhenPasswordChangeRequired_ReturnsSuccess()
     {
         await using var dbContext = CreateDbContext();
         var source = CreateOidcSource("keycloak");
@@ -251,13 +250,13 @@ public sealed class IdentitySourceAuthServiceTests
             .Setup(x => x.ValidateAndGetSubjectAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("ext-sub");
 
-        var challenge = PasswordChangeChallenge.Create(user.Id, DateTime.UtcNow.AddMinutes(15));
+        var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim("sub", user.Id.ToString())]));
         var senderMock = new Mock<ISender>();
         senderMock
             .Setup(x => x.Send(
-                It.Is<CreatePasswordChangeChallengeCommand>(c => c.UserId == user.Id),
+                It.Is<BuildPrincipalQuery>(q => q.UserId == user.Id),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(challenge);
+            .ReturnsAsync(principal);
 
         var handler = CreateHandler(dbContext, sender: senderMock, tokenValidator: tokenValidator);
 
@@ -265,7 +264,7 @@ public sealed class IdentitySourceAuthServiceTests
             new AuthenticateViaIdentitySourceCommand("keycloak", null, "token", ["openid"]),
             CancellationToken.None);
 
-        result.Should().BeOfType<PasswordGrantResult.PasswordChangeRequired>();
+        result.Should().BeOfType<PasswordGrantResult.Success>();
     }
 
     // LDAP tests
