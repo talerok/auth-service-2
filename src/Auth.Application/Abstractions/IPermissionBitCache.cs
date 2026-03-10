@@ -2,8 +2,7 @@ namespace Auth.Application;
 
 public interface IPermissionBitCache
 {
-    int GetBitByCode(string code);
-    bool TryGetBitByCode(string code, out int bit);
-    IReadOnlyDictionary<string, int> Snapshot();
+    bool TryGetBit(string domain, string code, out int bit);
+    IReadOnlyDictionary<(string Domain, string Code), int> Snapshot();
     Task WarmupAsync(CancellationToken cancellationToken);
 }

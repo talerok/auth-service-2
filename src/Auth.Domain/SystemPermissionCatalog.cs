@@ -2,49 +2,58 @@ namespace Auth.Domain;
 
 public static class SystemPermissionCatalog
 {
-    /// <summary>
-    /// Биты 0–127 зарезервированы для системных полномочий.
-    /// Пользовательские полномочия начинаются с этого бита.
-    /// </summary>
-    public const int CustomBitStart = 128;
-
-    public static readonly (int Bit, string Code, string Description)[] Permissions =
+    public static readonly (string Domain, int Bit, string Code, string Description)[] Permissions =
     [
-        (0, "system.users.view", "View users"),
-        (1, "system.users.create", "Create users"),
-        (2, "system.users.update", "Update users"),
-        (3, "system.users.delete", "Delete users"),
-        (4, "system.roles.view", "View roles"),
-        (5, "system.roles.create", "Create roles"),
-        (6, "system.roles.update", "Update roles"),
-        (7, "system.roles.delete", "Delete roles"),
-        (8, "system.permissions.view", "View permissions"),
-        (9, "system.permissions.create", "Create permissions"),
-        (10, "system.permissions.update", "Update permissions"),
-        (11, "system.permissions.delete", "Delete permissions"),
-        (12, "system.workspaces.view", "View workspaces"),
-        (13, "system.workspaces.create", "Create workspaces"),
-        (14, "system.workspaces.update", "Update workspaces"),
-        (15, "system.workspaces.delete", "Delete workspaces"),
-        (16, "system.search.reindex", "Reindex search"),
-        (17, "system.users.reset-password", "Reset user password"),
-        (18, "system.notification-templates.view", "View notification templates"),
-        (19, "system.notification-templates.update", "Update notification templates"),
-        (20, "system.identity-sources.view", "View identity sources"),
-        (21, "system.identity-sources.create", "Create identity sources"),
-        (22, "system.identity-sources.update", "Update identity sources"),
-        (23, "system.identity-sources.delete", "Delete identity sources"),
-        (24, "system.api-clients.view", "View API clients"),
-        (25, "system.api-clients.create", "Create API clients"),
-        (26, "system.api-clients.update", "Update API clients"),
-        (27, "system.api-clients.delete", "Delete API clients"),
-        (28, "system.permissions.import", "Import permissions"),
-        (29, "system.permissions.export", "Export permissions"),
-        (30, "system.roles.import", "Import roles"),
-        (31, "system.roles.export", "Export roles"),
-        (32, "system.workspaces.import", "Import workspaces"),
-        (33, "system.workspaces.export", "Export workspaces"),
-        (34, "system.users.import", "Import users"),
-        (35, "system.users.export", "Export users")
+        // system.users
+        ("system.users", 0, "view", "View users"),
+        ("system.users", 1, "create", "Create users"),
+        ("system.users", 2, "update", "Update users"),
+        ("system.users", 3, "delete", "Delete users"),
+        ("system.users", 4, "reset-password", "Reset user password"),
+        ("system.users", 5, "import", "Import users"),
+        ("system.users", 6, "export", "Export users"),
+
+        // system.roles
+        ("system.roles", 0, "view", "View roles"),
+        ("system.roles", 1, "create", "Create roles"),
+        ("system.roles", 2, "update", "Update roles"),
+        ("system.roles", 3, "delete", "Delete roles"),
+        ("system.roles", 4, "import", "Import roles"),
+        ("system.roles", 5, "export", "Export roles"),
+
+        // system.permissions
+        ("system.permissions", 0, "view", "View permissions"),
+        ("system.permissions", 1, "create", "Create permissions"),
+        ("system.permissions", 2, "update", "Update permissions"),
+        ("system.permissions", 3, "delete", "Delete permissions"),
+        ("system.permissions", 4, "import", "Import permissions"),
+        ("system.permissions", 5, "export", "Export permissions"),
+
+        // system.workspaces
+        ("system.workspaces", 0, "view", "View workspaces"),
+        ("system.workspaces", 1, "create", "Create workspaces"),
+        ("system.workspaces", 2, "update", "Update workspaces"),
+        ("system.workspaces", 3, "delete", "Delete workspaces"),
+        ("system.workspaces", 4, "import", "Import workspaces"),
+        ("system.workspaces", 5, "export", "Export workspaces"),
+
+        // system.search
+        ("system.search", 0, "reindex", "Reindex search"),
+
+        // system.notification-templates
+        ("system.notification-templates", 0, "view", "View notification templates"),
+        ("system.notification-templates", 1, "update", "Update notification templates"),
+
+        // system.identity-sources
+        ("system.identity-sources", 0, "view", "View identity sources"),
+        ("system.identity-sources", 1, "create", "Create identity sources"),
+        ("system.identity-sources", 2, "update", "Update identity sources"),
+        ("system.identity-sources", 3, "delete", "Delete identity sources"),
+
+        // system.api-clients
+        ("system.api-clients", 0, "view", "View API clients"),
+        ("system.api-clients", 1, "create", "Create API clients"),
+        ("system.api-clients", 2, "update", "Update API clients"),
+        ("system.api-clients", 3, "delete", "Delete API clients")
     ];
 }

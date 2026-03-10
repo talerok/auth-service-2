@@ -17,7 +17,7 @@ internal sealed class GetRolePermissionsQueryHandler(
         return await dbContext.RolePermissions
             .AsNoTracking()
             .Where(x => x.RoleId == query.RoleId)
-            .Select(x => new PermissionDto(x.Permission!.Id, x.Permission.Bit, x.Permission.Code, x.Permission.Description, x.Permission.IsSystem))
+            .Select(x => new PermissionDto(x.Permission!.Id, x.Permission.Domain, x.Permission.Bit, x.Permission.Code, x.Permission.Description, x.Permission.IsSystem))
             .ToListAsync(cancellationToken);
     }
 }

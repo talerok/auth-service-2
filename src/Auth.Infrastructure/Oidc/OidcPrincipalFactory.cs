@@ -32,7 +32,9 @@ internal static class OidcPrincipalFactory
         if (scopeList.Contains("ws"))
         {
             var masks = await sender.Send(new BuildWorkspaceMasksQuery(user.Id), cancellationToken);
-            var wsPayload = masks.ToDictionary(x => x.Key, x => Convert.ToBase64String(x.Value));
+            var wsPayload = masks.ToDictionary(
+                ws => ws.Key,
+                ws => ws.Value.ToDictionary(d => d.Key, d => Convert.ToBase64String(d.Value)));
             identity.AddClaim(new Claim("ws", JsonSerializer.Serialize(wsPayload)));
         }
 

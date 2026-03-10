@@ -13,19 +13,21 @@ internal sealed class CreatePermissionCommandHandler(
     public async Task<PermissionDto> Handle(CreatePermissionCommand command, CancellationToken cancellationToken)
     {
         var maxBit = await dbContext.Permissions.IgnoreQueryFilters()
+            .Where(x => x.Domain == command.Domain)
             .Select(x => (int?)x.Bit)
             .MaxAsync(cancellationToken) ?? -1;
 
         var entity = new Permission
         {
-            Bit = Math.Max(maxBit + 1, SystemPermissionCatalog.CustomBitStart),
+            Domain = command.Domain,
+            Bit = maxBit + 1,
             Code = command.Code,
             Description = command.Description,
             IsSystem = false
         };
         dbContext.Permissions.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = new PermissionDto(entity.Id, entity.Bit, entity.Code, entity.Description, entity.IsSystem);
+        var dto = new PermissionDto(entity.Id, entity.Domain, entity.Bit, entity.Code, entity.Description, entity.IsSystem);
         await searchIndexService.IndexPermissionAsync(dto, cancellationToken);
         return dto;
     }

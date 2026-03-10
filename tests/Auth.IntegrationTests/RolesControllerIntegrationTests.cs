@@ -36,6 +36,7 @@ public sealed class RolesControllerIntegrationTests(IntegrationTestFixture fixtu
                 new
                 {
                     id = selectedPermission.Id,
+                    domain = selectedPermission.Domain,
                     bit = selectedPermission.Bit,
                     code = selectedPermission.Code,
                     description = selectedPermission.Description,
@@ -113,6 +114,7 @@ public sealed class RolesControllerIntegrationTests(IntegrationTestFixture fixtu
                 new
                 {
                     id = selectedPermission.Id,
+                    domain = selectedPermission.Domain,
                     bit = selectedPermission.Bit,
                     code = selectedPermission.Code,
                     description = selectedPermission.Description,

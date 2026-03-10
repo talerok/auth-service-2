@@ -17,19 +17,20 @@ public static class SeedDataExtensions
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         var permissionCache = scope.ServiceProvider.GetRequiredService<IPermissionBitCache>();
         var appManager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
-        await db.Database.MigrateAsync(cancellationToken);
+        await db.Database.EnsureCreatedAsync(cancellationToken);
 
-        var existingBits = await db.Permissions.IgnoreQueryFilters()
-            .Select(x => x.Bit)
+        var existingKeys = await db.Permissions.IgnoreQueryFilters()
+            .Select(x => new { x.Domain, x.Bit })
             .ToListAsync(cancellationToken);
-        var existingBitSet = existingBits.ToHashSet();
+        var existingKeySet = existingKeys.Select(x => (x.Domain, x.Bit)).ToHashSet();
         var missingPermissions = SystemPermissionCatalog.Permissions
-            .Where(x => !existingBitSet.Contains(x.Bit))
+            .Where(x => !existingKeySet.Contains((x.Domain, x.Bit)))
             .ToList();
         if (missingPermissions.Count > 0)
         {
             db.Permissions.AddRange(missingPermissions.Select(x => new Permission
             {
+                Domain = x.Domain,
                 Bit = x.Bit,
                 Code = x.Code,
                 Description = x.Description,

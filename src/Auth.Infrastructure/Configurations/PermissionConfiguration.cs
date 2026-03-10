@@ -10,10 +10,11 @@ public sealed class PermissionConfiguration : IEntityTypeConfiguration<Permissio
     {
         builder.ToTable("permissions");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Domain).IsRequired().HasMaxLength(120);
         builder.Property(x => x.Code).IsRequired().HasMaxLength(120);
         builder.Property(x => x.Description).HasMaxLength(500);
         builder.HasQueryFilter(x => x.DeletedAt == null);
-        builder.HasIndex(x => x.Code).IsUnique().HasFilter("\"DeletedAt\" IS NULL");
-        builder.HasIndex(x => x.Bit).IsUnique();
+        builder.HasIndex(x => new { x.Domain, x.Code }).IsUnique().HasFilter("\"DeletedAt\" IS NULL");
+        builder.HasIndex(x => new { x.Domain, x.Bit }).IsUnique();
     }
 }

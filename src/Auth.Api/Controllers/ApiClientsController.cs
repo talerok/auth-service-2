@@ -21,12 +21,12 @@ namespace Auth.Api.Controllers;
 public sealed class ApiClientsController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    [HasPermissionIn("system", "system.api-clients.view")]
+    [HasPermissionIn("system", "system.api-clients", "view")]
     public Task<IReadOnlyCollection<ApiClientDto>> GetAll(CancellationToken cancellationToken) =>
         sender.Send(new GetAllApiClientsQuery(), cancellationToken);
 
     [HttpGet("{id:guid}")]
-    [HasPermissionIn("system", "system.api-clients.view")]
+    [HasPermissionIn("system", "system.api-clients", "view")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var item = await sender.Send(new GetApiClientByIdQuery(id), cancellationToken);
@@ -34,12 +34,12 @@ public sealed class ApiClientsController(ISender sender) : ControllerBase
     }
 
     [HttpPost]
-    [HasPermissionIn("system", "system.api-clients.create")]
+    [HasPermissionIn("system", "system.api-clients", "create")]
     public Task<CreateApiClientResponse> Create([FromBody] CreateApiClientRequest request, CancellationToken cancellationToken) =>
         sender.Send(new CreateApiClientCommand(request.Name, request.Description, request.IsActive), cancellationToken);
 
     [HttpPut("{id:guid}")]
-    [HasPermissionIn("system", "system.api-clients.update")]
+    [HasPermissionIn("system", "system.api-clients", "update")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateApiClientRequest request, CancellationToken cancellationToken)
     {
         var updated = await sender.Send(new UpdateApiClientCommand(id, request.Name, request.Description, request.IsActive), cancellationToken);
@@ -47,7 +47,7 @@ public sealed class ApiClientsController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}")]
-    [HasPermissionIn("system", "system.api-clients.update")]
+    [HasPermissionIn("system", "system.api-clients", "update")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] PatchApiClientRequest request, CancellationToken cancellationToken)
     {
         var updated = await sender.Send(new PatchApiClientCommand(id, request.Name, request.Description, request.IsActive), cancellationToken);
@@ -55,7 +55,7 @@ public sealed class ApiClientsController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermissionIn("system", "system.api-clients.delete")]
+    [HasPermissionIn("system", "system.api-clients", "delete")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var deleted = await sender.Send(new SoftDeleteApiClientCommand(id), cancellationToken);
@@ -63,7 +63,7 @@ public sealed class ApiClientsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}/workspaces")]
-    [HasPermissionIn("system", "system.api-clients.view")]
+    [HasPermissionIn("system", "system.api-clients", "view")]
     public async Task<IActionResult> GetWorkspaces(Guid id, CancellationToken cancellationToken)
     {
         var workspaces = await sender.Send(new GetApiClientWorkspacesQuery(id), cancellationToken);
@@ -71,7 +71,7 @@ public sealed class ApiClientsController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}/workspaces")]
-    [HasPermissionIn("system", "system.api-clients.update")]
+    [HasPermissionIn("system", "system.api-clients", "update")]
     public async Task<IActionResult> SetWorkspaces(Guid id, [FromBody] SetApiClientWorkspacesRequest request, CancellationToken cancellationToken)
     {
         await sender.Send(new SetApiClientWorkspacesCommand(id, request.Workspaces), cancellationToken);
@@ -79,7 +79,7 @@ public sealed class ApiClientsController(ISender sender) : ControllerBase
     }
 
     [HttpPost("{id:guid}/regenerate-secret")]
-    [HasPermissionIn("system", "system.api-clients.update")]
+    [HasPermissionIn("system", "system.api-clients", "update")]
     public async Task<IActionResult> RegenerateSecret(Guid id, CancellationToken cancellationToken)
     {
         var result = await sender.Send(new RegenerateApiClientSecretCommand(id), cancellationToken);
@@ -87,7 +87,7 @@ public sealed class ApiClientsController(ISender sender) : ControllerBase
     }
 
     [HttpPost("search")]
-    [HasPermissionIn("system", "system.api-clients.view")]
+    [HasPermissionIn("system", "system.api-clients", "view")]
     public Task<SearchResponse<ApiClientDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
         sender.Send(new SearchApiClientsQuery(request), cancellationToken);
 }

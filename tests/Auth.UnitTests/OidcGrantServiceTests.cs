@@ -261,7 +261,7 @@ public sealed class OidcGrantServiceTests
         sender.Setup(x => x.Send(
                 It.Is<BuildWorkspaceMasksQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<string, byte[]> { ["system"] = [0b_0000_0101] });
+            .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>> { ["system"] = new() { ["system.users"] = [0b_0000_0101] } });
         var handler = new BuildPrincipalQueryHandler(sender.Object);
 
         var principal = await handler.Handle(
@@ -270,6 +270,7 @@ public sealed class OidcGrantServiceTests
         var wsClaim = principal.FindFirst("ws");
         wsClaim.Should().NotBeNull();
         wsClaim!.Value.Should().Contain("system");
+        wsClaim.Value.Should().Contain("system.users");
         wsClaim.Value.Should().Contain(Convert.ToBase64String([0b_0000_0101]));
     }
 
@@ -373,7 +374,7 @@ public sealed class OidcGrantServiceTests
         sender.Setup(x => x.Send(
                 It.Is<BuildApiClientWorkspaceMasksQuery>(q => q.ApiClientId == apiClient.Id),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<string, byte[]> { ["system"] = [0b_0000_0011] });
+            .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>> { ["system"] = new() { ["system.users"] = [0b_0000_0011] } });
         var handler = new HandleClientCredentialsGrantCommandHandler(sender.Object, dbContext);
 
         var principal = await handler.Handle(

@@ -2,6 +2,7 @@ namespace Auth.Domain;
 
 public sealed class Permission : EntityBase
 {
+    public string Domain { get; set; } = string.Empty;
     public int Bit { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;

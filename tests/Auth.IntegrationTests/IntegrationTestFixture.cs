@@ -219,14 +219,13 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
 
     private sealed class StubPermissionBitCache : IPermissionBitCache
     {
-        private readonly IReadOnlyDictionary<string, int> _cache = SystemPermissionCatalog.Permissions
-            .ToDictionary(x => x.Code, x => x.Bit, StringComparer.OrdinalIgnoreCase);
+        private readonly IReadOnlyDictionary<(string Domain, string Code), int> _cache = SystemPermissionCatalog.Permissions
+            .ToDictionary(x => (x.Domain.ToLowerInvariant(), x.Code.ToLowerInvariant()), x => x.Bit);
 
-        public int GetBitByCode(string code) => _cache[code];
+        public bool TryGetBit(string domain, string code, out int bit) =>
+            _cache.TryGetValue((domain.ToLowerInvariant(), code.ToLowerInvariant()), out bit);
 
-        public bool TryGetBitByCode(string code, out int bit) => _cache.TryGetValue(code, out bit);
-
-        public IReadOnlyDictionary<string, int> Snapshot() => _cache;
+        public IReadOnlyDictionary<(string Domain, string Code), int> Snapshot() => _cache;
 
         public Task WarmupAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }

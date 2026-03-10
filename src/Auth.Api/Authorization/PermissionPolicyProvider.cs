@@ -18,16 +18,23 @@ public sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> opti
 
     private Task<AuthorizationPolicy?> _PermInPolicy(string policyName)
     {
+        // policyName = "perm-in:{workspace}:{domain}:{permission}"
         var rest = policyName["perm-in:".Length..];
-        var colonIdx = rest.IndexOf(':');
-        if (colonIdx == -1)
-        {
+        var firstColon = rest.IndexOf(':');
+        if (firstColon == -1)
             return base.GetPolicyAsync(policyName);
-        }
 
-        var code = rest[..colonIdx];
-        var permission = rest[(colonIdx + 1)..];
-        var req = new PermissionInRequirement(code, permission);
+        var workspaceCode = rest[..firstColon];
+        var afterWorkspace = rest[(firstColon + 1)..];
+
+        var lastColon = afterWorkspace.LastIndexOf(':');
+        if (lastColon == -1)
+            return base.GetPolicyAsync(policyName);
+
+        var domain = afterWorkspace[..lastColon];
+        var permission = afterWorkspace[(lastColon + 1)..];
+
+        var req = new PermissionInRequirement(workspaceCode, domain, permission);
 
         var policy = new AuthorizationPolicyBuilder()
             .RequireAuthenticatedUser()

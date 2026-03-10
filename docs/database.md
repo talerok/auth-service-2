@@ -81,21 +81,22 @@
 
 ### Таблица `permissions`
 
-| Колонка       | Тип          | Nullable | Описание                                 |
-| ------------- | ------------ | -------- | ---------------------------------------- |
-| `id`          | uuid         | NO       | PK                                       |
-| `bit`         | integer      | NO       | Номер бита для bitmask-операций (UNIQUE) |
-| `code`        | varchar(120) | NO       | Код разрешения (partial index)           |
-| `description` | varchar(500) | NO       | Описание разрешения                      |
-| `is_system`   | boolean      | NO       | Признак системного разрешения            |
-| `created_at`  | timestamptz  | NO       |                                          |
-| `updated_at`  | timestamptz  | NO       |                                          |
-| `deleted_at`  | timestamptz  | YES      | Soft delete                              |
+| Колонка       | Тип          | Nullable | Описание                                        |
+| ------------- | ------------ | -------- | ----------------------------------------------- |
+| `id`          | uuid         | NO       | PK                                              |
+| `domain`      | varchar(120) | NO       | Домен полномочия (например `system.users`)       |
+| `bit`         | integer      | NO       | Номер бита внутри домена для bitmask-операций    |
+| `code`        | varchar(120) | NO       | Код действия (например `view`, `create`)         |
+| `description` | varchar(500) | NO       | Описание разрешения                              |
+| `is_system`   | boolean      | NO       | Признак системного разрешения                    |
+| `created_at`  | timestamptz  | NO       |                                                  |
+| `updated_at`  | timestamptz  | NO       |                                                  |
+| `deleted_at`  | timestamptz  | YES      | Soft delete                                      |
 
 Индексы:
 
-- `IX_permissions_Bit` UNIQUE
-- `IX_permissions_Code` UNIQUE WHERE `"DeletedAt" IS NULL`
+- `IX_permissions_Domain_Bit` UNIQUE ON (`domain`, `bit`)
+- `IX_permissions_Domain_Code` UNIQUE ON (`domain`, `code`) WHERE `"DeletedAt" IS NULL`
 
 ### Таблица `user_workspaces`
 

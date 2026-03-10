@@ -37,7 +37,7 @@ internal sealed class SetRolePermissionsCommandHandler(
         foreach (var permission in existingPermissions)
         {
             var model = permissionById[permission.Id];
-            var currentModel = new PermissionDto(permission.Id, permission.Bit, permission.Code, permission.Description, permission.IsSystem);
+            var currentModel = new PermissionDto(permission.Id, permission.Domain, permission.Bit, permission.Code, permission.Description, permission.IsSystem);
             if (currentModel.Equals(model))
             {
                 continue;
@@ -46,7 +46,7 @@ internal sealed class SetRolePermissionsCommandHandler(
             permission.Description = model.Description;
             permission.UpdatedAt = DateTime.UtcNow;
             permissionsToReindex.Add(
-                new PermissionDto(permission.Id, permission.Bit, permission.Code, permission.Description, permission.IsSystem));
+                new PermissionDto(permission.Id, permission.Domain, permission.Bit, permission.Code, permission.Description, permission.IsSystem));
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

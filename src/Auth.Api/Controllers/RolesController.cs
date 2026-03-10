@@ -30,12 +30,12 @@ public sealed class RolesController(ISender sender) : ControllerBase
     };
 
     [HttpGet]
-    [HasPermissionIn("system", "system.roles.view")]
+    [HasPermissionIn("system", "system.roles", "view")]
     public async Task<IReadOnlyCollection<RoleDto>> GetAll(CancellationToken cancellationToken) =>
         await sender.Send(new GetAllRolesQuery(), cancellationToken);
 
     [HttpGet("{id:guid}")]
-    [HasPermissionIn("system", "system.roles.view")]
+    [HasPermissionIn("system", "system.roles", "view")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var item = await sender.Send(new GetRoleByIdQuery(id), cancellationToken);
@@ -43,12 +43,12 @@ public sealed class RolesController(ISender sender) : ControllerBase
     }
 
     [HttpPost]
-    [HasPermissionIn("system", "system.roles.create")]
+    [HasPermissionIn("system", "system.roles", "create")]
     public async Task<RoleDto> Create([FromBody] CreateRoleRequest request, CancellationToken cancellationToken) =>
         await sender.Send(new CreateRoleCommand(request.Name, request.Code, request.Description), cancellationToken);
 
     [HttpPut("{id:guid}")]
-    [HasPermissionIn("system", "system.roles.update")]
+    [HasPermissionIn("system", "system.roles", "update")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRoleRequest request, CancellationToken cancellationToken)
     {
         var updated = await sender.Send(new UpdateRoleCommand(id, request.Name, request.Code, request.Description), cancellationToken);
@@ -56,7 +56,7 @@ public sealed class RolesController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}")]
-    [HasPermissionIn("system", "system.roles.update")]
+    [HasPermissionIn("system", "system.roles", "update")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] PatchRoleRequest request, CancellationToken cancellationToken)
     {
         var updated = await sender.Send(new PatchRoleCommand(id, request.Name, request.Code, request.Description), cancellationToken);
@@ -64,7 +64,7 @@ public sealed class RolesController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermissionIn("system", "system.roles.delete")]
+    [HasPermissionIn("system", "system.roles", "delete")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var deleted = await sender.Send(new SoftDeleteRoleCommand(id), cancellationToken);
@@ -72,7 +72,7 @@ public sealed class RolesController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}/permissions")]
-    [HasPermissionIn("system", "system.roles.view")]
+    [HasPermissionIn("system", "system.roles", "view")]
     public async Task<IActionResult> GetPermissions(Guid id, CancellationToken cancellationToken)
     {
         var permissions = await sender.Send(new GetRolePermissionsQuery(id), cancellationToken);
@@ -80,7 +80,7 @@ public sealed class RolesController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}/permissions")]
-    [HasPermissionIn("system", "system.roles.update")]
+    [HasPermissionIn("system", "system.roles", "update")]
     public async Task<IActionResult> SetPermissions(Guid id, [FromBody] SetPermissionsRequest request, CancellationToken cancellationToken)
     {
         await sender.Send(new SetRolePermissionsCommand(id, request.Permissions), cancellationToken);
@@ -88,12 +88,12 @@ public sealed class RolesController(ISender sender) : ControllerBase
     }
 
     [HttpPost("search")]
-    [HasPermissionIn("system", "system.roles.view")]
+    [HasPermissionIn("system", "system.roles", "view")]
     public async Task<SearchResponse<RoleDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
         await sender.Send(new SearchRolesQuery(request), cancellationToken);
 
     [HttpGet("export")]
-    [HasPermissionIn("system", "system.roles.export")]
+    [HasPermissionIn("system", "system.roles", "export")]
     public async Task<IActionResult> Export(CancellationToken cancellationToken)
     {
         var items = await sender.Send(new ExportRolesQuery(), cancellationToken);
@@ -102,7 +102,7 @@ public sealed class RolesController(ISender sender) : ControllerBase
     }
 
     [HttpPost("import")]
-    [HasPermissionIn("system", "system.roles.import")]
+    [HasPermissionIn("system", "system.roles", "import")]
     public async Task<ImportRolesResult> Import(IFormFile file, [FromQuery] bool add = true, [FromQuery] bool edit = true, CancellationToken cancellationToken = default)
     {
         await using var stream = file.OpenReadStream();

@@ -6,6 +6,7 @@ public sealed class CreatePermissionCommandValidator : AbstractValidator<CreateP
 {
     public CreatePermissionCommandValidator()
     {
+        RuleFor(x => x.Domain).NotEmpty().MaximumLength(120);
         RuleFor(x => x.Code).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Description).MaximumLength(500);
     }

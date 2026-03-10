@@ -27,7 +27,7 @@ namespace Auth.UnitTests.Permissions;
 
 public sealed class PermissionHandlerTests
 {
-    // ── CreatePermissionCommandHandler ──────────────────────────────────
+    // -- CreatePermissionCommandHandler --────────────────────────────────
 
     [Fact]
     public async Task Create_ValidRequest_CreatesPermissionAndIndexes()
@@ -39,17 +39,19 @@ public sealed class PermissionHandlerTests
         var handler = new CreatePermissionCommandHandler(dbContext, searchIndex.Object);
 
         var result = await handler.Handle(
-            new CreatePermissionCommand("users.read", "Read users"),
+            new CreatePermissionCommand("custom.domain", "users.read", "Read users"),
             CancellationToken.None);
 
         result.Should().NotBeNull();
         result.Code.Should().Be("users.read");
         result.Description.Should().Be("Read users");
         result.IsSystem.Should().BeFalse();
+        result.Domain.Should().Be("custom.domain");
 
         var entity = await dbContext.Permissions.FirstAsync(x => x.Id == result.Id);
         entity.Code.Should().Be("users.read");
         entity.Description.Should().Be("Read users");
+        entity.Domain.Should().Be("custom.domain");
 
         searchIndex.Verify(
             x => x.IndexPermissionAsync(It.Is<PermissionDto>(p => p.Id == result.Id), It.IsAny<CancellationToken>()),
@@ -57,75 +59,75 @@ public sealed class PermissionHandlerTests
     }
 
     [Fact]
-    public async Task Create_EmptyDatabase_AssignsCustomBitStart()
+    public async Task Create_EmptyDatabase_AssignsBitZero()
     {
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new CreatePermissionCommandHandler(dbContext, searchIndex.Object);
 
         var result = await handler.Handle(
-            new CreatePermissionCommand("first.perm", "First"),
+            new CreatePermissionCommand("custom.domain", "first.perm", "First"),
             CancellationToken.None);
 
-        result.Bit.Should().Be(SystemPermissionCatalog.CustomBitStart);
+        result.Bit.Should().Be(0);
     }
 
     [Fact]
-    public async Task Create_OnlySystemPermissions_AssignsCustomBitStart()
+    public async Task Create_OnlySystemPermissionsInDifferentDomain_AssignsBitZero()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Permissions.Add(new Permission { Bit = 5, Code = "existing", Description = "Existing", IsSystem = true });
+        dbContext.Permissions.Add(new Permission { Domain = "system.domain", Bit = 5, Code = "existing", Description = "Existing", IsSystem = true });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new CreatePermissionCommandHandler(dbContext, searchIndex.Object);
 
         var result = await handler.Handle(
-            new CreatePermissionCommand("new.perm", "New permission"),
+            new CreatePermissionCommand("custom.domain", "new.perm", "New permission"),
             CancellationToken.None);
 
-        result.Bit.Should().Be(SystemPermissionCatalog.CustomBitStart);
+        result.Bit.Should().Be(0);
     }
 
     [Fact]
     public async Task Create_ExistingCustomPermission_AssignsNextBit()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Permissions.Add(new Permission { Bit = 130, Code = "custom.existing", Description = "Existing custom" });
+        dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 3, Code = "custom.existing", Description = "Existing custom" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new CreatePermissionCommandHandler(dbContext, searchIndex.Object);
 
         var result = await handler.Handle(
-            new CreatePermissionCommand("new.perm", "New permission"),
+            new CreatePermissionCommand("custom.domain", "new.perm", "New permission"),
             CancellationToken.None);
 
-        result.Bit.Should().Be(131);
+        result.Bit.Should().Be(4);
     }
 
     [Fact]
-    public async Task Create_DeletedPermissionInReservedRange_AssignsCustomBitStart()
+    public async Task Create_DeletedPermissionInDomain_AssignsBitZero()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Permissions.Add(new Permission { Bit = 3, Code = "active", Description = "Active", IsSystem = true });
-        dbContext.Permissions.Add(new Permission { Bit = 7, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
+        dbContext.Permissions.Add(new Permission { Domain = "system.domain", Bit = 3, Code = "active", Description = "Active", IsSystem = true });
+        dbContext.Permissions.Add(new Permission { Domain = "other.domain", Bit = 7, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new CreatePermissionCommandHandler(dbContext, searchIndex.Object);
 
         var result = await handler.Handle(
-            new CreatePermissionCommand("after.deleted", "After deleted"),
+            new CreatePermissionCommand("custom.domain", "after.deleted", "After deleted"),
             CancellationToken.None);
 
-        result.Bit.Should().Be(SystemPermissionCatalog.CustomBitStart);
+        result.Bit.Should().Be(0);
     }
 
-    // ── UpdatePermissionCommandHandler ──────────────────────────────────
+    // -- UpdatePermissionCommandHandler --────────────────────────────────
 
     [Fact]
     public async Task Update_ExistingPermission_UpdatesAndReturns()
     {
         await using var dbContext = CreateDbContext();
-        var permission = new Permission { Bit = 0, Code = "perm.code", Description = "OldDesc" };
+        var permission = new Permission { Domain = "test.domain", Bit = 0, Code = "perm.code", Description = "OldDesc" };
         dbContext.Permissions.Add(permission);
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
@@ -164,13 +166,13 @@ public sealed class PermissionHandlerTests
         result.Should().BeNull();
     }
 
-    // ── PatchPermissionCommandHandler ───────────────────────────────────
+    // -- PatchPermissionCommandHandler --─────────────────────────────────
 
     [Fact]
     public async Task Patch_WithDescription_OnlyUpdatesDescription()
     {
         await using var dbContext = CreateDbContext();
-        var permission = new Permission { Bit = 0, Code = "perm.code", Description = "OriginalDesc" };
+        var permission = new Permission { Domain = "test.domain", Bit = 0, Code = "perm.code", Description = "OriginalDesc" };
         dbContext.Permissions.Add(permission);
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
@@ -198,7 +200,7 @@ public sealed class PermissionHandlerTests
     public async Task Patch_WithNullDescription_PreservesOriginalDescription()
     {
         await using var dbContext = CreateDbContext();
-        var permission = new Permission { Bit = 0, Code = "perm.code", Description = "OriginalDesc" };
+        var permission = new Permission { Domain = "test.domain", Bit = 0, Code = "perm.code", Description = "OriginalDesc" };
         dbContext.Permissions.Add(permission);
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
@@ -227,13 +229,13 @@ public sealed class PermissionHandlerTests
         result.Should().BeNull();
     }
 
-    // ── SoftDeletePermissionCommandHandler ──────────────────────────────
+    // -- SoftDeletePermissionCommandHandler --────────────────────────────
 
     [Fact]
     public async Task SoftDelete_ExistingPermission_SoftDeletesAndReturnsTrue()
     {
         await using var dbContext = CreateDbContext();
-        var permission = new Permission { Bit = 0, Code = "to.delete", Description = "desc" };
+        var permission = new Permission { Domain = "test.domain", Bit = 0, Code = "to.delete", Description = "desc" };
         dbContext.Permissions.Add(permission);
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
@@ -267,7 +269,7 @@ public sealed class PermissionHandlerTests
     public async Task SoftDelete_SystemPermission_ThrowsAuthException()
     {
         await using var dbContext = CreateDbContext();
-        var permission = new Permission { Bit = 0, Code = "system.perm", Description = "System", IsSystem = true };
+        var permission = new Permission { Domain = "test.domain", Bit = 0, Code = "system.perm", Description = "System", IsSystem = true };
         dbContext.Permissions.Add(permission);
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
@@ -281,15 +283,15 @@ public sealed class PermissionHandlerTests
         exception.Which.Code.Should().Be(AuthErrorCatalog.SystemPermissionDeleteForbidden);
     }
 
-    // ── GetAllPermissionsQueryHandler ────────────────────────────────────
+    // -- GetAllPermissionsQueryHandler --──────────────────────────────────
 
     [Fact]
     public async Task GetAll_ReturnsAllPermissions()
     {
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.AddRange(
-            new Permission { Bit = 0, Code = "perm.a", Description = "A" },
-            new Permission { Bit = 1, Code = "perm.b", Description = "B" });
+            new Permission { Domain = "test.domain", Bit = 0, Code = "perm.a", Description = "A" },
+            new Permission { Domain = "test.domain", Bit = 1, Code = "perm.b", Description = "B" });
         await dbContext.SaveChangesAsync();
         var handler = new GetAllPermissionsQueryHandler(dbContext);
 
@@ -304,8 +306,8 @@ public sealed class PermissionHandlerTests
     {
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.AddRange(
-            new Permission { Bit = 0, Code = "active", Description = "Active" },
-            new Permission { Bit = 1, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
+            new Permission { Domain = "test.domain", Bit = 0, Code = "active", Description = "Active" },
+            new Permission { Domain = "test.domain", Bit = 1, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
         await dbContext.SaveChangesAsync();
         var handler = new GetAllPermissionsQueryHandler(dbContext);
 
@@ -315,13 +317,13 @@ public sealed class PermissionHandlerTests
         result.Single().Code.Should().Be("active");
     }
 
-    // ── GetPermissionByIdQueryHandler ────────────────────────────────────
+    // -- GetPermissionByIdQueryHandler --──────────────────────────────────
 
     [Fact]
     public async Task GetById_ExistingPermission_ReturnsDto()
     {
         await using var dbContext = CreateDbContext();
-        var permission = new Permission { Bit = 3, Code = "perm.find", Description = "Findable", IsSystem = true };
+        var permission = new Permission { Domain = "test.domain", Bit = 3, Code = "perm.find", Description = "Findable", IsSystem = true };
         dbContext.Permissions.Add(permission);
         await dbContext.SaveChangesAsync();
         var handler = new GetPermissionByIdQueryHandler(dbContext);
@@ -330,6 +332,7 @@ public sealed class PermissionHandlerTests
 
         result.Should().NotBeNull();
         result!.Id.Should().Be(permission.Id);
+        result.Domain.Should().Be("test.domain");
         result.Bit.Should().Be(3);
         result.Code.Should().Be("perm.find");
         result.Description.Should().Be("Findable");
@@ -347,7 +350,7 @@ public sealed class PermissionHandlerTests
         result.Should().BeNull();
     }
 
-    // ── SearchPermissionsQueryHandler ────────────────────────────────────
+    // -- SearchPermissionsQueryHandler --──────────────────────────────────
 
     [Fact]
     public async Task Search_DelegatesToSearchService()
@@ -355,8 +358,8 @@ public sealed class PermissionHandlerTests
         var searchService = new Mock<ISearchService>();
         var expectedItems = new List<PermissionDto>
         {
-            new(Guid.NewGuid(), 0, "perm.a", "A", false),
-            new(Guid.NewGuid(), 1, "perm.b", "B", true)
+            new(Guid.NewGuid(), "test.domain", 0, "perm.a", "A", false),
+            new(Guid.NewGuid(), "test.domain", 1, "perm.b", "B", true)
         };
         var expectedResponse = new SearchResponse<PermissionDto>(expectedItems, 1, 20, 2);
         var request = new SearchRequest(null, null);
@@ -375,16 +378,16 @@ public sealed class PermissionHandlerTests
             Times.Once);
     }
 
-    // ── ExportPermissionsQueryHandler ───────────────────────────────────
+    // -- ExportPermissionsQueryHandler --─────────────────────────────────
 
     [Fact]
     public async Task Export_ReturnsOnlyCustomPermissions()
     {
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.AddRange(
-            new Permission { Bit = 5, Code = "system.perm", Description = "System", IsSystem = true },
-            new Permission { Bit = 130, Code = "custom.a", Description = "Custom A" },
-            new Permission { Bit = 131, Code = "custom.b", Description = "Custom B" });
+            new Permission { Domain = "test.domain", Bit = 0, Code = "system.perm", Description = "System", IsSystem = true },
+            new Permission { Domain = "test.domain", Bit = 1, Code = "custom.a", Description = "Custom A" },
+            new Permission { Domain = "test.domain", Bit = 2, Code = "custom.b", Description = "Custom B" });
         await dbContext.SaveChangesAsync();
         var handler = new ExportPermissionsQueryHandler(dbContext);
 
@@ -392,7 +395,7 @@ public sealed class PermissionHandlerTests
 
         result.Should().HaveCount(2);
         result.Select(x => x.Code).Should().BeEquivalentTo("custom.a", "custom.b");
-        result.Should().AllSatisfy(x => x.Bit.Should().BeGreaterThanOrEqualTo(SystemPermissionCatalog.CustomBitStart));
+        result.Should().AllSatisfy(x => x.Domain.Should().Be("test.domain"));
     }
 
     [Fact]
@@ -400,8 +403,8 @@ public sealed class PermissionHandlerTests
     {
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.AddRange(
-            new Permission { Bit = 128, Code = "active", Description = "Active" },
-            new Permission { Bit = 129, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
+            new Permission { Domain = "test.domain", Bit = 0, Code = "active", Description = "Active" },
+            new Permission { Domain = "test.domain", Bit = 1, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
         await dbContext.SaveChangesAsync();
         var handler = new ExportPermissionsQueryHandler(dbContext);
 
@@ -416,8 +419,8 @@ public sealed class PermissionHandlerTests
     {
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.AddRange(
-            new Permission { Bit = 200, Code = "later", Description = "Later" },
-            new Permission { Bit = 128, Code = "first", Description = "First" });
+            new Permission { Domain = "test.domain", Bit = 5, Code = "later", Description = "Later" },
+            new Permission { Domain = "test.domain", Bit = 0, Code = "first", Description = "First" });
         await dbContext.SaveChangesAsync();
         var handler = new ExportPermissionsQueryHandler(dbContext);
 
@@ -426,7 +429,7 @@ public sealed class PermissionHandlerTests
         result.Select(x => x.Bit).Should().BeInAscendingOrder();
     }
 
-    // ── ImportPermissionsCommandHandler ──────────────────────────────────
+    // -- ImportPermissionsCommandHandler --────────────────────────────────
 
     [Fact]
     public async Task Import_CreatesNewPermissions()
@@ -437,8 +440,8 @@ public sealed class PermissionHandlerTests
 
         var items = new List<ImportPermissionItem>
         {
-            new(128, "perm.a", "A"),
-            new(129, "perm.b", "B")
+            new("custom.domain", 0, "perm.a", "A"),
+            new("custom.domain", 1, "perm.b", "B")
         };
         var result = await handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
 
@@ -447,23 +450,24 @@ public sealed class PermissionHandlerTests
         var all = await dbContext.Permissions.ToListAsync();
         all.Should().HaveCount(2);
         all.Should().AllSatisfy(x => x.IsSystem.Should().BeFalse());
+        all.Should().AllSatisfy(x => x.Domain.Should().Be("custom.domain"));
     }
 
     [Fact]
     public async Task Import_UpdatesExistingPermissions()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Permissions.Add(new Permission { Bit = 128, Code = "old.code", Description = "Old" });
+        dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 0, Code = "old.code", Description = "Old" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
 
-        var items = new List<ImportPermissionItem> { new(128, "new.code", "New") };
+        var items = new List<ImportPermissionItem> { new("custom.domain", 0, "new.code", "New") };
         var result = await handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
 
         result.Created.Should().Be(0);
         result.Updated.Should().Be(1);
-        var entity = await dbContext.Permissions.FirstAsync(x => x.Bit == 128);
+        var entity = await dbContext.Permissions.FirstAsync(x => x.Domain == "custom.domain" && x.Bit == 0);
         entity.Code.Should().Be("new.code");
         entity.Description.Should().Be("New");
     }
@@ -472,15 +476,15 @@ public sealed class PermissionHandlerTests
     public async Task Import_MixedNewAndExisting_ReturnsCorrectCounts()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Permissions.Add(new Permission { Bit = 128, Code = "existing", Description = "Existing" });
+        dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 0, Code = "existing", Description = "Existing" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
 
         var items = new List<ImportPermissionItem>
         {
-            new(128, "updated", "Updated"),
-            new(129, "created", "Created")
+            new("custom.domain", 0, "updated", "Updated"),
+            new("custom.domain", 1, "created", "Created")
         };
         var result = await handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
 
@@ -489,60 +493,35 @@ public sealed class PermissionHandlerTests
     }
 
     [Fact]
-    public async Task Import_SystemBit_ThrowsAuthException()
+    public async Task Import_SystemPermissionAtDomainBit_ThrowsAuthException()
     {
         await using var dbContext = CreateDbContext();
+        dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 5, Code = "system.perm", Description = "System", IsSystem = true });
+        await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
 
-        var items = new List<ImportPermissionItem> { new(5, "system.hack", "Hack") };
+        var items = new List<ImportPermissionItem> { new("custom.domain", 5, "system.hack", "Hack") };
         var act = () => handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
 
         var exception = await act.Should().ThrowAsync<AuthException>();
         exception.Which.Code.Should().Be(AuthErrorCatalog.SystemPermissionImportForbidden);
-    }
-
-    [Fact]
-    public async Task Import_BitAtBoundary127_ThrowsAuthException()
-    {
-        await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
-
-        var items = new List<ImportPermissionItem> { new(127, "boundary", "Boundary") };
-        var act = () => handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
-
-        var exception = await act.Should().ThrowAsync<AuthException>();
-        exception.Which.Code.Should().Be(AuthErrorCatalog.SystemPermissionImportForbidden);
-    }
-
-    [Fact]
-    public async Task Import_BitAtBoundary128_Succeeds()
-    {
-        await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
-
-        var items = new List<ImportPermissionItem> { new(128, "boundary.ok", "Boundary OK") };
-        var result = await handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
-
-        result.Created.Should().Be(1);
     }
 
     [Fact]
     public async Task Import_RestoresSoftDeletedPermission()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Permissions.Add(new Permission { Bit = 128, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
+        dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 0, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
 
-        var items = new List<ImportPermissionItem> { new(128, "restored", "Restored") };
+        var items = new List<ImportPermissionItem> { new("custom.domain", 0, "restored", "Restored") };
         var result = await handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
 
         result.Updated.Should().Be(1);
-        var entity = await dbContext.Permissions.IgnoreQueryFilters().FirstAsync(x => x.Bit == 128);
+        var entity = await dbContext.Permissions.IgnoreQueryFilters().FirstAsync(x => x.Domain == "custom.domain" && x.Bit == 0);
         entity.DeletedAt.Should().BeNull();
         entity.Code.Should().Be("restored");
     }
@@ -551,15 +530,15 @@ public sealed class PermissionHandlerTests
     public async Task Import_AddFalse_SkipsNewPermissions()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Permissions.Add(new Permission { Bit = 128, Code = "existing", Description = "Existing" });
+        dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 0, Code = "existing", Description = "Existing" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
 
         var items = new List<ImportPermissionItem>
         {
-            new(128, "updated", "Updated"),
-            new(129, "new.perm", "New")
+            new("custom.domain", 0, "updated", "Updated"),
+            new("custom.domain", 1, "new.perm", "New")
         };
         var result = await handler.Handle(new ImportPermissionsCommand(items, Add: false), CancellationToken.None);
 
@@ -573,22 +552,22 @@ public sealed class PermissionHandlerTests
     public async Task Import_EditFalse_SkipsExistingPermissions()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Permissions.Add(new Permission { Bit = 128, Code = "existing", Description = "Existing" });
+        dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 0, Code = "existing", Description = "Existing" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
 
         var items = new List<ImportPermissionItem>
         {
-            new(128, "updated", "Updated"),
-            new(129, "new.perm", "New")
+            new("custom.domain", 0, "updated", "Updated"),
+            new("custom.domain", 1, "new.perm", "New")
         };
         var result = await handler.Handle(new ImportPermissionsCommand(items, Edit: false), CancellationToken.None);
 
         result.Created.Should().Be(1);
         result.Updated.Should().Be(0);
         result.Skipped.Should().Be(1);
-        var entity = await dbContext.Permissions.FirstAsync(x => x.Bit == 128);
+        var entity = await dbContext.Permissions.FirstAsync(x => x.Domain == "custom.domain" && x.Bit == 0);
         entity.Code.Should().Be("existing");
     }
 
@@ -596,15 +575,15 @@ public sealed class PermissionHandlerTests
     public async Task Import_BothFalse_SkipsAll()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Permissions.Add(new Permission { Bit = 128, Code = "existing", Description = "Existing" });
+        dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 0, Code = "existing", Description = "Existing" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);
 
         var items = new List<ImportPermissionItem>
         {
-            new(128, "updated", "Updated"),
-            new(129, "new.perm", "New")
+            new("custom.domain", 0, "updated", "Updated"),
+            new("custom.domain", 1, "new.perm", "New")
         };
         var result = await handler.Handle(new ImportPermissionsCommand(items, Add: false, Edit: false), CancellationToken.None);
 
@@ -613,7 +592,7 @@ public sealed class PermissionHandlerTests
         result.Skipped.Should().Be(2);
     }
 
-    // ── Helper ──────────────────────────────────────────────────────────
+    // -- Helper --────────────────────────────────────────────────────────
 
     private static AuthDbContext CreateDbContext()
     {

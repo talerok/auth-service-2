@@ -99,7 +99,7 @@ public sealed class OpenSearchMaintenanceService(
     public async Task ReindexPermissionsAsync(CancellationToken cancellationToken)
     {
         var permissions = await dbContext.Permissions.AsNoTracking()
-            .Select(x => new PermissionDto(x.Id, x.Bit, x.Code, x.Description, x.IsSystem))
+            .Select(x => new PermissionDto(x.Id, x.Domain, x.Bit, x.Code, x.Description, x.IsSystem))
             .ToListAsync(cancellationToken);
         foreach (var permission in permissions)
         {

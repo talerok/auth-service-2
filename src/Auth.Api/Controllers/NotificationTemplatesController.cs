@@ -15,12 +15,12 @@ namespace Auth.Api.Controllers;
 public sealed class NotificationTemplatesController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    [HasPermissionIn("system", "system.notification-templates.view")]
+    [HasPermissionIn("system", "system.notification-templates", "view")]
     public async Task<IReadOnlyCollection<NotificationTemplateDto>> GetAll(CancellationToken cancellationToken) =>
         await sender.Send(new GetAllNotificationTemplatesQuery(), cancellationToken);
 
     [HttpGet("{channel}")]
-    [HasPermissionIn("system", "system.notification-templates.view")]
+    [HasPermissionIn("system", "system.notification-templates", "view")]
     public async Task<IActionResult> GetByChannel(string channel, CancellationToken cancellationToken)
     {
         var item = await sender.Send(new GetNotificationTemplateByChannelQuery(channel), cancellationToken);
@@ -28,7 +28,7 @@ public sealed class NotificationTemplatesController(ISender sender) : Controller
     }
 
     [HttpPut("{channel}")]
-    [HasPermissionIn("system", "system.notification-templates.update")]
+    [HasPermissionIn("system", "system.notification-templates", "update")]
     public async Task<IActionResult> Update(string channel, [FromBody] UpdateNotificationTemplateRequest request, CancellationToken cancellationToken)
     {
         var updated = await sender.Send(new UpdateNotificationTemplateCommand(channel, request.Subject, request.Body), cancellationToken);

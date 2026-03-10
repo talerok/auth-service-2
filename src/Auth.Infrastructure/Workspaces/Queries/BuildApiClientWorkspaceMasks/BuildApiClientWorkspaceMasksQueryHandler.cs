@@ -1,31 +1,36 @@
 using Auth.Application;
 using Auth.Application.Workspaces.Queries.BuildApiClientWorkspaceMasks;
-using Auth.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Auth.Infrastructure.Workspaces.Queries.BuildApiClientWorkspaceMasks;
 
 internal sealed class BuildApiClientWorkspaceMasksQueryHandler(
-    AuthDbContext dbContext) : IRequestHandler<BuildApiClientWorkspaceMasksQuery, Dictionary<string, byte[]>>
+    AuthDbContext dbContext) : IRequestHandler<BuildApiClientWorkspaceMasksQuery, Dictionary<string, Dictionary<string, byte[]>>>
 {
-    public async Task<Dictionary<string, byte[]>> Handle(BuildApiClientWorkspaceMasksQuery query, CancellationToken cancellationToken)
+    public async Task<Dictionary<string, Dictionary<string, byte[]>>> Handle(BuildApiClientWorkspaceMasksQuery query, CancellationToken cancellationToken)
     {
         var matrix = await dbContext.ApiClientWorkspaces
             .Where(acw => acw.ApiClientId == query.ApiClientId)
             .Select(acw => new
             {
-                acw.Workspace!.Code,
-                Bits = acw.ApiClientWorkspaceRoles
+                WorkspaceCode = acw.Workspace!.Code,
+                Permissions = acw.ApiClientWorkspaceRoles
                     .SelectMany(acwr => acwr.Role!.RolePermissions)
-                    .Select(rp => rp.Permission!.Bit)
+                    .Select(rp => new { rp.Permission!.Domain, rp.Permission!.Bit })
             })
             .ToListAsync(cancellationToken);
 
-        var result = new Dictionary<string, byte[]>();
+        var result = new Dictionary<string, Dictionary<string, byte[]>>();
         foreach (var row in matrix)
         {
-            result[row.Code] = PermissionBitmask.BuildMask(row.Bits);
+            var domainMasks = new Dictionary<string, byte[]>();
+            foreach (var group in row.Permissions.GroupBy(p => p.Domain))
+            {
+                domainMasks[group.Key] = PermissionBitmask.BuildMask(group.Select(p => p.Bit));
+            }
+
+            result[row.WorkspaceCode] = domainMasks;
         }
 
         return result;

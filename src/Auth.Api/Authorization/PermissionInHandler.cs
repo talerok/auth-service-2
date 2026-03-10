@@ -9,17 +9,17 @@ public sealed class PermissionInHandler(IPermissionBitCache permissionBitCache) 
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionInRequirement requirement)
     {
         var wsClaim = context.User.FindFirst("ws")?.Value;
-        Dictionary<string, string>? workspaceMasks;
 
         if (string.IsNullOrWhiteSpace(wsClaim))
         {
             return Task.CompletedTask;
         }
 
+        Dictionary<string, Dictionary<string, string>>? workspaceMasks;
 
         try
         {
-            workspaceMasks = JsonSerializer.Deserialize<Dictionary<string, string>>(wsClaim);
+            workspaceMasks = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(wsClaim);
         }
         catch
         {
@@ -31,15 +31,18 @@ public sealed class PermissionInHandler(IPermissionBitCache permissionBitCache) 
             return Task.CompletedTask;
         }
 
-        if (!workspaceMasks.TryGetValue(requirement.WorkspaceCode, out var encoded))
+        if (!workspaceMasks.TryGetValue(requirement.WorkspaceCode, out var domainMasks))
         {
             return Task.CompletedTask;
         }
 
-        var hasBit = permissionBitCache.TryGetBitByCode(requirement.Permission, out var bit);
-        if (hasBit && PermissionBitmask.HasBit(Convert.FromBase64String(encoded), bit))
+        if (permissionBitCache.TryGetBit(requirement.Domain, requirement.Permission, out var bit)
+            && domainMasks.TryGetValue(requirement.Domain, out var encoded))
         {
-            context.Succeed(requirement);
+            if (PermissionBitmask.HasBit(Convert.FromBase64String(encoded), bit))
+            {
+                context.Succeed(requirement);
+            }
         }
 
         return Task.CompletedTask;

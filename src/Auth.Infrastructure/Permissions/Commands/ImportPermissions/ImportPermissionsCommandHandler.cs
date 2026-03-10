@@ -12,34 +12,44 @@ internal sealed class ImportPermissionsCommandHandler(
 {
     public async Task<ImportPermissionsResult> Handle(ImportPermissionsCommand command, CancellationToken cancellationToken)
     {
-        if (command.Items.Any(x => x.Bit < SystemPermissionCatalog.CustomBitStart))
-            throw new AuthException(AuthErrorCatalog.SystemPermissionImportForbidden);
-
-        var bits = command.Items.Select(x => x.Bit).ToList();
+        var domains = command.Items.Select(x => x.Domain).Distinct().ToList();
         var existing = await dbContext.Permissions
             .IgnoreQueryFilters()
-            .Where(x => bits.Contains(x.Bit))
-            .ToDictionaryAsync(x => x.Bit, cancellationToken);
+            .Where(x => domains.Contains(x.Domain))
+            .ToListAsync(cancellationToken);
 
-        var (created, updated, skipped, processed) = ApplyChanges(command, existing);
+        existing = existing
+            .Where(x => command.Items.Any(k => k.Domain == x.Domain && k.Bit == x.Bit))
+            .ToList();
+
+        var existingLookup = existing.ToDictionary(x => (x.Domain, x.Bit));
+
+        // Prevent importing over system permissions
+        var systemConflicts = command.Items
+            .Where(item => existingLookup.TryGetValue((item.Domain, item.Bit), out var e) && e.IsSystem)
+            .ToList();
+        if (systemConflicts.Count > 0)
+            throw new AuthException(AuthErrorCatalog.SystemPermissionImportForbidden);
+
+        var (created, updated, skipped, processed) = ApplyChanges(command, existingLookup);
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        await IndexAsync(processed, existing, cancellationToken);
+        await IndexAsync(processed, existingLookup, cancellationToken);
 
         return new ImportPermissionsResult(created, updated, skipped);
     }
 
-    private (int Created, int Updated, int Skipped, List<int> Processed) ApplyChanges(
-        ImportPermissionsCommand command, Dictionary<int, Permission> existing)
+    private (int Created, int Updated, int Skipped, List<(string Domain, int Bit)> Processed) ApplyChanges(
+        ImportPermissionsCommand command, Dictionary<(string, int), Permission> existing)
     {
         var created = 0;
         var updated = 0;
         var skipped = 0;
-        var processed = new List<int>();
+        var processed = new List<(string Domain, int Bit)>();
 
         foreach (var item in command.Items)
         {
-            if (existing.TryGetValue(item.Bit, out var entity))
+            if (existing.TryGetValue((item.Domain, item.Bit), out var entity))
             {
                 if (!command.Edit) { skipped++; continue; }
                 UpdatePermission(entity, item);
@@ -52,7 +62,7 @@ internal sealed class ImportPermissionsCommandHandler(
                 created++;
             }
 
-            processed.Add(item.Bit);
+            processed.Add((item.Domain, item.Bit));
         }
 
         return (created, updated, skipped, processed);
@@ -70,6 +80,7 @@ internal sealed class ImportPermissionsCommandHandler(
     {
         dbContext.Permissions.Add(new Permission
         {
+            Domain = item.Domain,
             Bit = item.Bit,
             Code = item.Code,
             Description = item.Description,
@@ -77,15 +88,15 @@ internal sealed class ImportPermissionsCommandHandler(
         });
     }
 
-    private async Task IndexAsync(List<int> processed, Dictionary<int, Permission> existing, CancellationToken cancellationToken)
+    private async Task IndexAsync(List<(string Domain, int Bit)> processed, Dictionary<(string, int), Permission> existing, CancellationToken cancellationToken)
     {
-        foreach (var bit in processed)
+        foreach (var key in processed)
         {
-            var e = existing.TryGetValue(bit, out var ex)
+            var e = existing.TryGetValue(key, out var ex)
                 ? ex
-                : await dbContext.Permissions.FirstAsync(x => x.Bit == bit, cancellationToken);
+                : await dbContext.Permissions.FirstAsync(x => x.Domain == key.Domain && x.Bit == key.Bit, cancellationToken);
             await searchIndexService.IndexPermissionAsync(
-                new PermissionDto(e.Id, e.Bit, e.Code, e.Description, e.IsSystem), cancellationToken);
+                new PermissionDto(e.Id, e.Domain, e.Bit, e.Code, e.Description, e.IsSystem), cancellationToken);
         }
     }
 }
