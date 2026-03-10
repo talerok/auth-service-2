@@ -5,55 +5,55 @@ public static class SystemPermissionCatalog
     public static readonly (string Domain, int Bit, string Code, string Description)[] Permissions =
     [
         // system.users
-        ("system.users", 0, "view", "View users"),
-        ("system.users", 1, "create", "Create users"),
-        ("system.users", 2, "update", "Update users"),
-        ("system.users", 3, "delete", "Delete users"),
-        ("system.users", 4, "reset-password", "Reset user password"),
-        ("system.users", 5, "import", "Import users"),
-        ("system.users", 6, "export", "Export users"),
+        ("system", 0, "system.users.view", "View users"),
+        ("system", 1, "system.users.create", "Create users"),
+        ("system", 2, "system.users.update", "Update users"),
+        ("system", 3, "system.users.delete", "Delete users"),
+        ("system", 4, "system.users.reset-password", "Reset user password"),
+        ("system", 5, "system.users.import", "Import users"),
+        ("system", 6, "system.users.export", "Export users"),
 
         // system.roles
-        ("system.roles", 0, "view", "View roles"),
-        ("system.roles", 1, "create", "Create roles"),
-        ("system.roles", 2, "update", "Update roles"),
-        ("system.roles", 3, "delete", "Delete roles"),
-        ("system.roles", 4, "import", "Import roles"),
-        ("system.roles", 5, "export", "Export roles"),
+        ("system", 7, "system.roles.view", "View roles"),
+        ("system", 8, "system.roles.create", "Create roles"),
+        ("system", 9, "system.roles.update", "Update roles"),
+        ("system", 10, "system.roles.delete", "Delete roles"),
+        ("system", 11, "system.roles.import", "Import roles"),
+        ("system", 12, "system.roles.export", "Export roles"),
 
         // system.permissions
-        ("system.permissions", 0, "view", "View permissions"),
-        ("system.permissions", 1, "create", "Create permissions"),
-        ("system.permissions", 2, "update", "Update permissions"),
-        ("system.permissions", 3, "delete", "Delete permissions"),
-        ("system.permissions", 4, "import", "Import permissions"),
-        ("system.permissions", 5, "export", "Export permissions"),
+        ("system", 13, "system.permissions.view", "View permissions"),
+        ("system", 14, "system.permissions.create", "Create permissions"),
+        ("system", 15, "system.permissions.update", "Update permissions"),
+        ("system", 16, "system.permissions.delete", "Delete permissions"),
+        ("system", 17, "system.permissions.import", "Import permissions"),
+        ("system", 18, "system.permissions.export", "Export permissions"),
 
         // system.workspaces
-        ("system.workspaces", 0, "view", "View workspaces"),
-        ("system.workspaces", 1, "create", "Create workspaces"),
-        ("system.workspaces", 2, "update", "Update workspaces"),
-        ("system.workspaces", 3, "delete", "Delete workspaces"),
-        ("system.workspaces", 4, "import", "Import workspaces"),
-        ("system.workspaces", 5, "export", "Export workspaces"),
+        ("system", 19, "system.workspaces.view", "View workspaces"),
+        ("system", 20, "system.workspaces.create", "Create workspaces"),
+        ("system", 21, "system.workspaces.update", "Update workspaces"),
+        ("system", 22, "system.workspaces.delete", "Delete workspaces"),
+        ("system", 23, "system.workspaces.import", "Import workspaces"),
+        ("system", 24, "system.workspaces.export", "Export workspaces"),
 
         // system.search
-        ("system.search", 0, "reindex", "Reindex search"),
+        ("system", 25, "system.search.reindex", "Reindex search"),
 
         // system.notification-templates
-        ("system.notification-templates", 0, "view", "View notification templates"),
-        ("system.notification-templates", 1, "update", "Update notification templates"),
+        ("system", 26, "system.notification-templates.view", "View notification templates"),
+        ("system", 27, "system.notification-templates.update", "Update notification templates"),
 
         // system.identity-sources
-        ("system.identity-sources", 0, "view", "View identity sources"),
-        ("system.identity-sources", 1, "create", "Create identity sources"),
-        ("system.identity-sources", 2, "update", "Update identity sources"),
-        ("system.identity-sources", 3, "delete", "Delete identity sources"),
+        ("system", 28, "system.identity-sources.view", "View identity sources"),
+        ("system", 29, "system.identity-sources.create", "Create identity sources"),
+        ("system", 30, "system.identity-sources.update", "Update identity sources"),
+        ("system", 31, "system.identity-sources.delete", "Delete identity sources"),
 
         // system.api-clients
-        ("system.api-clients", 0, "view", "View API clients"),
-        ("system.api-clients", 1, "create", "Create API clients"),
-        ("system.api-clients", 2, "update", "Update API clients"),
-        ("system.api-clients", 3, "delete", "Delete API clients")
+        ("system", 32, "system.api-clients.view", "View API clients"),
+        ("system", 33, "system.api-clients.create", "Create API clients"),
+        ("system", 34, "system.api-clients.update", "Update API clients"),
+        ("system", 35, "system.api-clients.delete", "Delete API clients")
     ];
 }

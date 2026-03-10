@@ -28,12 +28,12 @@ public sealed class PermissionsController(ISender sender) : ControllerBase
     };
 
     [HttpGet]
-    [HasPermissionIn("system", "system.permissions", "view")]
+    [HasPermissionIn("system", "system", "system.permissions.view")]
     public async Task<IReadOnlyCollection<PermissionDto>> GetAll(CancellationToken cancellationToken) =>
         await sender.Send(new GetAllPermissionsQuery(), cancellationToken);
 
     [HttpGet("{id:guid}")]
-    [HasPermissionIn("system", "system.permissions", "view")]
+    [HasPermissionIn("system", "system", "system.permissions.view")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var item = await sender.Send(new GetPermissionByIdQuery(id), cancellationToken);
@@ -41,12 +41,12 @@ public sealed class PermissionsController(ISender sender) : ControllerBase
     }
 
     [HttpPost]
-    [HasPermissionIn("system", "system.permissions", "create")]
+    [HasPermissionIn("system", "system", "system.permissions.create")]
     public async Task<PermissionDto> Create([FromBody] CreatePermissionRequest request, CancellationToken cancellationToken) =>
         await sender.Send(new CreatePermissionCommand(request.Domain, request.Code, request.Description), cancellationToken);
 
     [HttpPut("{id:guid}")]
-    [HasPermissionIn("system", "system.permissions", "update")]
+    [HasPermissionIn("system", "system", "system.permissions.update")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePermissionRequest request, CancellationToken cancellationToken)
     {
         var updated = await sender.Send(new UpdatePermissionCommand(id, request.Code, request.Description), cancellationToken);
@@ -54,7 +54,7 @@ public sealed class PermissionsController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}")]
-    [HasPermissionIn("system", "system.permissions", "update")]
+    [HasPermissionIn("system", "system", "system.permissions.update")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] PatchPermissionRequest request, CancellationToken cancellationToken)
     {
         var updated = await sender.Send(new PatchPermissionCommand(id, request.Code, request.Description), cancellationToken);
@@ -62,7 +62,7 @@ public sealed class PermissionsController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermissionIn("system", "system.permissions", "delete")]
+    [HasPermissionIn("system", "system", "system.permissions.delete")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var deleted = await sender.Send(new SoftDeletePermissionCommand(id), cancellationToken);
@@ -70,12 +70,12 @@ public sealed class PermissionsController(ISender sender) : ControllerBase
     }
 
     [HttpPost("search")]
-    [HasPermissionIn("system", "system.permissions", "view")]
+    [HasPermissionIn("system", "system", "system.permissions.view")]
     public async Task<SearchResponse<PermissionDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
         await sender.Send(new SearchPermissionsQuery(request), cancellationToken);
 
     [HttpGet("export")]
-    [HasPermissionIn("system", "system.permissions", "export")]
+    [HasPermissionIn("system", "system", "system.permissions.export")]
     public async Task<IActionResult> Export(CancellationToken cancellationToken)
     {
         var items = await sender.Send(new ExportPermissionsQuery(), cancellationToken);
@@ -84,7 +84,7 @@ public sealed class PermissionsController(ISender sender) : ControllerBase
     }
 
     [HttpPost("import")]
-    [HasPermissionIn("system", "system.permissions", "import")]
+    [HasPermissionIn("system", "system", "system.permissions.import")]
     public async Task<ImportPermissionsResult> Import(IFormFile file, [FromQuery] bool add = true, [FromQuery] bool edit = true, CancellationToken cancellationToken = default)
     {
         await using var stream = file.OpenReadStream();

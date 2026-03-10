@@ -32,12 +32,12 @@ public sealed class UsersController(ISender sender) : ControllerBase
     };
 
     [HttpGet]
-    [HasPermissionIn("system", "system.users", "view")]
+    [HasPermissionIn("system", "system", "system.users.view")]
     public Task<IReadOnlyCollection<UserDto>> GetAll(CancellationToken cancellationToken) =>
         sender.Send(new GetAllUsersQuery(), cancellationToken);
 
     [HttpGet("{id:guid}")]
-    [HasPermissionIn("system", "system.users", "view")]
+    [HasPermissionIn("system", "system", "system.users.view")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var item = await sender.Send(new GetUserByIdQuery(id), cancellationToken);
@@ -45,7 +45,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpPost]
-    [HasPermissionIn("system", "system.users", "create")]
+    [HasPermissionIn("system", "system", "system.users.create")]
     public Task<UserDto> Create([FromBody] CreateUserRequest request, CancellationToken cancellationToken) =>
         sender.Send(new CreateUserCommand(
             request.Username, request.FullName, request.Email, request.Password,
@@ -53,7 +53,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
             request.TwoFactorEnabled, request.TwoFactorChannel), cancellationToken);
 
     [HttpPut("{id:guid}")]
-    [HasPermissionIn("system", "system.users", "update")]
+    [HasPermissionIn("system", "system", "system.users.update")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
         var updated = await sender.Send(new UpdateUserCommand(
@@ -64,7 +64,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}")]
-    [HasPermissionIn("system", "system.users", "update")]
+    [HasPermissionIn("system", "system", "system.users.update")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] PatchUserRequest request, CancellationToken cancellationToken)
     {
         var updated = await sender.Send(new PatchUserCommand(
@@ -75,7 +75,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermissionIn("system", "system.users", "delete")]
+    [HasPermissionIn("system", "system", "system.users.delete")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var deleted = await sender.Send(new SoftDeleteUserCommand(id), cancellationToken);
@@ -83,7 +83,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}/workspaces")]
-    [HasPermissionIn("system", "system.users", "view")]
+    [HasPermissionIn("system", "system", "system.users.view")]
     public async Task<IActionResult> GetWorkspaces(Guid id, CancellationToken cancellationToken)
     {
         var workspaces = await sender.Send(new GetUserWorkspacesQuery(id), cancellationToken);
@@ -91,7 +91,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}/workspaces")]
-    [HasPermissionIn("system", "system.users", "update")]
+    [HasPermissionIn("system", "system", "system.users.update")]
     public async Task<IActionResult> SetWorkspaces(Guid id, [FromBody] SetUserWorkspacesRequest request, CancellationToken cancellationToken)
     {
         await sender.Send(new SetUserWorkspacesCommand(id, request.Workspaces), cancellationToken);
@@ -99,7 +99,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpPost("{id:guid}/reset-password")]
-    [HasPermissionIn("system", "system.users", "reset-password")]
+    [HasPermissionIn("system", "system", "system.users.reset-password")]
     public async Task<IActionResult> ResetPassword(Guid id, [FromBody] AdminResetPasswordRequest request, CancellationToken cancellationToken)
     {
         var result = await sender.Send(new ResetPasswordCommand(id, request.Password), cancellationToken);
@@ -107,7 +107,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}/identity-sources")]
-    [HasPermissionIn("system", "system.users", "view")]
+    [HasPermissionIn("system", "system", "system.users.view")]
     public async Task<IActionResult> GetIdentitySourceLinks(Guid id, CancellationToken cancellationToken)
     {
         var links = await sender.Send(new GetUserIdentitySourceLinksQuery(id), cancellationToken);
@@ -115,7 +115,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}/identity-sources")]
-    [HasPermissionIn("system", "system.users", "update")]
+    [HasPermissionIn("system", "system", "system.users.update")]
     public async Task<IActionResult> SetIdentitySourceLinks(Guid id, [FromBody] SetUserIdentitySourceLinksRequest request, CancellationToken cancellationToken)
     {
         await sender.Send(new SetUserIdentitySourceLinksCommand(id, request.Links), cancellationToken);
@@ -123,12 +123,12 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpPost("search")]
-    [HasPermissionIn("system", "system.users", "view")]
+    [HasPermissionIn("system", "system", "system.users.view")]
     public Task<SearchResponse<UserDto>> Search([FromBody] SearchRequest request, CancellationToken cancellationToken) =>
         sender.Send(new SearchUsersQuery(request), cancellationToken);
 
     [HttpGet("export")]
-    [HasPermissionIn("system", "system.users", "export")]
+    [HasPermissionIn("system", "system", "system.users.export")]
     public async Task<IActionResult> Export(CancellationToken cancellationToken)
     {
         var items = await sender.Send(new ExportUsersQuery(), cancellationToken);
@@ -137,7 +137,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpPost("import")]
-    [HasPermissionIn("system", "system.users", "import")]
+    [HasPermissionIn("system", "system", "system.users.import")]
     public async Task<ImportUsersResult> Import(IFormFile file, [FromQuery] bool add = true, [FromQuery] bool edit = true, [FromQuery] bool blockMissing = false, CancellationToken cancellationToken = default)
     {
         await using var stream = file.OpenReadStream();
