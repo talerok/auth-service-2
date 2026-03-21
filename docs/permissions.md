@@ -42,10 +42,14 @@
 | 29  | `system.identity-sources.create`       | Create identity source        |
 | 30  | `system.identity-sources.update`       | Update identity source        |
 | 31  | `system.identity-sources.delete`       | Delete identity source        |
-| 32  | `system.api-clients.view`              | View API clients              |
-| 33  | `system.api-clients.create`            | Create API client             |
-| 34  | `system.api-clients.update`            | Update API client             |
-| 35  | `system.api-clients.delete`            | Delete API client             |
+| 32  | `system.applications.view`             | View applications             |
+| 33  | `system.applications.create`           | Create applications           |
+| 34  | `system.applications.update`           | Update applications           |
+| 35  | `system.applications.delete`           | Delete applications           |
+| 36  | `system.service-accounts.view`         | View service accounts         |
+| 37  | `system.service-accounts.create`       | Create service accounts       |
+| 38  | `system.service-accounts.update`       | Update service accounts       |
+| 39  | `system.service-accounts.delete`       | Delete service accounts       |
 
 ## Упаковка в байты
 

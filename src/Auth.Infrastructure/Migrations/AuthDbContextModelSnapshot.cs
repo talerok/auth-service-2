@@ -23,7 +23,7 @@ namespace Auth.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Auth.Domain.ApiClient", b =>
+            modelBuilder.Entity("Auth.Domain.Application", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -80,13 +80,6 @@ namespace Auth.Infrastructure.Migrations
                         .HasColumnType("jsonb")
                         .HasDefaultValueSql("'[]'::jsonb");
 
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasDefaultValue("ServiceAccount");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -100,51 +93,7 @@ namespace Auth.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("\"DeletedAt\" IS NULL");
 
-                    b.ToTable("api_clients", (string)null);
-                });
-
-            modelBuilder.Entity("Auth.Domain.ApiClientWorkspace", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ApiClientId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("WorkspaceId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WorkspaceId");
-
-                    b.HasIndex("ApiClientId", "WorkspaceId")
-                        .IsUnique();
-
-                    b.ToTable("api_client_workspaces", (string)null);
-                });
-
-            modelBuilder.Entity("Auth.Domain.ApiClientWorkspaceRole", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ApiClientWorkspaceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoleId");
-
-                    b.HasIndex("ApiClientWorkspaceId", "RoleId")
-                        .IsUnique();
-
-                    b.ToTable("api_client_workspace_roles", (string)null);
+                    b.ToTable("applications", (string)null);
                 });
 
             modelBuilder.Entity("Auth.Domain.IdentitySource", b =>
@@ -485,6 +434,98 @@ namespace Auth.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("role_permissions", (string)null);
+                });
+
+            modelBuilder.Entity("Auth.Domain.ServiceAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId")
+                        .IsUnique()
+                        .HasFilter("\"DeletedAt\" IS NULL");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasFilter("\"DeletedAt\" IS NULL");
+
+                    b.ToTable("service_accounts", (string)null);
+                });
+
+            modelBuilder.Entity("Auth.Domain.ServiceAccountWorkspace", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ServiceAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkspaceId");
+
+                    b.HasIndex("ServiceAccountId", "WorkspaceId")
+                        .IsUnique();
+
+                    b.ToTable("service_account_workspaces", (string)null);
+                });
+
+            modelBuilder.Entity("Auth.Domain.ServiceAccountWorkspaceRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ServiceAccountWorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("ServiceAccountWorkspaceId", "RoleId")
+                        .IsUnique();
+
+                    b.ToTable("service_account_workspace_roles", (string)null);
                 });
 
             modelBuilder.Entity("Auth.Domain.TwoFactorChallenge", b =>
@@ -923,44 +964,6 @@ namespace Auth.Infrastructure.Migrations
                     b.ToTable("OpenIddictTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Auth.Domain.ApiClientWorkspace", b =>
-                {
-                    b.HasOne("Auth.Domain.ApiClient", "ApiClient")
-                        .WithMany("ApiClientWorkspaces")
-                        .HasForeignKey("ApiClientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Auth.Domain.Workspace", "Workspace")
-                        .WithMany()
-                        .HasForeignKey("WorkspaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ApiClient");
-
-                    b.Navigation("Workspace");
-                });
-
-            modelBuilder.Entity("Auth.Domain.ApiClientWorkspaceRole", b =>
-                {
-                    b.HasOne("Auth.Domain.ApiClientWorkspace", "ApiClientWorkspace")
-                        .WithMany("ApiClientWorkspaceRoles")
-                        .HasForeignKey("ApiClientWorkspaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Auth.Domain.Role", "Role")
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ApiClientWorkspace");
-
-                    b.Navigation("Role");
-                });
-
             modelBuilder.Entity("Auth.Domain.IdentitySourceLdapConfig", b =>
                 {
                     b.HasOne("Auth.Domain.IdentitySource", null)
@@ -1022,6 +1025,44 @@ namespace Auth.Infrastructure.Migrations
                     b.Navigation("Permission");
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("Auth.Domain.ServiceAccountWorkspace", b =>
+                {
+                    b.HasOne("Auth.Domain.ServiceAccount", "ServiceAccount")
+                        .WithMany("ServiceAccountWorkspaces")
+                        .HasForeignKey("ServiceAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Auth.Domain.Workspace", "Workspace")
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ServiceAccount");
+
+                    b.Navigation("Workspace");
+                });
+
+            modelBuilder.Entity("Auth.Domain.ServiceAccountWorkspaceRole", b =>
+                {
+                    b.HasOne("Auth.Domain.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Auth.Domain.ServiceAccountWorkspace", "ServiceAccountWorkspace")
+                        .WithMany("ServiceAccountWorkspaceRoles")
+                        .HasForeignKey("ServiceAccountWorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("ServiceAccountWorkspace");
                 });
 
             modelBuilder.Entity("Auth.Domain.TwoFactorChallenge", b =>
@@ -1097,16 +1138,6 @@ namespace Auth.Infrastructure.Migrations
                     b.Navigation("Authorization");
                 });
 
-            modelBuilder.Entity("Auth.Domain.ApiClient", b =>
-                {
-                    b.Navigation("ApiClientWorkspaces");
-                });
-
-            modelBuilder.Entity("Auth.Domain.ApiClientWorkspace", b =>
-                {
-                    b.Navigation("ApiClientWorkspaceRoles");
-                });
-
             modelBuilder.Entity("Auth.Domain.IdentitySource", b =>
                 {
                     b.Navigation("LdapConfig");
@@ -1126,6 +1157,16 @@ namespace Auth.Infrastructure.Migrations
                     b.Navigation("RolePermissions");
 
                     b.Navigation("UserWorkspaceRoles");
+                });
+
+            modelBuilder.Entity("Auth.Domain.ServiceAccount", b =>
+                {
+                    b.Navigation("ServiceAccountWorkspaces");
+                });
+
+            modelBuilder.Entity("Auth.Domain.ServiceAccountWorkspace", b =>
+                {
+                    b.Navigation("ServiceAccountWorkspaceRoles");
                 });
 
             modelBuilder.Entity("Auth.Domain.User", b =>

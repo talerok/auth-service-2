@@ -9,7 +9,7 @@ using Auth.Application.Oidc.Commands.HandleMfaOtpGrant;
 using Auth.Application.Oidc.Commands.ValidateCredentialsForLogin;
 using Auth.Application.Oidc.Queries.BuildPrincipal;
 using Auth.Application.TwoFactor.Commands.ValidateLoginOtp;
-using Auth.Application.Workspaces.Queries.BuildApiClientWorkspaceMasks;
+using Auth.Application.Workspaces.Queries.BuildServiceAccountWorkspaceMasks;
 using Auth.Application.Workspaces.Queries.BuildWorkspaceMasks;
 using Auth.Domain;
 using Auth.Infrastructure;
@@ -301,13 +301,13 @@ public sealed class OidcGrantServiceTests
     public async Task HandleClientCredentialsGrant_WhenValid_ReturnsPrincipal()
     {
         var dbContext = CreateDbContext();
-        var apiClient = new ApiClient
+        var serviceAccount = new Domain.ServiceAccount
         {
             Name = "Test Client",
             ClientId = "test-client",
             IsActive = true
         };
-        dbContext.ApiClients.Add(apiClient);
+        dbContext.ServiceAccounts.Add(serviceAccount);
         await dbContext.SaveChangesAsync();
 
         var sender = new Mock<ISender>();
@@ -316,7 +316,7 @@ public sealed class OidcGrantServiceTests
         var principal = await handler.Handle(
             new HandleClientCredentialsGrantCommand("test-client", ["openid"]), CancellationToken.None);
 
-        principal.FindFirst(Claims.Subject)!.Value.Should().Be(apiClient.Id.ToString());
+        principal.FindFirst(Claims.Subject)!.Value.Should().Be(serviceAccount.Id.ToString());
         principal.FindFirst(Claims.Name)!.Value.Should().Be("Test Client");
     }
 
@@ -331,14 +331,14 @@ public sealed class OidcGrantServiceTests
             new HandleClientCredentialsGrantCommand("nonexistent", ["openid"]), CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
-            .Where(x => x.Code == AuthErrorCatalog.ApiClientNotFound);
+            .Where(x => x.Code == AuthErrorCatalog.ApplicationNotFound);
     }
 
     [Fact]
     public async Task HandleClientCredentialsGrant_WhenClientInactive_ThrowsAuthException()
     {
         var dbContext = CreateDbContext();
-        dbContext.ApiClients.Add(new ApiClient
+        dbContext.ServiceAccounts.Add(new Domain.ServiceAccount
         {
             Name = "Inactive Client",
             ClientId = "inactive-client",
@@ -353,25 +353,25 @@ public sealed class OidcGrantServiceTests
             new HandleClientCredentialsGrantCommand("inactive-client", ["openid"]), CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
-            .Where(x => x.Code == AuthErrorCatalog.ApiClientInactive);
+            .Where(x => x.Code == AuthErrorCatalog.ApplicationInactive);
     }
 
     [Fact]
     public async Task HandleClientCredentialsGrant_WhenWsScope_IncludesWorkspaceMasks()
     {
         var dbContext = CreateDbContext();
-        var apiClient = new ApiClient
+        var serviceAccount = new Domain.ServiceAccount
         {
             Name = "WS Client",
             ClientId = "ws-client",
             IsActive = true
         };
-        dbContext.ApiClients.Add(apiClient);
+        dbContext.ServiceAccounts.Add(serviceAccount);
         await dbContext.SaveChangesAsync();
 
         var sender = new Mock<ISender>();
         sender.Setup(x => x.Send(
-                It.Is<BuildApiClientWorkspaceMasksQuery>(q => q.ApiClientId == apiClient.Id),
+                It.Is<BuildServiceAccountWorkspaceMasksQuery>(q => q.ServiceAccountId == serviceAccount.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>> { ["system"] = new() { ["system"] = [0b_0000_0011] } });
         var handler = new HandleClientCredentialsGrantCommandHandler(sender.Object, dbContext);

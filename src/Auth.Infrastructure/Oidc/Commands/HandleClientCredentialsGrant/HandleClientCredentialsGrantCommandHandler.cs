@@ -2,7 +2,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using Auth.Application;
 using Auth.Application.Oidc.Commands.HandleClientCredentialsGrant;
-using Auth.Application.Workspaces.Queries.BuildApiClientWorkspaceMasks;
+using Auth.Application.Workspaces.Queries.BuildServiceAccountWorkspaceMasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
@@ -18,25 +18,25 @@ internal sealed class HandleClientCredentialsGrantCommandHandler(
 
     public async Task<ClaimsPrincipal> Handle(HandleClientCredentialsGrantCommand command, CancellationToken cancellationToken)
     {
-        var apiClient = await dbContext.ApiClients
+        var serviceAccount = await dbContext.ServiceAccounts
             .FirstOrDefaultAsync(x => x.ClientId == command.ClientId, cancellationToken);
 
-        if (apiClient is null)
-            throw new AuthException(AuthErrorCatalog.ApiClientNotFound);
+        if (serviceAccount is null)
+            throw new AuthException(AuthErrorCatalog.ApplicationNotFound);
 
-        if (!apiClient.IsActive)
-            throw new AuthException(AuthErrorCatalog.ApiClientInactive);
+        if (!serviceAccount.IsActive)
+            throw new AuthException(AuthErrorCatalog.ApplicationInactive);
 
         var scopeList = command.Scopes.ToList();
         var identity = new ClaimsIdentity(OidcServerScheme, Claims.Name, Claims.Role);
 
-        identity.SetClaim(Claims.Subject, apiClient.Id.ToString());
-        identity.SetClaim(Claims.Name, apiClient.Name);
-        identity.SetClaim(Claims.PreferredUsername, apiClient.ClientId);
+        identity.SetClaim(Claims.Subject, serviceAccount.Id.ToString());
+        identity.SetClaim(Claims.Name, serviceAccount.Name);
+        identity.SetClaim(Claims.PreferredUsername, serviceAccount.ClientId);
 
         if (scopeList.Contains("ws"))
         {
-            var masks = await sender.Send(new BuildApiClientWorkspaceMasksQuery(apiClient.Id), cancellationToken);
+            var masks = await sender.Send(new BuildServiceAccountWorkspaceMasksQuery(serviceAccount.Id), cancellationToken);
             var wsPayload = masks.ToDictionary(
                 ws => ws.Key,
                 ws => ws.Value.ToDictionary(d => d.Key, d => Convert.ToBase64String(d.Value)));

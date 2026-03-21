@@ -12,12 +12,14 @@ public sealed class OpenSearchIndexNames
         Roles = $"{prefix}-roles";
         Permissions = $"{prefix}-permissions";
         Workspaces = $"{prefix}-workspaces";
-        ApiClients = $"{prefix}-api-clients";
+        Applications = $"{prefix}-applications";
+        ServiceAccounts = $"{prefix}-service-accounts";
     }
 
     public string Users { get; }
     public string Roles { get; }
     public string Permissions { get; }
     public string Workspaces { get; }
-    public string ApiClients { get; }
+    public string Applications { get; }
+    public string ServiceAccounts { get; }
 }

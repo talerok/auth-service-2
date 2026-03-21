@@ -50,10 +50,16 @@ public static class SystemPermissionCatalog
         ("system", 30, "system.identity-sources.update", "Update identity sources"),
         ("system", 31, "system.identity-sources.delete", "Delete identity sources"),
 
-        // system.api-clients
-        ("system", 32, "system.api-clients.view", "View API clients"),
-        ("system", 33, "system.api-clients.create", "Create API clients"),
-        ("system", 34, "system.api-clients.update", "Update API clients"),
-        ("system", 35, "system.api-clients.delete", "Delete API clients")
+        // system.applications
+        ("system", 32, "system.applications.view", "View applications"),
+        ("system", 33, "system.applications.create", "Create applications"),
+        ("system", 34, "system.applications.update", "Update applications"),
+        ("system", 35, "system.applications.delete", "Delete applications"),
+
+        // system.service-accounts
+        ("system", 36, "system.service-accounts.view", "View service accounts"),
+        ("system", 37, "system.service-accounts.create", "Create service accounts"),
+        ("system", 38, "system.service-accounts.update", "Update service accounts"),
+        ("system", 39, "system.service-accounts.delete", "Delete service accounts")
     ];
 }

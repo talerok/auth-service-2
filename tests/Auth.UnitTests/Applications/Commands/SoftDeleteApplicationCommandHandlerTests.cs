@@ -1,0 +1,58 @@
+using Auth.Application;
+using Auth.Application.Applications.Commands.SoftDeleteApplication;
+using Auth.Domain;
+using Auth.Infrastructure;
+using Auth.Infrastructure.Applications.Commands.SoftDeleteApplication;
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Moq;
+using OpenIddict.Abstractions;
+
+namespace Auth.UnitTests.Applications.Commands;
+
+public sealed class SoftDeleteApplicationCommandHandlerTests
+{
+    [Fact]
+    public async Task Handle_WhenApplicationExists_SoftDeletesAndReturnsTrue()
+    {
+        await using var dbContext = CreateDbContext();
+        var application = new Domain.Application { Name = "To Delete", Description = "desc", ClientId = "ac-del", IsActive = true };
+        dbContext.Applications.Add(application);
+        await dbContext.SaveChangesAsync();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var appManager = new Mock<IOpenIddictApplicationManager>();
+        var handler = new SoftDeleteApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+
+        var result = await handler.Handle(
+            new SoftDeleteApplicationCommand(application.Id),
+            CancellationToken.None);
+
+        result.Should().BeTrue();
+        var updated = await dbContext.Applications.IgnoreQueryFilters().FirstAsync(x => x.Id == application.Id);
+        updated.DeletedAt.Should().NotBeNull();
+        searchIndex.Verify(x => x.DeleteApplicationAsync(application.Id, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenApplicationDoesNotExist_ReturnsFalse()
+    {
+        await using var dbContext = CreateDbContext();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var appManager = new Mock<IOpenIddictApplicationManager>();
+        var handler = new SoftDeleteApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+
+        var result = await handler.Handle(
+            new SoftDeleteApplicationCommand(Guid.NewGuid()),
+            CancellationToken.None);
+
+        result.Should().BeFalse();
+    }
+
+    private static AuthDbContext CreateDbContext()
+    {
+        var options = new DbContextOptionsBuilder<AuthDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+            .Options;
+        return new AuthDbContext(options);
+    }
+}

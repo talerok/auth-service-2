@@ -6,7 +6,8 @@ public interface ISearchService
     Task<SearchResponse<RoleDto>> SearchRolesAsync(SearchRequest request, CancellationToken cancellationToken);
     Task<SearchResponse<PermissionDto>> SearchPermissionsAsync(SearchRequest request, CancellationToken cancellationToken);
     Task<SearchResponse<WorkspaceDto>> SearchWorkspacesAsync(SearchRequest request, CancellationToken cancellationToken);
-    Task<SearchResponse<ApiClientDto>> SearchApiClientsAsync(SearchRequest request, CancellationToken cancellationToken);
+    Task<SearchResponse<ApplicationDto>> SearchApplicationsAsync(SearchRequest request, CancellationToken cancellationToken);
+    Task<SearchResponse<ServiceAccountDto>> SearchServiceAccountsAsync(SearchRequest request, CancellationToken cancellationToken);
 }
 
 public interface ISearchIndexService
@@ -23,14 +24,18 @@ public interface ISearchIndexService
     Task IndexWorkspaceAsync(WorkspaceDto workspace, CancellationToken cancellationToken);
     Task DeleteWorkspaceAsync(Guid id, CancellationToken cancellationToken);
 
-    Task IndexApiClientAsync(ApiClientDto apiClient, CancellationToken cancellationToken);
-    Task DeleteApiClientAsync(Guid id, CancellationToken cancellationToken);
+    Task IndexApplicationAsync(ApplicationDto application, CancellationToken cancellationToken);
+    Task DeleteApplicationAsync(Guid id, CancellationToken cancellationToken);
+
+    Task IndexServiceAccountAsync(ServiceAccountDto serviceAccount, CancellationToken cancellationToken);
+    Task DeleteServiceAccountAsync(Guid id, CancellationToken cancellationToken);
 
     Task BulkIndexUsersAsync(IReadOnlyCollection<UserDto> users, CancellationToken cancellationToken);
     Task BulkIndexRolesAsync(IReadOnlyCollection<RoleDto> roles, CancellationToken cancellationToken);
     Task BulkIndexPermissionsAsync(IReadOnlyCollection<PermissionDto> permissions, CancellationToken cancellationToken);
     Task BulkIndexWorkspacesAsync(IReadOnlyCollection<WorkspaceDto> workspaces, CancellationToken cancellationToken);
-    Task BulkIndexApiClientsAsync(IReadOnlyCollection<ApiClientDto> apiClients, CancellationToken cancellationToken);
+    Task BulkIndexApplicationsAsync(IReadOnlyCollection<ApplicationDto> applications, CancellationToken cancellationToken);
+    Task BulkIndexServiceAccountsAsync(IReadOnlyCollection<ServiceAccountDto> serviceAccounts, CancellationToken cancellationToken);
 }
 
 public interface ISearchMaintenanceService
@@ -41,5 +46,6 @@ public interface ISearchMaintenanceService
     Task ReindexRolesAsync(CancellationToken cancellationToken);
     Task ReindexPermissionsAsync(CancellationToken cancellationToken);
     Task ReindexWorkspacesAsync(CancellationToken cancellationToken);
-    Task ReindexApiClientsAsync(CancellationToken cancellationToken);
+    Task ReindexApplicationsAsync(CancellationToken cancellationToken);
+    Task ReindexServiceAccountsAsync(CancellationToken cancellationToken);
 }

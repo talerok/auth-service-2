@@ -21,8 +21,11 @@ public sealed class OpenSearchQueryService(
     public Task<Auth.Application.SearchResponse<WorkspaceDto>> SearchWorkspacesAsync(AppSearchRequest request, CancellationToken cancellationToken) =>
         SearchAsync<WorkspaceDto>(indexNames.Workspaces, request, cancellationToken);
 
-    public Task<Auth.Application.SearchResponse<ApiClientDto>> SearchApiClientsAsync(AppSearchRequest request, CancellationToken cancellationToken) =>
-        SearchAsync<ApiClientDto>(indexNames.ApiClients, request, cancellationToken);
+    public Task<Auth.Application.SearchResponse<ApplicationDto>> SearchApplicationsAsync(AppSearchRequest request, CancellationToken cancellationToken) =>
+        SearchAsync<ApplicationDto>(indexNames.Applications, request, cancellationToken);
+
+    public Task<Auth.Application.SearchResponse<ServiceAccountDto>> SearchServiceAccountsAsync(AppSearchRequest request, CancellationToken cancellationToken) =>
+        SearchAsync<ServiceAccountDto>(indexNames.ServiceAccounts, request, cancellationToken);
 
     private async Task<Auth.Application.SearchResponse<TDocument>> SearchAsync<TDocument>(string indexName, AppSearchRequest request, CancellationToken cancellationToken)
         where TDocument : class

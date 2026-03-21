@@ -10,7 +10,7 @@ internal sealed class GetClientInfoQueryHandler(
 {
     public async Task<ClientInfoResult?> Handle(GetClientInfoQuery query, CancellationToken cancellationToken)
     {
-        var client = await dbContext.ApiClients
+        var client = await dbContext.Applications
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.ClientId == query.ClientId, cancellationToken);
 

@@ -16,19 +16,19 @@ internal sealed class GrantConsentCommandHandler(
 {
     public async Task<string> Handle(GrantConsentCommand command, CancellationToken cancellationToken)
     {
-        var apiClient = await dbContext.ApiClients
+        var app = await dbContext.Applications
             .FirstOrDefaultAsync(x => x.ClientId == command.ClientId, cancellationToken);
 
-        if (apiClient is null)
-            throw new AuthException(AuthErrorCatalog.ApiClientNotFound);
-        if (!apiClient.IsActive)
-            throw new AuthException(AuthErrorCatalog.ApiClientInactive);
+        if (app is null)
+            throw new AuthException(AuthErrorCatalog.ApplicationNotFound);
+        if (!app.IsActive)
+            throw new AuthException(AuthErrorCatalog.ApplicationInactive);
 
         var application = await appManager.FindByClientIdAsync(command.ClientId, cancellationToken)
-            ?? throw new AuthException(AuthErrorCatalog.ApiClientNotFound);
+            ?? throw new AuthException(AuthErrorCatalog.ApplicationNotFound);
 
         var applicationId = await appManager.GetIdAsync(application, cancellationToken)
-            ?? throw new AuthException(AuthErrorCatalog.ApiClientNotFound);
+            ?? throw new AuthException(AuthErrorCatalog.ApplicationNotFound);
 
         // Validate that requested scopes are allowed for this application
         var scopePrefix = OpenIddictConstants.Permissions.Prefixes.Scope;

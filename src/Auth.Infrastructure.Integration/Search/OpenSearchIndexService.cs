@@ -33,11 +33,11 @@ public sealed class OpenSearchIndexService(
     public Task DeleteWorkspaceAsync(Guid id, CancellationToken cancellationToken) =>
         DeleteAsync(indexNames.Workspaces, id, cancellationToken);
 
-    public Task IndexApiClientAsync(ApiClientDto apiClient, CancellationToken cancellationToken) =>
-        IndexAsync(indexNames.ApiClients, apiClient.Id, apiClient, cancellationToken);
+    public Task IndexApplicationAsync(ApplicationDto application, CancellationToken cancellationToken) =>
+        IndexAsync(indexNames.Applications, application.Id, application, cancellationToken);
 
-    public Task DeleteApiClientAsync(Guid id, CancellationToken cancellationToken) =>
-        DeleteAsync(indexNames.ApiClients, id, cancellationToken);
+    public Task DeleteApplicationAsync(Guid id, CancellationToken cancellationToken) =>
+        DeleteAsync(indexNames.Applications, id, cancellationToken);
 
     private async Task IndexAsync<TDocument>(string indexName, Guid id, TDocument document, CancellationToken cancellationToken)
         where TDocument : class
@@ -89,8 +89,17 @@ public sealed class OpenSearchIndexService(
     public Task BulkIndexWorkspacesAsync(IReadOnlyCollection<WorkspaceDto> workspaces, CancellationToken cancellationToken) =>
         BulkIndexAsync(indexNames.Workspaces, workspaces, x => x.Id, cancellationToken);
 
-    public Task BulkIndexApiClientsAsync(IReadOnlyCollection<ApiClientDto> apiClients, CancellationToken cancellationToken) =>
-        BulkIndexAsync(indexNames.ApiClients, apiClients, x => x.Id, cancellationToken);
+    public Task BulkIndexApplicationsAsync(IReadOnlyCollection<ApplicationDto> applications, CancellationToken cancellationToken) =>
+        BulkIndexAsync(indexNames.Applications, applications, x => x.Id, cancellationToken);
+
+    public Task IndexServiceAccountAsync(ServiceAccountDto serviceAccount, CancellationToken cancellationToken) =>
+        IndexAsync(indexNames.ServiceAccounts, serviceAccount.Id, serviceAccount, cancellationToken);
+
+    public Task DeleteServiceAccountAsync(Guid id, CancellationToken cancellationToken) =>
+        DeleteAsync(indexNames.ServiceAccounts, id, cancellationToken);
+
+    public Task BulkIndexServiceAccountsAsync(IReadOnlyCollection<ServiceAccountDto> serviceAccounts, CancellationToken cancellationToken) =>
+        BulkIndexAsync(indexNames.ServiceAccounts, serviceAccounts, x => x.Id, cancellationToken);
 
     private async Task DeleteAsync(string indexName, Guid id, CancellationToken cancellationToken)
     {

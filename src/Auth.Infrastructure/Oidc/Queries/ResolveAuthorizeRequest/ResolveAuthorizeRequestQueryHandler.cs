@@ -17,19 +17,19 @@ internal sealed class ResolveAuthorizeRequestQueryHandler(
     public async Task<AuthorizeRequestResult> Handle(
         ResolveAuthorizeRequestQuery query, CancellationToken cancellationToken)
     {
-        var apiClient = await dbContext.ApiClients
+        var app = await dbContext.Applications
             .FirstOrDefaultAsync(x => x.ClientId == query.ClientId, cancellationToken);
 
-        if (apiClient is null)
-            throw new AuthException(AuthErrorCatalog.ApiClientNotFound);
-        if (!apiClient.IsActive)
-            throw new AuthException(AuthErrorCatalog.ApiClientInactive);
+        if (app is null)
+            throw new AuthException(AuthErrorCatalog.ApplicationNotFound);
+        if (!app.IsActive)
+            throw new AuthException(AuthErrorCatalog.ApplicationInactive);
 
         var application = await appManager.FindByClientIdAsync(query.ClientId, cancellationToken)
-            ?? throw new AuthException(AuthErrorCatalog.ApiClientNotFound);
+            ?? throw new AuthException(AuthErrorCatalog.ApplicationNotFound);
 
         var applicationId = await appManager.GetIdAsync(application, cancellationToken)
-            ?? throw new AuthException(AuthErrorCatalog.ApiClientNotFound);
+            ?? throw new AuthException(AuthErrorCatalog.ApplicationNotFound);
 
         var subject = query.UserId.ToString();
         var scopesArray = query.Scopes.ToImmutableArray();

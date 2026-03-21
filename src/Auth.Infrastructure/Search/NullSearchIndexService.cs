@@ -20,13 +20,17 @@ public sealed class NullSearchIndexService : ISearchIndexService
 
     public Task DeleteWorkspaceAsync(Guid id, CancellationToken cancellationToken) => Task.CompletedTask;
 
-    public Task IndexApiClientAsync(ApiClientDto apiClient, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task IndexApplicationAsync(ApplicationDto application, CancellationToken cancellationToken) => Task.CompletedTask;
 
-    public Task DeleteApiClientAsync(Guid id, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task DeleteApplicationAsync(Guid id, CancellationToken cancellationToken) => Task.CompletedTask;
 
     public Task BulkIndexUsersAsync(IReadOnlyCollection<UserDto> users, CancellationToken cancellationToken) => Task.CompletedTask;
     public Task BulkIndexRolesAsync(IReadOnlyCollection<RoleDto> roles, CancellationToken cancellationToken) => Task.CompletedTask;
     public Task BulkIndexPermissionsAsync(IReadOnlyCollection<PermissionDto> permissions, CancellationToken cancellationToken) => Task.CompletedTask;
     public Task BulkIndexWorkspacesAsync(IReadOnlyCollection<WorkspaceDto> workspaces, CancellationToken cancellationToken) => Task.CompletedTask;
-    public Task BulkIndexApiClientsAsync(IReadOnlyCollection<ApiClientDto> apiClients, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task BulkIndexApplicationsAsync(IReadOnlyCollection<ApplicationDto> applications, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task IndexServiceAccountAsync(ServiceAccountDto serviceAccount, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task DeleteServiceAccountAsync(Guid id, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task BulkIndexServiceAccountsAsync(IReadOnlyCollection<ServiceAccountDto> serviceAccounts, CancellationToken cancellationToken) => Task.CompletedTask;
 }

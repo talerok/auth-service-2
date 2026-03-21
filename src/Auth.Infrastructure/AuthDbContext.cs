@@ -19,9 +19,10 @@ public DbSet<TwoFactorChallenge> TwoFactorChallenges => Set<TwoFactorChallenge>(
     public DbSet<IdentitySourceOidcConfig> IdentitySourceOidcConfigs => Set<IdentitySourceOidcConfig>();
     public DbSet<IdentitySourceLdapConfig> IdentitySourceLdapConfigs => Set<IdentitySourceLdapConfig>();
     public DbSet<IdentitySourceLink> IdentitySourceLinks => Set<IdentitySourceLink>();
-    public DbSet<ApiClient> ApiClients => Set<ApiClient>();
-    public DbSet<ApiClientWorkspace> ApiClientWorkspaces => Set<ApiClientWorkspace>();
-    public DbSet<ApiClientWorkspaceRole> ApiClientWorkspaceRoles => Set<ApiClientWorkspaceRole>();
+    public DbSet<Domain.Application> Applications => Set<Domain.Application>();
+    public DbSet<ServiceAccount> ServiceAccounts => Set<ServiceAccount>();
+    public DbSet<ServiceAccountWorkspace> ServiceAccountWorkspaces => Set<ServiceAccountWorkspace>();
+    public DbSet<ServiceAccountWorkspaceRole> ServiceAccountWorkspaceRoles => Set<ServiceAccountWorkspaceRole>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

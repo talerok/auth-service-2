@@ -54,14 +54,24 @@ public sealed class OpenSearchMaintenanceService(
             await ReindexWorkspacesAsync(cancellationToken);
         }
 
-        if (await EnsureIndexExistsAsync<ApiClientDto>(indexNames.ApiClients, p => p
+        if (await EnsureIndexExistsAsync<ApplicationDto>(indexNames.Applications, p => p
                 .Keyword(k => k.Name(n => n.Id))
                 .Keyword(k => k.Name(n => n.Name))
                 .Keyword(k => k.Name(n => n.Description))
                 .Keyword(k => k.Name(n => n.ClientId))
                 .Boolean(b => b.Name(n => n.IsActive)), cancellationToken))
         {
-            await ReindexApiClientsAsync(cancellationToken);
+            await ReindexApplicationsAsync(cancellationToken);
+        }
+
+        if (await EnsureIndexExistsAsync<ServiceAccountDto>(indexNames.ServiceAccounts, p => p
+                .Keyword(k => k.Name(n => n.Id))
+                .Keyword(k => k.Name(n => n.Name))
+                .Keyword(k => k.Name(n => n.Description))
+                .Keyword(k => k.Name(n => n.ClientId))
+                .Boolean(b => b.Name(n => n.IsActive)), cancellationToken))
+        {
+            await ReindexServiceAccountsAsync(cancellationToken);
         }
     }
 
@@ -71,7 +81,8 @@ public sealed class OpenSearchMaintenanceService(
         await ReindexRolesAsync(cancellationToken);
         await ReindexPermissionsAsync(cancellationToken);
         await ReindexWorkspacesAsync(cancellationToken);
-        await ReindexApiClientsAsync(cancellationToken);
+        await ReindexApplicationsAsync(cancellationToken);
+        await ReindexServiceAccountsAsync(cancellationToken);
     }
 
     public async Task ReindexUsersAsync(CancellationToken cancellationToken)
@@ -106,13 +117,21 @@ public sealed class OpenSearchMaintenanceService(
         await searchIndexService.BulkIndexWorkspacesAsync(workspaces, cancellationToken);
     }
 
-    public async Task ReindexApiClientsAsync(CancellationToken cancellationToken)
+    public async Task ReindexApplicationsAsync(CancellationToken cancellationToken)
     {
-        var apiClients = await dbContext.ApiClients.AsNoTracking()
-            .Select(x => new ApiClientDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive,
-                x.Type, x.IsConfidential, x.LogoUrl, x.HomepageUrl, x.RedirectUris, x.PostLogoutRedirectUris))
+        var applications = await dbContext.Applications.AsNoTracking()
+            .Select(x => new ApplicationDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive,
+                x.IsConfidential, x.LogoUrl, x.HomepageUrl, x.RedirectUris, x.PostLogoutRedirectUris))
             .ToListAsync(cancellationToken);
-        await searchIndexService.BulkIndexApiClientsAsync(apiClients, cancellationToken);
+        await searchIndexService.BulkIndexApplicationsAsync(applications, cancellationToken);
+    }
+
+    public async Task ReindexServiceAccountsAsync(CancellationToken cancellationToken)
+    {
+        var serviceAccounts = await dbContext.ServiceAccounts.AsNoTracking()
+            .Select(x => new ServiceAccountDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive))
+            .ToListAsync(cancellationToken);
+        await searchIndexService.BulkIndexServiceAccountsAsync(serviceAccounts, cancellationToken);
     }
 
     // Returns true if the index was created (did not exist before)

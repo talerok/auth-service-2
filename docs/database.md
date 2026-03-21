@@ -9,6 +9,10 @@
 - `user_workspaces`
 - `user_workspace_roles`
 - `role_permissions`
+- `applications`
+- `service_accounts`
+- `service_account_workspaces`
+- `service_account_workspace_roles`
 - `refresh_tokens`
 - `password_change_challenges`
 - `two_factor_challenges`
@@ -189,6 +193,75 @@
 
 - `IX_two_factor_challenges_UserId`
 - `IX_two_factor_challenges_UserId_Purpose`
+
+### Таблица `applications`
+
+OAuth2-приложения (authorization code flow). Могут быть public или confidential.
+
+| Колонка                      | Тип          | Nullable | Описание                                            |
+| ---------------------------- | ------------ | -------- | --------------------------------------------------- |
+| `id`                         | uuid         | NO       | PK                                                  |
+| `name`                       | varchar(120) | NO       | Уникальное название приложения (partial index)      |
+| `description`                | varchar(500) | YES      | Описание приложения                                 |
+| `client_id`                  | varchar(200) | NO       | Уникальный OAuth ClientId (partial index)           |
+| `is_active`                  | boolean      | NO       | Признак активности (DEFAULT true)                   |
+| `is_confidential`            | boolean      | NO       | Confidential client (DEFAULT true)                  |
+| `logo_url`                   | varchar(2000)| YES      | URL логотипа                                        |
+| `homepage_url`               | varchar(2000)| YES      | URL домашней страницы                               |
+| `redirect_uris`              | jsonb        | NO       | OAuth redirect URIs (DEFAULT '[]'::jsonb)           |
+| `post_logout_redirect_uris`  | jsonb        | NO       | Post-logout redirect URIs (DEFAULT '[]'::jsonb)     |
+| `created_at`                 | timestamptz  | NO       |                                                     |
+| `updated_at`                 | timestamptz  | NO       |                                                     |
+| `deleted_at`                 | timestamptz  | YES      | Soft delete                                         |
+
+Индексы:
+
+- `IX_applications_Name` UNIQUE WHERE `"DeletedAt" IS NULL`
+- `IX_applications_ClientId` UNIQUE WHERE `"DeletedAt" IS NULL`
+
+### Таблица `service_accounts`
+
+Сервисные аккаунты (client credentials flow). Всегда confidential.
+
+| Колонка       | Тип          | Nullable | Описание                                                |
+| ------------- | ------------ | -------- | ------------------------------------------------------- |
+| `id`          | uuid         | NO       | PK                                                      |
+| `name`        | varchar(120) | NO       | Уникальное название сервисного аккаунта (partial index) |
+| `description` | varchar(500) | YES      | Описание                                                |
+| `client_id`   | varchar(200) | NO       | Уникальный OAuth ClientId (partial index)               |
+| `is_active`   | boolean      | NO       | Признак активности (DEFAULT true)                       |
+| `created_at`  | timestamptz  | NO       |                                                         |
+| `updated_at`  | timestamptz  | NO       |                                                         |
+| `deleted_at`  | timestamptz  | YES      | Soft delete                                             |
+
+Индексы:
+
+- `IX_service_accounts_Name` UNIQUE WHERE `"DeletedAt" IS NULL`
+- `IX_service_accounts_ClientId` UNIQUE WHERE `"DeletedAt" IS NULL`
+
+### Таблица `service_account_workspaces`
+
+| Колонка              | Тип  | Nullable | Описание                          |
+| -------------------- | ---- | -------- | --------------------------------- |
+| `id`                 | uuid | NO       | PK                                |
+| `service_account_id` | uuid | NO       | FK → service_accounts(id) CASCADE |
+| `workspace_id`       | uuid | NO       | FK → workspaces(id) CASCADE       |
+
+Индексы:
+
+- `IX_service_account_workspaces_ServiceAccountId_WorkspaceId` UNIQUE
+
+### Таблица `service_account_workspace_roles`
+
+| Колонка                        | Тип  | Nullable | Описание                                   |
+| ------------------------------ | ---- | -------- | ------------------------------------------ |
+| `id`                           | uuid | NO       | PK                                         |
+| `service_account_workspace_id` | uuid | NO       | FK → service_account_workspaces(id) CASCADE |
+| `role_id`                      | uuid | NO       | FK → roles(id) CASCADE                     |
+
+Индексы:
+
+- `IX_service_account_workspace_roles_ServiceAccountWorkspaceId_RoleId` UNIQUE
 
 ### Таблица `identity_sources`
 

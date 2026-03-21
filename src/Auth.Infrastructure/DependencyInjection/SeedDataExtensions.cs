@@ -97,7 +97,7 @@ public static class SeedDataExtensions
         }
 
         await SeedNotificationTemplatesAsync(db, cancellationToken);
-        await SeedApiClientsAsync(db, cancellationToken);
+        await SeedApplicationsAsync(db, cancellationToken);
 
         await permissionCache.WarmupAsync(cancellationToken);
         await SeedOidcClientsAsync(appManager, cancellationToken);
@@ -137,7 +137,7 @@ public static class SeedDataExtensions
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private static async Task SeedApiClientsAsync(AuthDbContext db, CancellationToken cancellationToken)
+    private static async Task SeedApplicationsAsync(AuthDbContext db, CancellationToken cancellationToken)
     {
         var seedClients = new[]
         {
@@ -159,15 +159,14 @@ public static class SeedDataExtensions
 
         foreach (var seed in seedClients)
         {
-            if (!await db.ApiClients.AnyAsync(x => x.ClientId == seed.ClientId, cancellationToken))
+            if (!await db.Applications.AnyAsync(x => x.ClientId == seed.ClientId, cancellationToken))
             {
-                db.ApiClients.Add(new ApiClient
+                db.Applications.Add(new Domain.Application
                 {
                     ClientId = seed.ClientId,
                     Name = seed.Name,
                     Description = seed.Name,
                     IsActive = true,
-                    Type = ApiClientType.OAuthApplication,
                     IsConfidential = false,
                     RedirectUris = seed.RedirectUris,
                     PostLogoutRedirectUris = seed.PostLogoutRedirectUris
@@ -197,6 +196,7 @@ public static class SeedDataExtensions
                     OidcPermissions.Endpoints.EndSession,
                     OidcPermissions.Endpoints.Revocation,
                     OidcPermissions.GrantTypes.AuthorizationCode,
+                    OidcPermissions.GrantTypes.Password,
                     OidcPermissions.GrantTypes.RefreshToken,
                     OidcPermissions.ResponseTypes.Code,
                     OidcPermissions.Prefixes.GrantType + OidcConstants.MfaOtpGrantType,

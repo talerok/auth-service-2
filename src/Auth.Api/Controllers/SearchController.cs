@@ -49,4 +49,20 @@ public sealed class SearchController(ISearchMaintenanceService searchMaintenance
         await searchMaintenanceService.ReindexWorkspacesAsync(cancellationToken);
         return NoContent();
     }
+
+    [HttpPost("reindex/applications")]
+    [HasPermissionIn("system", "system", "system.search.reindex")]
+    public async Task<IActionResult> ReindexApplications(CancellationToken cancellationToken)
+    {
+        await searchMaintenanceService.ReindexApplicationsAsync(cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("reindex/service-accounts")]
+    [HasPermissionIn("system", "system", "system.search.reindex")]
+    public async Task<IActionResult> ReindexServiceAccounts(CancellationToken cancellationToken)
+    {
+        await searchMaintenanceService.ReindexServiceAccountsAsync(cancellationToken);
+        return NoContent();
+    }
 }
