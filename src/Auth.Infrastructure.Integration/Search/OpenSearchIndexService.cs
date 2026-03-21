@@ -55,6 +55,43 @@ public sealed class OpenSearchIndexService(
             cancellationToken);
     }
 
+    private async Task BulkIndexAsync<TDocument>(string indexName, IReadOnlyCollection<TDocument> documents, Func<TDocument, Guid> idSelector, CancellationToken cancellationToken)
+        where TDocument : class
+    {
+        if (documents.Count == 0) return;
+
+        await retryExecutor.ExecuteAsync(
+            async () =>
+            {
+                var response = await client.BulkAsync(b => b
+                    .Index(indexName)
+                    .IndexMany(documents, (descriptor, doc) => descriptor.Id(idSelector(doc)))
+                    .Refresh(Refresh.WaitFor), cancellationToken);
+                if (response.Errors)
+                {
+                    var firstError = response.ItemsWithErrors.First();
+                    throw new InvalidOperationException($"Bulk index failed: {firstError.Error.Reason}");
+                }
+            },
+            $"bulk index {documents.Count} {typeof(TDocument).Name} documents into {indexName}",
+            cancellationToken);
+    }
+
+    public Task BulkIndexUsersAsync(IReadOnlyCollection<UserDto> users, CancellationToken cancellationToken) =>
+        BulkIndexAsync(indexNames.Users, users, x => x.Id, cancellationToken);
+
+    public Task BulkIndexRolesAsync(IReadOnlyCollection<RoleDto> roles, CancellationToken cancellationToken) =>
+        BulkIndexAsync(indexNames.Roles, roles, x => x.Id, cancellationToken);
+
+    public Task BulkIndexPermissionsAsync(IReadOnlyCollection<PermissionDto> permissions, CancellationToken cancellationToken) =>
+        BulkIndexAsync(indexNames.Permissions, permissions, x => x.Id, cancellationToken);
+
+    public Task BulkIndexWorkspacesAsync(IReadOnlyCollection<WorkspaceDto> workspaces, CancellationToken cancellationToken) =>
+        BulkIndexAsync(indexNames.Workspaces, workspaces, x => x.Id, cancellationToken);
+
+    public Task BulkIndexApiClientsAsync(IReadOnlyCollection<ApiClientDto> apiClients, CancellationToken cancellationToken) =>
+        BulkIndexAsync(indexNames.ApiClients, apiClients, x => x.Id, cancellationToken);
+
     private async Task DeleteAsync(string indexName, Guid id, CancellationToken cancellationToken)
     {
         await retryExecutor.ExecuteAsync(

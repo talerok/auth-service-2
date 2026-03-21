@@ -79,10 +79,7 @@ public sealed class OpenSearchMaintenanceService(
         var users = await dbContext.Users.AsNoTracking()
             .Select(x => new UserDto(x.Id, x.Username, x.FullName, x.Email, x.Phone, x.IsActive, x.IsInternalAuthEnabled, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel))
             .ToListAsync(cancellationToken);
-        foreach (var user in users)
-        {
-            await searchIndexService.IndexUserAsync(user, cancellationToken);
-        }
+        await searchIndexService.BulkIndexUsersAsync(users, cancellationToken);
     }
 
     public async Task ReindexRolesAsync(CancellationToken cancellationToken)
@@ -90,10 +87,7 @@ public sealed class OpenSearchMaintenanceService(
         var roles = await dbContext.Roles.AsNoTracking()
             .Select(x => new RoleDto(x.Id, x.Name, x.Code, x.Description))
             .ToListAsync(cancellationToken);
-        foreach (var role in roles)
-        {
-            await searchIndexService.IndexRoleAsync(role, cancellationToken);
-        }
+        await searchIndexService.BulkIndexRolesAsync(roles, cancellationToken);
     }
 
     public async Task ReindexPermissionsAsync(CancellationToken cancellationToken)
@@ -101,10 +95,7 @@ public sealed class OpenSearchMaintenanceService(
         var permissions = await dbContext.Permissions.AsNoTracking()
             .Select(x => new PermissionDto(x.Id, x.Domain, x.Bit, x.Code, x.Description, x.IsSystem))
             .ToListAsync(cancellationToken);
-        foreach (var permission in permissions)
-        {
-            await searchIndexService.IndexPermissionAsync(permission, cancellationToken);
-        }
+        await searchIndexService.BulkIndexPermissionsAsync(permissions, cancellationToken);
     }
 
     public async Task ReindexWorkspacesAsync(CancellationToken cancellationToken)
@@ -112,10 +103,7 @@ public sealed class OpenSearchMaintenanceService(
         var workspaces = await dbContext.Workspaces.AsNoTracking()
             .Select(x => new WorkspaceDto(x.Id, x.Name, x.Code, x.Description, x.IsSystem))
             .ToListAsync(cancellationToken);
-        foreach (var workspace in workspaces)
-        {
-            await searchIndexService.IndexWorkspaceAsync(workspace, cancellationToken);
-        }
+        await searchIndexService.BulkIndexWorkspacesAsync(workspaces, cancellationToken);
     }
 
     public async Task ReindexApiClientsAsync(CancellationToken cancellationToken)
@@ -123,10 +111,7 @@ public sealed class OpenSearchMaintenanceService(
         var apiClients = await dbContext.ApiClients.AsNoTracking()
             .Select(x => new ApiClientDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive))
             .ToListAsync(cancellationToken);
-        foreach (var apiClient in apiClients)
-        {
-            await searchIndexService.IndexApiClientAsync(apiClient, cancellationToken);
-        }
+        await searchIndexService.BulkIndexApiClientsAsync(apiClients, cancellationToken);
     }
 
     // Returns true if the index was created (did not exist before)

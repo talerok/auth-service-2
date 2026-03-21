@@ -25,6 +25,12 @@ public interface ISearchIndexService
 
     Task IndexApiClientAsync(ApiClientDto apiClient, CancellationToken cancellationToken);
     Task DeleteApiClientAsync(Guid id, CancellationToken cancellationToken);
+
+    Task BulkIndexUsersAsync(IReadOnlyCollection<UserDto> users, CancellationToken cancellationToken);
+    Task BulkIndexRolesAsync(IReadOnlyCollection<RoleDto> roles, CancellationToken cancellationToken);
+    Task BulkIndexPermissionsAsync(IReadOnlyCollection<PermissionDto> permissions, CancellationToken cancellationToken);
+    Task BulkIndexWorkspacesAsync(IReadOnlyCollection<WorkspaceDto> workspaces, CancellationToken cancellationToken);
+    Task BulkIndexApiClientsAsync(IReadOnlyCollection<ApiClientDto> apiClients, CancellationToken cancellationToken);
 }
 
 public interface ISearchMaintenanceService

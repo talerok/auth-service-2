@@ -15,7 +15,8 @@ public static class OpenSearchServiceCollectionExtensions
         services.AddSingleton<IOpenSearchClient>(_ =>
         {
             var uri = new Uri(integration.OpenSearch.Url);
-            var settings = new ConnectionSettings(uri).DefaultIndex($"{integration.OpenSearch.IndexPrefix}-users");
+            var settings = new ConnectionSettings(uri)
+                .DefaultIndex($"{integration.OpenSearch.IndexPrefix}-users");
             if (!string.IsNullOrWhiteSpace(integration.OpenSearch.Username))
             {
                 settings = settings.BasicAuthentication(integration.OpenSearch.Username, integration.OpenSearch.Password);
