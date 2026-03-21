@@ -17,7 +17,7 @@ public static class SeedDataExtensions
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         var permissionCache = scope.ServiceProvider.GetRequiredService<IPermissionBitCache>();
         var appManager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
-        await db.Database.EnsureCreatedAsync(cancellationToken);
+        await db.Database.MigrateAsync(cancellationToken);
 
         var existingKeys = await db.Permissions.IgnoreQueryFilters()
             .Select(x => new { x.Domain, x.Bit })

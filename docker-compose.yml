@@ -1,8 +1,11 @@
+name: auth
+
 services:
   auth-api:
     build:
       context: .
       dockerfile: Dockerfile
+    image: auth-api
     container_name: auth-api
     depends_on:
       postgres:
