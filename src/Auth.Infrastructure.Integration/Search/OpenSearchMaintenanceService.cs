@@ -36,6 +36,7 @@ public sealed class OpenSearchMaintenanceService(
 
         if (await EnsureIndexExistsAsync<PermissionDto>(indexNames.Permissions, p => p
                 .Keyword(k => k.Name(n => n.Id))
+                .Keyword(k => k.Name(n => n.Domain))
                 .Number(n => n.Name(x => x.Bit).Type(NumberType.Integer))
                 .Keyword(k => k.Name(n => n.Code))
                 .Keyword(k => k.Name(n => n.Description))
@@ -134,7 +135,7 @@ public sealed class OpenSearchMaintenanceService(
         await searchIndexService.BulkIndexServiceAccountsAsync(serviceAccounts, cancellationToken);
     }
 
-    // Returns true if the index was created (did not exist before)
+    // Returns true if the index needs reindexing (was created or recreated due to mapping conflict)
     private async Task<bool> EnsureIndexExistsAsync<TDocument>(
         string indexName,
         Func<PropertiesDescriptor<TDocument>, IPromise<IProperties>> propertiesSelector,
@@ -146,12 +147,17 @@ public sealed class OpenSearchMaintenanceService(
             var putMappingResponse = await client.Indices.PutMappingAsync<TDocument>(
                 p => p.Index(indexName).Properties(propertiesSelector), cancellationToken);
 
-            if (!putMappingResponse.IsValid)
+            if (putMappingResponse.IsValid)
             {
-                throw new InvalidOperationException(putMappingResponse.DebugInformation);
+                return false;
             }
 
-            return false;
+            // Mapping conflict (e.g. text→keyword) — recreate the index
+            var deleteResponse = await client.Indices.DeleteAsync(indexName, ct: cancellationToken);
+            if (!deleteResponse.IsValid)
+            {
+                throw new InvalidOperationException(deleteResponse.DebugInformation);
+            }
         }
 
         var createResponse = await client.Indices.CreateAsync(indexName,
