@@ -12,7 +12,10 @@ internal sealed class GetApiClientByIdQueryHandler(
     {
         return await dbContext.ApiClients.AsNoTracking()
             .Where(x => x.Id == query.Id)
-            .Select(x => new ApiClientDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive))
+            .Select(x => new ApiClientDto(
+                x.Id, x.Name, x.Description, x.ClientId, x.IsActive,
+                x.Type, x.IsConfidential, x.LogoUrl, x.HomepageUrl,
+                x.RedirectUris, x.PostLogoutRedirectUris))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

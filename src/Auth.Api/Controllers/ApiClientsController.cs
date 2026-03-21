@@ -36,13 +36,21 @@ public sealed class ApiClientsController(ISender sender) : ControllerBase
     [HttpPost]
     [HasPermissionIn("system", "system", "system.api-clients.create")]
     public Task<CreateApiClientResponse> Create([FromBody] CreateApiClientRequest request, CancellationToken cancellationToken) =>
-        sender.Send(new CreateApiClientCommand(request.Name, request.Description, request.IsActive), cancellationToken);
+        sender.Send(new CreateApiClientCommand(
+            request.Name, request.Description, request.IsActive,
+            request.Type, request.IsConfidential, request.LogoUrl, request.HomepageUrl,
+            request.RedirectUris, request.PostLogoutRedirectUris,
+            request.ConsentType), cancellationToken);
 
     [HttpPut("{id:guid}")]
     [HasPermissionIn("system", "system", "system.api-clients.update")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateApiClientRequest request, CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(new UpdateApiClientCommand(id, request.Name, request.Description, request.IsActive), cancellationToken);
+        var updated = await sender.Send(new UpdateApiClientCommand(
+            id, request.Name, request.Description, request.IsActive,
+            request.Type, request.IsConfidential, request.LogoUrl, request.HomepageUrl,
+            request.RedirectUris, request.PostLogoutRedirectUris,
+            request.ConsentType), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -50,7 +58,11 @@ public sealed class ApiClientsController(ISender sender) : ControllerBase
     [HasPermissionIn("system", "system", "system.api-clients.update")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] PatchApiClientRequest request, CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(new PatchApiClientCommand(id, request.Name, request.Description, request.IsActive), cancellationToken);
+        var updated = await sender.Send(new PatchApiClientCommand(
+            id, request.Name, request.Description, request.IsActive,
+            request.Type, request.IsConfidential, request.LogoUrl, request.HomepageUrl,
+            request.RedirectUris, request.PostLogoutRedirectUris,
+            request.ConsentType), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 

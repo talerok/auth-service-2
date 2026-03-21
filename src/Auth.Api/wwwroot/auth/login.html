@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>[v-cloak] { display: none; }</style>
+</head>
+<body class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+  <div v-scope="LoginPage()" v-cloak class="w-full max-w-sm bg-white rounded-lg shadow p-8">
+    <h1 class="text-2xl font-semibold text-center mb-6">{{ t('loginTitle') }}</h1>
+
+    <div v-if="error" class="bg-red-50 text-red-700 text-sm rounded p-3 mb-4">{{ error }}</div>
+
+    <form @submit.prevent="submit" class="space-y-4">
+      <div>
+        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">{{ t('username') }}</label>
+        <input id="username" v-model="username" type="text" required autocomplete="username"
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">{{ t('password') }}</label>
+        <input id="password" v-model="password" type="password" required autocomplete="current-password"
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <button type="submit" :disabled="loading"
+        class="w-full bg-blue-600 text-white rounded py-2 font-medium hover:bg-blue-700 disabled:opacity-50">
+        {{ loading ? t('loginLoading') : t('loginSubmit') }}
+      </button>
+    </form>
+  </div>
+
+  <script type="module">
+    import { createApp } from './js/petite-vue.js'
+    import { t } from './js/i18n.js'
+    import { api, getParams } from './js/shared.js'
+
+    const returnUrl = getParams('returnUrl');
+
+    function LoginPage() {
+      return {
+        username: '',
+        password: '',
+        error: '',
+        loading: false,
+        t,
+        async submit() {
+          this.error = '';
+          this.loading = true;
+          const url = '/connect/login';
+          const { ok, data, error } = await api(url, 'POST', {
+            username: this.username,
+            password: this.password, 
+            returnUrl
+          });
+
+          if (error) { 
+            this.error = error; 
+            this.loading = false; 
+            return; 
+          }
+
+          if (ok) { 
+            location.href = data.redirect_url; 
+            return; 
+          }
+
+          if (data.error === 'mfa_required') {
+            const { mfa_token, mfa_channel } = data;
+            const p = new URLSearchParams({ mfa_token, mfa_channel });
+            if (data.return_url) p.set('return_url', data.return_url);
+            location.href = '/auth/mfa.html?' + p;
+            return;
+          }
+
+          if (data.error === 'password_change_required') {
+            const { challenge_id } = data;
+            const p = new URLSearchParams({ challenge_id });
+            if (data.return_url) p.set('return_url', data.return_url);
+            location.href = '/auth/password-change.html?' + p;
+            return;
+          }
+
+          this.error = t('invalidCredentials');
+          this.loading = false;
+        }
+      }
+    }
+
+    createApp({ LoginPage }).mount()
+  </script>
+</body>
+</html>

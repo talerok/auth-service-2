@@ -173,8 +173,8 @@ public sealed class IdentitySourceAuthServiceTests
             new AuthenticateViaIdentitySourceCommand("keycloak", null, "token", ["openid"]),
             CancellationToken.None);
 
-        result.Should().BeOfType<PasswordGrantResult.Success>();
-        var success = (PasswordGrantResult.Success)result;
+        result.Should().BeOfType<CredentialValidationResult.Success>();
+        var success = (CredentialValidationResult.Success)result;
         success.Principal.Should().Be(principal);
     }
 
@@ -219,7 +219,7 @@ public sealed class IdentitySourceAuthServiceTests
             new AuthenticateViaIdentitySourceCommand("keycloak", null, "token", ["openid"]),
             CancellationToken.None);
 
-        result.Should().BeOfType<PasswordGrantResult.MfaRequired>();
+        result.Should().BeOfType<CredentialValidationResult.MfaRequired>();
     }
 
     [Fact]
@@ -264,7 +264,7 @@ public sealed class IdentitySourceAuthServiceTests
             new AuthenticateViaIdentitySourceCommand("keycloak", null, "token", ["openid"]),
             CancellationToken.None);
 
-        result.Should().BeOfType<PasswordGrantResult.Success>();
+        result.Should().BeOfType<CredentialValidationResult.Success>();
     }
 
     // LDAP tests
@@ -310,8 +310,8 @@ public sealed class IdentitySourceAuthServiceTests
             new AuthenticateViaIdentitySourceCommand("corporate-ldap", "jdoe", "password", ["openid"]),
             CancellationToken.None);
 
-        result.Should().BeOfType<PasswordGrantResult.Success>();
-        var success = (PasswordGrantResult.Success)result;
+        result.Should().BeOfType<CredentialValidationResult.Success>();
+        var success = (CredentialValidationResult.Success)result;
         success.Principal.Should().Be(principal);
     }
 
@@ -459,7 +459,7 @@ public sealed class IdentitySourceAuthServiceTests
             new AuthenticateViaIdentitySourceCommand("corporate-ldap", "jdoe", "password", ["openid"]),
             CancellationToken.None);
 
-        result.Should().BeOfType<PasswordGrantResult.MfaRequired>();
+        result.Should().BeOfType<CredentialValidationResult.MfaRequired>();
     }
 
     private static IdentitySource CreateOidcSource(string name, bool isEnabled = true) => new()

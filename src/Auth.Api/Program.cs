@@ -43,11 +43,15 @@ builder.Services.AddOpenIddict()
     .AddServer(options =>
     {
         options.SetTokenEndpointUris("/connect/token")
-              .SetUserInfoEndpointUris("/connect/userinfo");
+              .SetUserInfoEndpointUris("/connect/userinfo")
+              .SetAuthorizationEndpointUris("/connect/authorize")
+              .SetEndSessionEndpointUris("/connect/logout")
+              .SetRevocationEndpointUris("/connect/revocation");
 
-        options.AllowPasswordFlow()
-              .AllowRefreshTokenFlow()
+        options.AllowRefreshTokenFlow()
               .AllowClientCredentialsFlow()
+              .AllowAuthorizationCodeFlow()
+              .AllowPasswordFlow()
               .AllowCustomFlow(OidcConstants.MfaOtpGrantType)
               .AllowCustomFlow(OidcConstants.TokenExchangeGrantType);
 
@@ -58,21 +62,30 @@ builder.Services.AddOpenIddict()
 
         options.DisableAccessTokenEncryption();
 
+        var isDev = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing");
+
         if (!string.IsNullOrWhiteSpace(oidc.SigningKeyPath))
             options.AddSigningCertificate(new X509Certificate2(oidc.SigningKeyPath, oidc.SigningKeyPassword));
-        else
+        else if (isDev)
             options.AddDevelopmentSigningCertificate();
+        else
+            throw new InvalidOperationException("OIDC signing key is required in non-development environments.");
 
         if (!string.IsNullOrWhiteSpace(oidc.EncryptionKeyPath))
             options.AddEncryptionCertificate(new X509Certificate2(oidc.EncryptionKeyPath, oidc.EncryptionKeyPassword));
-        else
+        else if (isDev)
             options.AddDevelopmentEncryptionCertificate();
+        else
+            throw new InvalidOperationException("OIDC encryption key is required in non-development environments.");
 
         var aspNetCoreBuilder = options.UseAspNetCore()
               .EnableTokenEndpointPassthrough()
-              .EnableUserInfoEndpointPassthrough();
+              .EnableUserInfoEndpointPassthrough()
+              .EnableAuthorizationEndpointPassthrough()
+              .EnableEndSessionEndpointPassthrough()
+              .EnableStatusCodePagesIntegration();
 
-        if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
+        if (isDev)
             aspNetCoreBuilder.DisableTransportSecurityRequirement();
     })
     .AddValidation(options =>
@@ -99,6 +112,14 @@ if (integration.Cors.AllowedOrigins.Length > 0)
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+})
+.AddCookie("Identity.External", options =>
+{
+    options.LoginPath = new PathString(oidc.LoginUrl);
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
 builder.Services.AddAuthorization();
@@ -127,6 +148,7 @@ if (app.Environment.IsDevelopment())
 }
 app.UseHttpsRedirection();
 app.UseCors();
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 

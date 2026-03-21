@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Подтверждение</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>[v-cloak] { display: none; }</style>
+</head>
+<body class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+  <div v-scope="MfaPage()" v-cloak class="w-full max-w-sm bg-white rounded-lg shadow p-8">
+    <h1 class="text-2xl font-semibold text-center mb-2">{{ t('mfaTitle') }}</h1>
+    <p class="text-sm text-gray-500 text-center mb-6">{{ t('mfaCodeSentTo') }} {{ channelLabel }}</p>
+
+    <div v-if="error" class="bg-red-50 text-red-700 text-sm rounded p-3 mb-4">{{ error }}</div>
+
+    <form @submit.prevent="submit" class="space-y-4">
+      <div>
+        <label for="otp" class="block text-sm font-medium text-gray-700 mb-1">{{ t('mfaCode') }}</label>
+        <input id="otp" v-model="otp" type="text" inputmode="numeric" maxlength="6" required
+          autocomplete="one-time-code" placeholder="000000"
+          class="w-full border border-gray-300 rounded px-3 py-2 text-center text-2xl tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <button type="submit" :disabled="loading || otp.length < 6"
+        class="w-full bg-blue-600 text-white rounded py-2 font-medium hover:bg-blue-700 disabled:opacity-50">
+        {{ loading ? t('mfaLoading') : t('mfaSubmit') }}
+      </button>
+    </form>
+  </div>
+
+  <script type="module">
+    import { createApp } from './js/petite-vue.js'
+    import { t } from './js/i18n.js'
+    import { api, getParams } from './js/shared.js'
+
+    const { mfa_token: mfaToken, mfa_channel: mfaChannel, return_url: returnUrl } =
+      getParams('mfa_token', 'mfa_channel', 'return_url');
+
+    if (!mfaToken || !mfaChannel) {
+      location.href = '/auth/login.html';
+    }
+
+    function MfaPage() {
+      return {
+        otp: '',
+        error: '',
+        loading: false,
+        t,
+        channelLabel: { 
+          email: t('mfaChannelEmail'),
+          sms: t('mfaChannelSms') 
+        }[mfaChannel] || mfaChannel,
+        async submit() {
+          this.error = '';
+          this.loading = true;
+
+          const url = '/connect/mfa/verify';
+          const { ok, data, error } = await api(url, 'POST', {
+            mfa_token: mfaToken, 
+            mfa_channel: mfaChannel, 
+            otp: this.otp, 
+            return_url: returnUrl
+          });
+    
+          if (error) { 
+            this.error = error; 
+            this.loading = false; 
+            return; 
+          }
+
+          if (ok) { 
+            location.href = data.redirect_url; 
+            return; 
+          }
+
+          this.error = t('mfaInvalidCode');
+          this.loading = false;
+        }
+      }
+    }
+
+    createApp({ MfaPage }).mount()
+  </script>
+</body>
+</html>

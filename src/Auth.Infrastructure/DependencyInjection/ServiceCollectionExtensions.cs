@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 
 namespace Auth.Infrastructure;
 
@@ -15,7 +16,10 @@ public static class ServiceCollectionExtensions
         services.Configure<PasswordRequirementsOptions>(configuration.GetSection("Integration:PasswordRequirements"));
         var integration = configuration.GetSection("Integration").Get<IntegrationOptions>() ?? new IntegrationOptions();
 
-        services.AddDbContext<AuthDbContext>(options => options.UseNpgsql(integration.PostgreSql.ConnectionString));
+        var dataSourceBuilder = new NpgsqlDataSourceBuilder(integration.PostgreSql.ConnectionString);
+        dataSourceBuilder.EnableDynamicJson();
+        var dataSource = dataSourceBuilder.Build();
+        services.AddDbContext<AuthDbContext>(options => options.UseNpgsql(dataSource));
 
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ServiceCollectionExtensions).Assembly));
         services.AddValidatorsFromAssembly(typeof(AuthException).Assembly);

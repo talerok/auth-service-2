@@ -6,7 +6,7 @@ using Auth.Application.Auth.Commands.ValidateCredentials;
 using Auth.Application.Auth.Queries.GetActiveUser;
 using Auth.Application.Oidc.Commands.HandleClientCredentialsGrant;
 using Auth.Application.Oidc.Commands.HandleMfaOtpGrant;
-using Auth.Application.Oidc.Commands.HandlePasswordGrant;
+using Auth.Application.Oidc.Commands.ValidateCredentialsForLogin;
 using Auth.Application.Oidc.Queries.BuildPrincipal;
 using Auth.Application.TwoFactor.Commands.ValidateLoginOtp;
 using Auth.Application.Workspaces.Queries.BuildApiClientWorkspaceMasks;
@@ -15,7 +15,7 @@ using Auth.Domain;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Oidc.Commands.HandleClientCredentialsGrant;
 using Auth.Infrastructure.Oidc.Commands.HandleMfaOtpGrant;
-using Auth.Infrastructure.Oidc.Commands.HandlePasswordGrant;
+using Auth.Infrastructure.Oidc.Commands.ValidateCredentialsForLogin;
 using Auth.Infrastructure.Oidc.Queries.BuildPrincipal;
 using FluentAssertions;
 using MediatR;
@@ -40,28 +40,28 @@ public sealed class OidcGrantServiceTests
         IsInternalAuthEnabled = true
     };
 
-    // HandlePasswordGrantCommandHandler tests
+    // ValidateCredentialsForLoginCommandHandler tests
 
     [Fact]
-    public async Task HandlePasswordGrant_WhenCredentialsValid_ReturnsSuccessWithPrincipal()
+    public async Task ValidateCredentialsForLogin_WhenCredentialsValid_ReturnsSuccessWithPrincipal()
     {
         var sender = new Mock<ISender>();
         sender.Setup(x => x.Send(
                 It.Is<ValidateCredentialsCommand>(c => c.Username == "testuser" && c.Password == "password"),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new HandlePasswordGrantCommandHandler(sender.Object);
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object);
 
         var result = await handler.Handle(
-            new HandlePasswordGrantCommand("testuser", "password", ["openid", "profile"]), CancellationToken.None);
+            new ValidateCredentialsForLoginCommand("testuser", "password", ["openid", "profile"]), CancellationToken.None);
 
-        result.Should().BeOfType<PasswordGrantResult.Success>();
-        var success = (PasswordGrantResult.Success)result;
+        result.Should().BeOfType<CredentialValidationResult.Success>();
+        var success = (CredentialValidationResult.Success)result;
         success.Principal.FindFirst(Claims.Subject)!.Value.Should().Be(TestUser.Id.ToString());
     }
 
     [Fact]
-    public async Task HandlePasswordGrant_WhenMustChangePassword_ReturnsPasswordChangeRequired()
+    public async Task ValidateCredentialsForLogin_WhenMustChangePassword_ReturnsPasswordChangeRequired()
     {
         var user = new User
         {
@@ -79,16 +79,16 @@ public sealed class OidcGrantServiceTests
                 It.Is<CreatePasswordChangeChallengeCommand>(c => c.UserId == user.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(PasswordChangeChallenge.Create(user.Id, DateTime.UtcNow.AddMinutes(15)));
-        var handler = new HandlePasswordGrantCommandHandler(sender.Object);
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object);
 
         var result = await handler.Handle(
-            new HandlePasswordGrantCommand("mcp", "pwd", ["openid"]), CancellationToken.None);
+            new ValidateCredentialsForLoginCommand("mcp", "pwd", ["openid"]), CancellationToken.None);
 
-        result.Should().BeOfType<PasswordGrantResult.PasswordChangeRequired>();
+        result.Should().BeOfType<CredentialValidationResult.PasswordChangeRequired>();
     }
 
     [Fact]
-    public async Task HandlePasswordGrant_WhenTwoFactorEnabled_ReturnsMfaRequired()
+    public async Task ValidateCredentialsForLogin_WhenTwoFactorEnabled_ReturnsMfaRequired()
     {
         var user = new User
         {
@@ -110,28 +110,28 @@ public sealed class OidcGrantServiceTests
                 It.Is<CreateLoginChallengeCommand>(c => c.UserId == user.Id && c.Channel == TwoFactorChannel.Email),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(challenge);
-        var handler = new HandlePasswordGrantCommandHandler(sender.Object);
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object);
 
         var result = await handler.Handle(
-            new HandlePasswordGrantCommand("mfa", "pwd", ["openid"]), CancellationToken.None);
+            new ValidateCredentialsForLoginCommand("mfa", "pwd", ["openid"]), CancellationToken.None);
 
-        result.Should().BeOfType<PasswordGrantResult.MfaRequired>();
-        var mfa = (PasswordGrantResult.MfaRequired)result;
+        result.Should().BeOfType<CredentialValidationResult.MfaRequired>();
+        var mfa = (CredentialValidationResult.MfaRequired)result;
         mfa.Channel.Should().Be(TwoFactorChannel.Email);
     }
 
     [Fact]
-    public async Task HandlePasswordGrant_WhenInvalidCredentials_ThrowsAuthException()
+    public async Task ValidateCredentialsForLogin_WhenInvalidCredentials_ThrowsAuthException()
     {
         var sender = new Mock<ISender>();
         sender.Setup(x => x.Send(
                 It.Is<ValidateCredentialsCommand>(c => c.Username == "bad" && c.Password == "bad"),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new AuthException(AuthErrorCatalog.InvalidCredentials));
-        var handler = new HandlePasswordGrantCommandHandler(sender.Object);
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object);
 
         var act = () => handler.Handle(
-            new HandlePasswordGrantCommand("bad", "bad", ["openid"]), CancellationToken.None);
+            new ValidateCredentialsForLoginCommand("bad", "bad", ["openid"]), CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == AuthErrorCatalog.InvalidCredentials);
@@ -151,7 +151,7 @@ public sealed class OidcGrantServiceTests
         var handler = new HandleMfaOtpGrantCommandHandler(sender.Object);
 
         var principal = await handler.Handle(
-            new HandleMfaOtpGrantCommand(challengeId, TwoFactorChannel.Email, "123456", ["openid", "profile"]),
+            new HandleMfaOtpGrantCommand(challengeId.ToString(), TwoFactorChannel.Email.ToString(), "123456", ["openid", "profile"]),
             CancellationToken.None);
 
         principal.FindFirst(Claims.Subject)!.Value.Should().Be(TestUser.Id.ToString());
@@ -169,7 +169,7 @@ public sealed class OidcGrantServiceTests
         var handler = new HandleMfaOtpGrantCommandHandler(sender.Object);
 
         var act = () => handler.Handle(
-            new HandleMfaOtpGrantCommand(challengeId, TwoFactorChannel.Email, "000000", ["openid"]),
+            new HandleMfaOtpGrantCommand(challengeId.ToString(), TwoFactorChannel.Email.ToString(), "000000", ["openid"]),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Доступ</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>[v-cloak] { display: none; }</style>
+</head>
+<body class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+  <div v-scope="ConsentPage()" v-cloak @vue:mounted="loadClientInfo" class="w-full max-w-sm bg-white rounded-lg shadow p-8">
+    <div class="flex flex-col items-center mb-6">
+      <img v-if="logoUrl" :src="logoUrl" class="w-16 h-16 rounded mb-3" alt="">
+      <h1 class="text-2xl font-semibold text-center mb-1">{{ t('consentTitle') }}</h1>
+      <p class="text-sm text-gray-500 text-center">
+        <strong>{{ clientName }}</strong> {{ t('consentRequestsAccess') }}
+      </p>
+      <a v-if="homepageUrl" :href="homepageUrl" target="_blank" rel="noopener"
+        class="text-xs text-blue-600 hover:underline">{{ homepageUrl }}</a>
+    </div>
+
+    <div v-if="error" class="bg-red-50 text-red-700 text-sm rounded p-3 mb-4">{{ error }}</div>
+
+    <ul class="mb-6 space-y-2">
+      <li v-for="s in scopes" class="flex items-center gap-2 text-sm text-gray-700">
+        <span class="text-green-500">&#10003;</span> {{ scopeLabel(s) }}
+      </li>
+    </ul>
+
+    <div class="flex gap-3">
+      <button @click="respond(false)" :disabled="loading"
+        class="flex-1 border border-gray-300 text-gray-700 rounded py-2 font-medium hover:bg-gray-50 disabled:opacity-50">
+        {{ t('consentDeny') }}
+      </button>
+      <button @click="respond(true)" :disabled="loading"
+        class="flex-1 bg-blue-600 text-white rounded py-2 font-medium hover:bg-blue-700 disabled:opacity-50">
+        {{ t('consentAllow') }}
+      </button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createApp } from './js/petite-vue.js'
+    import { t } from './js/i18n.js'
+    import { api, getParams } from './js/shared.js'
+
+    const { client_id: clientId, return_url: returnUrl, scope } =
+      getParams('client_id', 'return_url', 'scope');
+
+    const scopeKeys = {
+      openid: 'scopeOpenid', profile: 'scopeProfile', email: 'scopeEmail',
+      phone: 'scopePhone', ws: 'scopeWs', offline_access: 'scopeOfflineAccess'
+    };
+
+    function ConsentPage() {
+      return {
+        clientName: clientId || '',
+        logoUrl: '',
+        homepageUrl: '',
+        scopes: (scope || '').split(' ').filter(Boolean),
+        error: '',
+        loading: false,
+        t,
+
+        scopeLabel(s) { 
+          return scopeKeys[s] ? t(scopeKeys[s]) : s; 
+        },
+
+        async loadClientInfo() {
+          const id = encodeURIComponent(clientId || '');
+          const url = '/connect/client-info?client_id=' + id;
+          const { ok, data } = await api(url);
+
+          if (ok) {
+            this.clientName = data.name || clientId;
+            this.logoUrl = data.logoUrl || '';
+            this.homepageUrl = data.homepageUrl || '';
+          }
+        },
+
+        async respond(approved) {
+          this.error = '';
+          this.loading = true;
+          const url = '/connect/authorize/consent';
+          const { data, error } = await api(url, 'POST', {
+            clientId, 
+            scopes: this.scopes, 
+            approved, returnUrl
+          });
+      
+          if (error) { 
+            this.error = error; 
+            this.loading = false; 
+            return; 
+          }
+
+          if (data.redirect_url) { 
+            location.href = data.redirect_url; 
+            return; 
+          }
+  
+          if (data.error) this.error = data.error;
+          this.loading = false;
+        }
+      }
+    }
+
+    createApp({ ConsentPage }).mount()
+  </script>
+</body>
+</html>

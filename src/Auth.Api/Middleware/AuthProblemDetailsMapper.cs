@@ -47,6 +47,9 @@ public static class AuthProblemDetailsMapper
             AuthErrorCatalog.PermissionCodeNotFound => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Permission code not found"),
             AuthErrorCatalog.SystemWorkspaceImportForbidden => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Cannot import system workspaces"),
             AuthErrorCatalog.InternalAuthDisabled => new AuthProblemDescriptor(StatusCodes.Status403Forbidden, "Forbidden", "Internal authentication is disabled for this user"),
+            AuthErrorCatalog.ConsentRequired => new AuthProblemDescriptor(StatusCodes.Status403Forbidden, "Consent required", "User consent is required"),
+            AuthErrorCatalog.AuthorizationNotFound => new AuthProblemDescriptor(StatusCodes.Status404NotFound, "Resource not found", "Authorization not found"),
+            AuthErrorCatalog.InvalidRedirectUri => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Validation error", "Invalid redirect URI"),
             _ => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Business rule violation")
         };
     }

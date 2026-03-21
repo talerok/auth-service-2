@@ -31,6 +31,11 @@ public static class AuthErrorCatalog
     public const string PermissionCodeNotFound = "AUTH_PERMISSION_CODE_NOT_FOUND";
     public const string SystemWorkspaceImportForbidden = "AUTH_SYSTEM_WORKSPACE_IMPORT_FORBIDDEN";
     public const string InternalAuthDisabled = "AUTH_INTERNAL_AUTH_DISABLED";
+    public const string ConsentRequired = "AUTH_CONSENT_REQUIRED";
+    public const string AuthorizationNotFound = "AUTH_AUTHORIZATION_NOT_FOUND";
+    public const string InvalidRedirectUri = "AUTH_INVALID_REDIRECT_URI";
+    public const string InvalidScope = "AUTH_INVALID_SCOPE";
+    public const string InvalidRequest = "AUTH_INVALID_REQUEST";
 
     public const string ImportUserInvalidUsername = "IMPORT_USER_INVALID_USERNAME";
     public const string ImportUserInvalidFullName = "IMPORT_USER_INVALID_FULL_NAME";

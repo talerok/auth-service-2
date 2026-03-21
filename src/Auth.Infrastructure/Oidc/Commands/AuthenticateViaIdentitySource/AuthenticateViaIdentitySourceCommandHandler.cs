@@ -12,10 +12,13 @@ internal sealed class AuthenticateViaIdentitySourceCommandHandler(
     AuthDbContext dbContext,
     ISender sender,
     IOidcTokenValidator tokenValidator,
-    ILdapAuthenticator ldapAuthenticator) : IRequestHandler<AuthenticateViaIdentitySourceCommand, PasswordGrantResult>
+    ILdapAuthenticator ldapAuthenticator) : IRequestHandler<AuthenticateViaIdentitySourceCommand, CredentialValidationResult>
 {
-    public async Task<PasswordGrantResult> Handle(AuthenticateViaIdentitySourceCommand command, CancellationToken cancellationToken)
+    public async Task<CredentialValidationResult> Handle(AuthenticateViaIdentitySourceCommand command, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(command.IdentitySourceName) || string.IsNullOrWhiteSpace(command.Token))
+            throw new AuthException(AuthErrorCatalog.InvalidRequest);
+
         var source = await dbContext.IdentitySources
             .Include(x => x.OidcConfig)
             .Include(x => x.LdapConfig)
@@ -66,10 +69,10 @@ internal sealed class AuthenticateViaIdentitySourceCommandHandler(
         {
             var mfaChallenge = await sender.Send(
                 new CreateLoginChallengeCommand(user.Id, user.TwoFactorChannel!.Value), cancellationToken);
-            return new PasswordGrantResult.MfaRequired(mfaChallenge.Id, mfaChallenge.Channel);
+            return new CredentialValidationResult.MfaRequired(mfaChallenge.Id, mfaChallenge.Channel);
         }
 
         var principal = await sender.Send(new BuildPrincipalQuery(user.Id, command.Scopes), cancellationToken);
-        return new PasswordGrantResult.Success(principal);
+        return new CredentialValidationResult.Success(principal);
     }
 }

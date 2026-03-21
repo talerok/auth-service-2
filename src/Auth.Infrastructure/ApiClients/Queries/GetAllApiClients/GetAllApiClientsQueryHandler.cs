@@ -11,7 +11,10 @@ internal sealed class GetAllApiClientsQueryHandler(
     public async Task<IReadOnlyCollection<ApiClientDto>> Handle(GetAllApiClientsQuery query, CancellationToken cancellationToken)
     {
         return await dbContext.ApiClients.AsNoTracking()
-            .Select(x => new ApiClientDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive))
+            .Select(x => new ApiClientDto(
+                x.Id, x.Name, x.Description, x.ClientId, x.IsActive,
+                x.Type, x.IsConfidential, x.LogoUrl, x.HomepageUrl,
+                x.RedirectUris, x.PostLogoutRedirectUris))
             .ToListAsync(cancellationToken);
     }
 }

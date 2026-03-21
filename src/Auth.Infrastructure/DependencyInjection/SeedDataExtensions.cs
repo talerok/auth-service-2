@@ -97,6 +97,7 @@ public static class SeedDataExtensions
         }
 
         await SeedNotificationTemplatesAsync(db, cancellationToken);
+        await SeedApiClientsAsync(db, cancellationToken);
 
         await permissionCache.WarmupAsync(cancellationToken);
         await SeedOidcClientsAsync(appManager, cancellationToken);
@@ -136,6 +137,47 @@ public static class SeedDataExtensions
         await db.SaveChangesAsync(cancellationToken);
     }
 
+    private static async Task SeedApiClientsAsync(AuthDbContext db, CancellationToken cancellationToken)
+    {
+        var seedClients = new[]
+        {
+            new
+            {
+                ClientId = "frontend-app",
+                Name = "Frontend SPA",
+                RedirectUris = new List<string> { "http://localhost:3000/callback" },
+                PostLogoutRedirectUris = new List<string> { "http://localhost:3000" }
+            },
+            new
+            {
+                ClientId = "mobile-app",
+                Name = "Mobile App",
+                RedirectUris = new List<string> { "http://localhost/callback" },
+                PostLogoutRedirectUris = new List<string> { "http://localhost" }
+            }
+        };
+
+        foreach (var seed in seedClients)
+        {
+            if (!await db.ApiClients.AnyAsync(x => x.ClientId == seed.ClientId, cancellationToken))
+            {
+                db.ApiClients.Add(new ApiClient
+                {
+                    ClientId = seed.ClientId,
+                    Name = seed.Name,
+                    Description = seed.Name,
+                    IsActive = true,
+                    Type = ApiClientType.OAuthApplication,
+                    IsConfidential = false,
+                    RedirectUris = seed.RedirectUris,
+                    PostLogoutRedirectUris = seed.PostLogoutRedirectUris
+                });
+            }
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
     private static async Task SeedOidcClientsAsync(IOpenIddictApplicationManager appManager, CancellationToken cancellationToken)
     {
         if (await appManager.FindByClientIdAsync("frontend-app", cancellationToken) is null)
@@ -145,17 +187,28 @@ public static class SeedDataExtensions
                 ClientId = "frontend-app",
                 DisplayName = "Frontend SPA",
                 ClientType = ClientTypes.Public,
+                ConsentType = ConsentTypes.Implicit,
+                RedirectUris = { new Uri("http://localhost:3000/callback") },
+                PostLogoutRedirectUris = { new Uri("http://localhost:3000") },
                 Permissions =
                 {
+                    OidcPermissions.Endpoints.Authorization,
                     OidcPermissions.Endpoints.Token,
-                    OidcPermissions.GrantTypes.Password,
+                    OidcPermissions.Endpoints.EndSession,
+                    OidcPermissions.Endpoints.Revocation,
+                    OidcPermissions.GrantTypes.AuthorizationCode,
                     OidcPermissions.GrantTypes.RefreshToken,
+                    OidcPermissions.ResponseTypes.Code,
                     OidcPermissions.Prefixes.GrantType + OidcConstants.MfaOtpGrantType,
                     OidcPermissions.Prefixes.GrantType + OidcConstants.TokenExchangeGrantType,
                     OidcPermissions.Scopes.Email,
                     OidcPermissions.Scopes.Profile,
                     OidcPermissions.Prefixes.Scope + "ws",
                     OidcPermissions.Prefixes.Scope + "phone"
+                },
+                Requirements =
+                {
+                    Requirements.Features.ProofKeyForCodeExchange
                 }
             }, cancellationToken);
         }
@@ -167,17 +220,29 @@ public static class SeedDataExtensions
                 ClientId = "mobile-app",
                 DisplayName = "Mobile App",
                 ClientType = ClientTypes.Public,
+                ConsentType = ConsentTypes.Implicit,
+                RedirectUris = { new Uri("http://localhost/callback") },
+                PostLogoutRedirectUris = { new Uri("http://localhost") },
                 Permissions =
                 {
+                    OidcPermissions.Endpoints.Authorization,
                     OidcPermissions.Endpoints.Token,
+                    OidcPermissions.Endpoints.EndSession,
+                    OidcPermissions.Endpoints.Revocation,
+                    OidcPermissions.GrantTypes.AuthorizationCode,
                     OidcPermissions.GrantTypes.Password,
                     OidcPermissions.GrantTypes.RefreshToken,
+                    OidcPermissions.ResponseTypes.Code,
                     OidcPermissions.Prefixes.GrantType + OidcConstants.MfaOtpGrantType,
                     OidcPermissions.Prefixes.GrantType + OidcConstants.TokenExchangeGrantType,
                     OidcPermissions.Scopes.Email,
                     OidcPermissions.Scopes.Profile,
                     OidcPermissions.Prefixes.Scope + "ws",
                     OidcPermissions.Prefixes.Scope + "phone"
+                },
+                Requirements =
+                {
+                    Requirements.Features.ProofKeyForCodeExchange
                 }
             }, cancellationToken);
         }

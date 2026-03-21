@@ -14,6 +14,25 @@ public sealed class ApiClientConfiguration : IEntityTypeConfiguration<ApiClient>
         builder.Property(x => x.Description).HasMaxLength(500);
         builder.Property(x => x.ClientId).IsRequired().HasMaxLength(200);
         builder.Property(x => x.IsActive).IsRequired().HasDefaultValue(true);
+
+        builder.Property(x => x.Type)
+            .IsRequired()
+            .HasDefaultValue(ApiClientType.ServiceAccount)
+            .HasConversion<string>()
+            .HasMaxLength(32);
+
+        builder.Property(x => x.IsConfidential).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.LogoUrl).HasMaxLength(2000);
+        builder.Property(x => x.HomepageUrl).HasMaxLength(2000);
+
+        builder.Property(x => x.RedirectUris)
+            .HasColumnType("jsonb")
+            .HasDefaultValueSql("'[]'::jsonb");
+
+        builder.Property(x => x.PostLogoutRedirectUris)
+            .HasColumnType("jsonb")
+            .HasDefaultValueSql("'[]'::jsonb");
+
         builder.HasQueryFilter(x => x.DeletedAt == null);
         builder.HasIndex(x => x.Name).IsUnique().HasFilter("\"DeletedAt\" IS NULL");
         builder.HasIndex(x => x.ClientId).IsUnique().HasFilter("\"DeletedAt\" IS NULL");
