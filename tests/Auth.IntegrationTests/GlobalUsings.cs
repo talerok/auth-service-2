@@ -1,4 +1,10 @@
 global using System.Net;
 global using System.Net.Http.Json;
+global using System.Net.Http.Headers;
+global using System.Text.Json;
+global using System.Text.Json.Serialization;
 global using Auth.Application;
+global using Auth.Infrastructure;
 global using Microsoft.AspNetCore.Mvc;
+global using Xunit;
+global using FluentAssertions;
