@@ -60,21 +60,26 @@ public sealed class OpenSearchIndexService(
     {
         if (documents.Count == 0) return;
 
-        await retryExecutor.ExecuteAsync(
-            async () =>
-            {
-                var response = await client.BulkAsync(b => b
-                    .Index(indexName)
-                    .IndexMany(documents, (descriptor, doc) => descriptor.Id(idSelector(doc)))
-                    .Refresh(Refresh.WaitFor), cancellationToken);
-                if (response.Errors)
+        int bulkSize = 5000;
+        foreach (var batch in documents.Chunk(bulkSize))
+        {
+            await retryExecutor.ExecuteAsync(
+                async () =>
                 {
-                    var firstError = response.ItemsWithErrors.First();
-                    throw new InvalidOperationException($"Bulk index failed: {firstError.Error.Reason}");
-                }
-            },
-            $"bulk index {documents.Count} {typeof(TDocument).Name} documents into {indexName}",
-            cancellationToken);
+                    var response = await client.BulkAsync(b => b
+                        .Index(indexName)
+                        .IndexMany(batch, (descriptor, doc) => descriptor.Id(idSelector(doc))), cancellationToken);
+                    if (response.Errors)
+                    {
+                        var firstError = response.ItemsWithErrors.First();
+                        throw new InvalidOperationException($"Bulk index failed: {firstError.Error.Reason}");
+                    }
+                },
+                $"bulk index {batch.Length} {typeof(TDocument).Name} documents into {indexName}",
+                cancellationToken);
+        }
+
+        await client.Indices.RefreshAsync(indexName, ct: cancellationToken);
     }
 
     public Task BulkIndexUsersAsync(IReadOnlyCollection<UserDto> users, CancellationToken cancellationToken) =>

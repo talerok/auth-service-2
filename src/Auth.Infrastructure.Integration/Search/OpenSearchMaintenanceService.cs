@@ -78,16 +78,13 @@ public sealed class OpenSearchMaintenanceService(
 
     public async Task ReindexAllAsync(CancellationToken cancellationToken)
     {
-        await ReindexUsersAsync(cancellationToken);
-        await ReindexRolesAsync(cancellationToken);
-        await ReindexPermissionsAsync(cancellationToken);
-        await ReindexWorkspacesAsync(cancellationToken);
-        await ReindexApplicationsAsync(cancellationToken);
-        await ReindexServiceAccountsAsync(cancellationToken);
+        await DeleteAllIndicesAsync(cancellationToken);
+        await EnsureIndicesAsync(cancellationToken);
     }
 
     public async Task ReindexUsersAsync(CancellationToken cancellationToken)
     {
+        await ClearIndexAsync(indexNames.Users, cancellationToken);
         var users = await dbContext.Users.AsNoTracking()
             .Select(x => new UserDto(x.Id, x.Username, x.FullName, x.Email, x.Phone, x.IsActive, x.IsInternalAuthEnabled, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel))
             .ToListAsync(cancellationToken);
@@ -96,6 +93,7 @@ public sealed class OpenSearchMaintenanceService(
 
     public async Task ReindexRolesAsync(CancellationToken cancellationToken)
     {
+        await ClearIndexAsync(indexNames.Roles, cancellationToken);
         var roles = await dbContext.Roles.AsNoTracking()
             .Select(x => new RoleDto(x.Id, x.Name, x.Code, x.Description))
             .ToListAsync(cancellationToken);
@@ -104,6 +102,7 @@ public sealed class OpenSearchMaintenanceService(
 
     public async Task ReindexPermissionsAsync(CancellationToken cancellationToken)
     {
+        await ClearIndexAsync(indexNames.Permissions, cancellationToken);
         var permissions = await dbContext.Permissions.AsNoTracking()
             .Select(x => new PermissionDto(x.Id, x.Domain, x.Bit, x.Code, x.Description, x.IsSystem))
             .ToListAsync(cancellationToken);
@@ -112,6 +111,7 @@ public sealed class OpenSearchMaintenanceService(
 
     public async Task ReindexWorkspacesAsync(CancellationToken cancellationToken)
     {
+        await ClearIndexAsync(indexNames.Workspaces, cancellationToken);
         var workspaces = await dbContext.Workspaces.AsNoTracking()
             .Select(x => new WorkspaceDto(x.Id, x.Name, x.Code, x.Description, x.IsSystem))
             .ToListAsync(cancellationToken);
@@ -120,6 +120,7 @@ public sealed class OpenSearchMaintenanceService(
 
     public async Task ReindexApplicationsAsync(CancellationToken cancellationToken)
     {
+        await ClearIndexAsync(indexNames.Applications, cancellationToken);
         var applications = await dbContext.Applications.AsNoTracking()
             .Select(x => new ApplicationDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive,
                 x.IsConfidential, x.LogoUrl, x.HomepageUrl, x.RedirectUris, x.PostLogoutRedirectUris))
@@ -129,10 +130,30 @@ public sealed class OpenSearchMaintenanceService(
 
     public async Task ReindexServiceAccountsAsync(CancellationToken cancellationToken)
     {
+        await ClearIndexAsync(indexNames.ServiceAccounts, cancellationToken);
         var serviceAccounts = await dbContext.ServiceAccounts.AsNoTracking()
             .Select(x => new ServiceAccountDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive))
             .ToListAsync(cancellationToken);
         await searchIndexService.BulkIndexServiceAccountsAsync(serviceAccounts, cancellationToken);
+    }
+
+    private async Task ClearIndexAsync(string indexName, CancellationToken cancellationToken)
+    {
+        var response = await client.DeleteByQueryAsync<object>(d => d
+            .Index(indexName)
+            .Query(q => q.MatchAll())
+            .Refresh(), cancellationToken);
+
+        if (!response.IsValid)
+        {
+            throw new InvalidOperationException(response.DebugInformation);
+        }
+    }
+
+    private async Task DeleteAllIndicesAsync(CancellationToken cancellationToken)
+    {
+        var all = string.Join(",", indexNames.Users, indexNames.Roles, indexNames.Permissions, indexNames.Workspaces, indexNames.Applications, indexNames.ServiceAccounts);
+        await client.Indices.DeleteAsync(all, ct: cancellationToken);
     }
 
     // Returns true if the index needs reindexing (was created or recreated due to mapping conflict)
