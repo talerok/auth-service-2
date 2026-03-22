@@ -15,9 +15,7 @@ public sealed class TwoFactorDeliveryBackgroundService(
     ILogger<TwoFactorDeliveryBackgroundService> logger) : BackgroundService
 {
     private readonly TwoFactorOptions _twoFactor = options.Value.TwoFactor;
-    private readonly string _twoFactorKeyMaterial = string.IsNullOrWhiteSpace(options.Value.TwoFactor.EncryptionKey)
-        ? options.Value.Jwt.Secret
-        : options.Value.TwoFactor.EncryptionKey;
+    private readonly string _twoFactorKeyMaterial = options.Value.TwoFactor.EncryptionKey;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

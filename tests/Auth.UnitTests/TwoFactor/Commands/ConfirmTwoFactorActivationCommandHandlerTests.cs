@@ -65,8 +65,7 @@ public sealed class ConfirmTwoFactorActivationCommandHandlerTests
     private static IOptions<IntegrationOptions> CreateOptions() =>
         Options.Create(new IntegrationOptions
         {
-            Jwt = new JwtOptions { Secret = "super-secret-key-min-32-characters-long!" },
-            TwoFactor = new TwoFactorOptions { StaticOtpForTesting = "123456", DeliveryPollIntervalMilliseconds = 5 }
+            TwoFactor = new TwoFactorOptions { EncryptionKey = "super-secret-key-min-32-characters-long!", StaticOtpForTesting = "123456", DeliveryPollIntervalMilliseconds = 5 }
         });
 
     private static AuthDbContext CreateDbContext()

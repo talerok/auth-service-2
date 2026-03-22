@@ -7,7 +7,6 @@ public sealed class IntegrationOptions
     public PostgreSqlOptions PostgreSql { get; set; } = new();
     public OpenSearchOptions OpenSearch { get; set; } = new();
 
-    public JwtOptions Jwt { get; set; } = new();
     public TwoFactorOptions TwoFactor { get; set; } = new();
     public PasswordChangeOptions PasswordChange { get; set; } = new();
     public SmtpOptions Smtp { get; set; } = new();
@@ -30,16 +29,6 @@ public sealed class OpenSearchOptions
     public string Password { get; set; } = string.Empty;
     public bool EnsureIndicesOnStartup { get; set; } = true;
     public bool ReindexOnStartup { get; set; }
-}
-
-
-public sealed class JwtOptions
-{
-    public string Secret { get; set; } = string.Empty;
-    public string Issuer { get; set; } = "auth-service";
-    public string Audience { get; set; } = "auth-service-clients";
-    public int AccessTokenExpirationMinutes { get; set; } = 15;
-    public int RefreshTokenExpirationDays { get; set; } = 7;
 }
 
 public sealed class TwoFactorOptions

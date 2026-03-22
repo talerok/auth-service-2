@@ -21,11 +21,7 @@ services:
       Integration__OpenSearch__Username: ${OPENSEARCH_USERNAME}
       Integration__OpenSearch__Password: ${OPENSEARCH_PASSWORD}
 
-      Integration__Jwt__Secret: ${JWT_SECRET}
-      Integration__Jwt__Issuer: ${JWT_ISSUER}
-      Integration__Jwt__Audience: ${JWT_AUDIENCE}
-      Integration__Jwt__AccessTokenExpirationMinutes: ${JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
-      Integration__Jwt__RefreshTokenExpirationDays: ${JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
+      Integration__TwoFactor__EncryptionKey: ${TWO_FACTOR_ENCRYPTION_KEY}
       Integration__Smtp__Enabled: ${SMTP_ENABLED}
       Integration__Smtp__Host: ${SMTP_HOST}
       Integration__Smtp__Port: ${SMTP_PORT}

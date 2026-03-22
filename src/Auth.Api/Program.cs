@@ -128,6 +128,12 @@ builder.Services.AddScoped<IAuthorizationHandler, PermissionInHandler>();
 
 var app = builder.Build();
 
+if (string.IsNullOrWhiteSpace(integration.TwoFactor.EncryptionKey))
+{
+    throw new InvalidOperationException(
+        "Integration:TwoFactor:EncryptionKey is required. It is used to encrypt OTP codes at rest.");
+}
+
 if (!app.Environment.IsDevelopment()
     && !app.Environment.IsEnvironment("Testing")
     && !string.IsNullOrWhiteSpace(integration.TwoFactor.StaticOtpForTesting))

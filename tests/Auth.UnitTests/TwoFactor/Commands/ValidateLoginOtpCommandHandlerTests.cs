@@ -77,8 +77,7 @@ public sealed class ValidateLoginOtpCommandHandlerTests
         new(dbContext,
             Options.Create(new IntegrationOptions
             {
-                Jwt = new JwtOptions { Secret = "super-secret-key-min-32-characters-long!" },
-                TwoFactor = new TwoFactorOptions { StaticOtpForTesting = twoFactorStaticOtp, DeliveryPollIntervalMilliseconds = 5 }
+                TwoFactor = new TwoFactorOptions { EncryptionKey = "super-secret-key-min-32-characters-long!", StaticOtpForTesting = twoFactorStaticOtp, DeliveryPollIntervalMilliseconds = 5 }
             }),
             NullLogger<CreateLoginChallengeCommandHandler>.Instance);
 

@@ -53,8 +53,7 @@ public sealed class CreateLoginChallengeCommandHandlerTests
     private static IOptions<IntegrationOptions> CreateOptions() =>
         Options.Create(new IntegrationOptions
         {
-            Jwt = new JwtOptions { Secret = "super-secret-key-min-32-characters-long!" },
-            TwoFactor = new TwoFactorOptions { StaticOtpForTesting = "123456" }
+            TwoFactor = new TwoFactorOptions { EncryptionKey = "super-secret-key-min-32-characters-long!", StaticOtpForTesting = "123456" }
         });
 
     private static AuthDbContext CreateDbContext()
