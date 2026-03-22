@@ -186,6 +186,119 @@ public sealed class CreateApplicationCommandHandlerTests
         result.Application.PostLogoutRedirectUris.Should().HaveCount(1);
     }
 
+    [Fact]
+    public async Task Handle_WithCustomGrantTypes_SetsCorrectPermissions()
+    {
+        await using var dbContext = CreateDbContext();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var appManager = new Mock<IOpenIddictApplicationManager>();
+        OpenIddictApplicationDescriptor? capturedDescriptor = null;
+        appManager.Setup(x => x.CreateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()))
+            .Callback<OpenIddictApplicationDescriptor, CancellationToken>((d, _) => capturedDescriptor = d)
+            .ReturnsAsync(new object());
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+
+        await handler.Handle(
+            new CreateApplicationCommand("M2M App", "desc",
+                GrantTypes: ["client_credentials"]),
+            CancellationToken.None);
+
+        capturedDescriptor.Should().NotBeNull();
+        capturedDescriptor!.Permissions.Should().Contain(OidcConstants.Permissions.GrantTypes.ClientCredentials);
+        capturedDescriptor.Permissions.Should().NotContain(OidcConstants.Permissions.GrantTypes.AuthorizationCode);
+        capturedDescriptor.Requirements.Should().NotContain(OidcConstants.Requirements.Features.ProofKeyForCodeExchange);
+    }
+
+    [Fact]
+    public async Task Handle_WithDefaultGrantTypes_SetsAuthorizationCodePermissions()
+    {
+        await using var dbContext = CreateDbContext();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var appManager = new Mock<IOpenIddictApplicationManager>();
+        OpenIddictApplicationDescriptor? capturedDescriptor = null;
+        appManager.Setup(x => x.CreateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()))
+            .Callback<OpenIddictApplicationDescriptor, CancellationToken>((d, _) => capturedDescriptor = d)
+            .ReturnsAsync(new object());
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+
+        await handler.Handle(
+            new CreateApplicationCommand("Web App", "desc"),
+            CancellationToken.None);
+
+        capturedDescriptor.Should().NotBeNull();
+        capturedDescriptor!.Permissions.Should().Contain(OidcConstants.Permissions.GrantTypes.AuthorizationCode);
+        capturedDescriptor.Permissions.Should().Contain(OidcConstants.Permissions.GrantTypes.RefreshToken);
+        capturedDescriptor.Requirements.Should().Contain(OidcConstants.Requirements.Features.ProofKeyForCodeExchange);
+    }
+
+    [Fact]
+    public async Task Handle_WithTokenLifetimes_SetsDescriptorSettings()
+    {
+        await using var dbContext = CreateDbContext();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var appManager = new Mock<IOpenIddictApplicationManager>();
+        OpenIddictApplicationDescriptor? capturedDescriptor = null;
+        appManager.Setup(x => x.CreateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()))
+            .Callback<OpenIddictApplicationDescriptor, CancellationToken>((d, _) => capturedDescriptor = d)
+            .ReturnsAsync(new object());
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+
+        await handler.Handle(
+            new CreateApplicationCommand("App", "desc",
+                AccessTokenLifetimeMinutes: 30,
+                RefreshTokenLifetimeMinutes: 1440),
+            CancellationToken.None);
+
+        capturedDescriptor.Should().NotBeNull();
+        capturedDescriptor!.Settings.Should().ContainKey("oidc:token_lifetimes:access_token");
+        capturedDescriptor.Settings.Should().ContainKey("oidc:token_lifetimes:refresh_token");
+    }
+
+    [Fact]
+    public async Task Handle_WithNullTokenLifetimes_NoSettingsInDescriptor()
+    {
+        await using var dbContext = CreateDbContext();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var appManager = new Mock<IOpenIddictApplicationManager>();
+        OpenIddictApplicationDescriptor? capturedDescriptor = null;
+        appManager.Setup(x => x.CreateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()))
+            .Callback<OpenIddictApplicationDescriptor, CancellationToken>((d, _) => capturedDescriptor = d)
+            .ReturnsAsync(new object());
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+
+        await handler.Handle(
+            new CreateApplicationCommand("App", "desc"),
+            CancellationToken.None);
+
+        capturedDescriptor.Should().NotBeNull();
+        capturedDescriptor!.Settings.Should().NotContainKey("oidc:token_lifetimes:access_token");
+        capturedDescriptor.Settings.Should().NotContainKey("oidc:token_lifetimes:refresh_token");
+    }
+
+    [Fact]
+    public async Task Handle_StoresGrantTypesInEntity()
+    {
+        await using var dbContext = CreateDbContext();
+        var searchIndex = new Mock<ISearchIndexService>();
+        var appManager = new Mock<IOpenIddictApplicationManager>();
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+
+        var result = await handler.Handle(
+            new CreateApplicationCommand("App", "desc",
+                GrantTypes: ["client_credentials", "refresh_token"],
+                AccessTokenLifetimeMinutes: 60,
+                RefreshTokenLifetimeMinutes: 10080),
+            CancellationToken.None);
+
+        result.Application.GrantTypes.Should().BeEquivalentTo(["client_credentials", "refresh_token"]);
+        result.Application.AccessTokenLifetimeMinutes.Should().Be(60);
+        result.Application.RefreshTokenLifetimeMinutes.Should().Be(10080);
+
+        var saved = await dbContext.Applications.FirstAsync();
+        saved.GrantTypes.Should().BeEquivalentTo(["client_credentials", "refresh_token"]);
+        saved.AccessTokenLifetimeMinutes.Should().Be(60);
+    }
+
     private static AuthDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AuthDbContext>()

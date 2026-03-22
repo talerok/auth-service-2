@@ -11,7 +11,10 @@ public sealed record ApplicationDto(
     string? HomepageUrl,
     IReadOnlyCollection<string> RedirectUris,
     IReadOnlyCollection<string> PostLogoutRedirectUris,
-    IReadOnlyCollection<string> Scopes);
+    IReadOnlyCollection<string> Scopes,
+    IReadOnlyCollection<string> GrantTypes,
+    int? AccessTokenLifetimeMinutes,
+    int? RefreshTokenLifetimeMinutes);
 
 public sealed record CreateApplicationRequest(
     string Name,
@@ -23,7 +26,10 @@ public sealed record CreateApplicationRequest(
     List<string>? RedirectUris = null,
     List<string>? PostLogoutRedirectUris = null,
     string? ConsentType = null,
-    List<string>? Scopes = null);
+    List<string>? Scopes = null,
+    List<string>? GrantTypes = null,
+    int? AccessTokenLifetimeMinutes = null,
+    int? RefreshTokenLifetimeMinutes = null);
 
 public sealed record CreateApplicationResponse(
     ApplicationDto Application,
@@ -38,7 +44,10 @@ public sealed record UpdateApplicationRequest(
     List<string> RedirectUris,
     List<string> PostLogoutRedirectUris,
     string? ConsentType,
-    List<string> Scopes);
+    List<string> Scopes,
+    List<string> GrantTypes,
+    int? AccessTokenLifetimeMinutes,
+    int? RefreshTokenLifetimeMinutes);
 
 public sealed record PatchApplicationRequest(
     string? Name,
@@ -49,6 +58,9 @@ public sealed record PatchApplicationRequest(
     List<string>? RedirectUris,
     List<string>? PostLogoutRedirectUris,
     string? ConsentType,
-    List<string>? Scopes);
+    List<string>? Scopes,
+    List<string>? GrantTypes,
+    int? AccessTokenLifetimeMinutes,
+    int? RefreshTokenLifetimeMinutes);
 
 public sealed record RegenerateApplicationSecretResponse(string ClientSecret);

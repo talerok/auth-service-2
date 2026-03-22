@@ -118,4 +118,117 @@ public sealed class CreateApplicationCommandValidatorTests
 
         result.IsValid.Should().BeTrue();
     }
+
+    [Fact]
+    public async Task Validate_WithValidGrantTypes_IsValid()
+    {
+        var command = new CreateApplicationCommand("App", "desc",
+            RedirectUris: ["https://example.com/cb"],
+            GrantTypes: ["authorization_code", "refresh_token"]);
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Validate_WithInvalidGrantType_HasError()
+    {
+        var command = new CreateApplicationCommand("App", "desc",
+            RedirectUris: ["https://example.com/cb"],
+            GrantTypes: ["authorization_code", "invalid_grant"]);
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("GrantTypes"));
+    }
+
+    [Fact]
+    public async Task Validate_WithNullGrantTypes_IsValid()
+    {
+        var command = new CreateApplicationCommand("App", "desc",
+            RedirectUris: ["https://example.com/cb"],
+            GrantTypes: null);
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Validate_WithValidAccessTokenLifetime_IsValid()
+    {
+        var command = new CreateApplicationCommand("App", "desc",
+            RedirectUris: ["https://example.com/cb"],
+            AccessTokenLifetimeMinutes: 60);
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Validate_WithAccessTokenLifetimeTooHigh_HasError()
+    {
+        var command = new CreateApplicationCommand("App", "desc",
+            RedirectUris: ["https://example.com/cb"],
+            AccessTokenLifetimeMinutes: 1441);
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "AccessTokenLifetimeMinutes");
+    }
+
+    [Fact]
+    public async Task Validate_WithAccessTokenLifetimeTooLow_HasError()
+    {
+        var command = new CreateApplicationCommand("App", "desc",
+            RedirectUris: ["https://example.com/cb"],
+            AccessTokenLifetimeMinutes: 0);
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "AccessTokenLifetimeMinutes");
+    }
+
+    [Fact]
+    public async Task Validate_WithRefreshTokenLifetimeTooHigh_HasError()
+    {
+        var command = new CreateApplicationCommand("App", "desc",
+            RedirectUris: ["https://example.com/cb"],
+            RefreshTokenLifetimeMinutes: 43201);
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "RefreshTokenLifetimeMinutes");
+    }
+
+    [Fact]
+    public async Task Validate_WithNullLifetimes_IsValid()
+    {
+        var command = new CreateApplicationCommand("App", "desc",
+            RedirectUris: ["https://example.com/cb"],
+            AccessTokenLifetimeMinutes: null,
+            RefreshTokenLifetimeMinutes: null);
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Validate_WithAllGrantTypes_IsValid()
+    {
+        var command = new CreateApplicationCommand("App", "desc",
+            RedirectUris: ["https://example.com/cb"],
+            GrantTypes: ["authorization_code", "client_credentials", "refresh_token", "password", "token_exchange", "mfa_otp"]);
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeTrue();
+    }
 }

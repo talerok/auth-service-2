@@ -27,6 +27,9 @@ internal sealed class UpdateApplicationCommandHandler(
         application.RedirectUris = command.RedirectUris;
         application.PostLogoutRedirectUris = command.PostLogoutRedirectUris;
         application.Scopes = command.Scopes;
+        application.GrantTypes = command.GrantTypes;
+        application.AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes;
+        application.RefreshTokenLifetimeMinutes = command.RefreshTokenLifetimeMinutes;
         application.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -50,16 +53,9 @@ internal sealed class UpdateApplicationCommandHandler(
         descriptor.DisplayName = command.Name;
 
         descriptor.Permissions.Clear();
-        descriptor.Permissions.UnionWith(new[]
-        {
-            OidcPermissions.Endpoints.Authorization,
-            OidcPermissions.Endpoints.Token,
-            OidcPermissions.Endpoints.EndSession,
-            OidcPermissions.Endpoints.Revocation,
-            OidcPermissions.GrantTypes.AuthorizationCode,
-            OidcPermissions.GrantTypes.RefreshToken,
-            OidcPermissions.ResponseTypes.Code
-        });
+        descriptor.Requirements.Clear();
+
+        GrantTypeMapper.ApplyGrantTypes(descriptor, application.GrantTypes);
 
         foreach (var scope in application.Scopes)
             descriptor.Permissions.Add(OidcPermissions.Prefixes.Scope + scope);
@@ -72,7 +68,9 @@ internal sealed class UpdateApplicationCommandHandler(
         foreach (var uri in command.PostLogoutRedirectUris)
             descriptor.PostLogoutRedirectUris.Add(new Uri(uri));
 
-        descriptor.Requirements.Add(Requirements.Features.ProofKeyForCodeExchange);
+        GrantTypeMapper.ApplyTokenLifetimes(descriptor,
+            application.AccessTokenLifetimeMinutes, application.RefreshTokenLifetimeMinutes);
+
         descriptor.ConsentType = command.ConsentType switch
         {
             "implicit" => ConsentTypes.Implicit,
@@ -85,5 +83,6 @@ internal sealed class UpdateApplicationCommandHandler(
     private static ApplicationDto MapToDto(Domain.Application c) =>
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
-            c.RedirectUris, c.PostLogoutRedirectUris, c.Scopes);
+            c.RedirectUris, c.PostLogoutRedirectUris, c.Scopes,
+            c.GrantTypes, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
 }

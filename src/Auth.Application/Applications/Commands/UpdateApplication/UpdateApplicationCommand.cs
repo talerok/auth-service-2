@@ -12,4 +12,7 @@ public sealed record UpdateApplicationCommand(
     List<string> RedirectUris,
     List<string> PostLogoutRedirectUris,
     string? ConsentType,
-    List<string> Scopes) : IRequest<ApplicationDto?>;
+    List<string> Scopes,
+    List<string> GrantTypes,
+    int? AccessTokenLifetimeMinutes,
+    int? RefreshTokenLifetimeMinutes) : IRequest<ApplicationDto?>;

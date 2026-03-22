@@ -145,39 +145,18 @@ public static class SeedDataExtensions
 
     private static async Task SeedApplicationsAsync(AuthDbContext db, CancellationToken cancellationToken)
     {
-        var seedClients = new[]
+        if (!await db.Applications.AnyAsync(x => x.ClientId == "system-app", cancellationToken))
         {
-            new
+            db.Applications.Add(new Domain.Application
             {
-                ClientId = "frontend-app",
-                Name = "Frontend SPA",
-                RedirectUris = new List<string> { "http://localhost:3000/callback" },
-                PostLogoutRedirectUris = new List<string> { "http://localhost:3000" }
-            },
-            new
-            {
-                ClientId = "mobile-app",
-                Name = "Mobile App",
-                RedirectUris = new List<string> { "http://localhost/callback" },
-                PostLogoutRedirectUris = new List<string> { "http://localhost" }
-            }
-        };
-
-        foreach (var seed in seedClients)
-        {
-            if (!await db.Applications.AnyAsync(x => x.ClientId == seed.ClientId, cancellationToken))
-            {
-                db.Applications.Add(new Domain.Application
-                {
-                    ClientId = seed.ClientId,
-                    Name = seed.Name,
-                    Description = seed.Name,
-                    IsActive = true,
-                    IsConfidential = false,
-                    RedirectUris = seed.RedirectUris,
-                    PostLogoutRedirectUris = seed.PostLogoutRedirectUris
-                });
-            }
+                ClientId = "system-app",
+                Name = "System Application",
+                Description = "System Application",
+                IsActive = true,
+                IsConfidential = true,
+                Scopes = ["openid", "profile", "email", "ws", "offline_access"],
+                GrantTypes = ["client_credentials", "token_exchange", "password", "mfa_otp", "refresh_token"]
+            });
         }
 
         await db.SaveChangesAsync(cancellationToken);
@@ -185,72 +164,24 @@ public static class SeedDataExtensions
 
     private static async Task SeedOidcClientsAsync(IOpenIddictApplicationManager appManager, CancellationToken cancellationToken)
     {
-        if (await appManager.FindByClientIdAsync("frontend-app", cancellationToken) is null)
+        if (await appManager.FindByClientIdAsync("system-app", cancellationToken) is null)
         {
-            await appManager.CreateAsync(new OpenIddictApplicationDescriptor
+            var descriptor = new OpenIddictApplicationDescriptor
             {
-                ClientId = "frontend-app",
-                DisplayName = "Frontend SPA",
-                ClientType = ClientTypes.Public,
-                ConsentType = ConsentTypes.Implicit,
-                RedirectUris = { new Uri("http://localhost:3000/callback") },
-                PostLogoutRedirectUris = { new Uri("http://localhost:3000") },
-                Permissions =
-                {
-                    OidcPermissions.Endpoints.Authorization,
-                    OidcPermissions.Endpoints.Token,
-                    OidcPermissions.Endpoints.EndSession,
-                    OidcPermissions.Endpoints.Revocation,
-                    OidcPermissions.GrantTypes.AuthorizationCode,
-                    OidcPermissions.GrantTypes.Password,
-                    OidcPermissions.GrantTypes.RefreshToken,
-                    OidcPermissions.ResponseTypes.Code,
-                    OidcPermissions.Prefixes.GrantType + OidcConstants.MfaOtpGrantType,
-                    OidcPermissions.Prefixes.GrantType + OidcConstants.TokenExchangeGrantType,
-                    OidcPermissions.Scopes.Email,
-                    OidcPermissions.Scopes.Profile,
-                    OidcPermissions.Prefixes.Scope + "ws",
-                    OidcPermissions.Prefixes.Scope + "phone"
-                },
-                Requirements =
-                {
-                    Requirements.Features.ProofKeyForCodeExchange
-                }
-            }, cancellationToken);
-        }
+                ClientId = "system-app",
+                ClientSecret = "system-secret",
+                DisplayName = "System Application",
+                ClientType = ClientTypes.Confidential,
+                ConsentType = ConsentTypes.Implicit
+            };
 
-        if (await appManager.FindByClientIdAsync("mobile-app", cancellationToken) is null)
-        {
-            await appManager.CreateAsync(new OpenIddictApplicationDescriptor
-            {
-                ClientId = "mobile-app",
-                DisplayName = "Mobile App",
-                ClientType = ClientTypes.Public,
-                ConsentType = ConsentTypes.Implicit,
-                RedirectUris = { new Uri("http://localhost/callback") },
-                PostLogoutRedirectUris = { new Uri("http://localhost") },
-                Permissions =
-                {
-                    OidcPermissions.Endpoints.Authorization,
-                    OidcPermissions.Endpoints.Token,
-                    OidcPermissions.Endpoints.EndSession,
-                    OidcPermissions.Endpoints.Revocation,
-                    OidcPermissions.GrantTypes.AuthorizationCode,
-                    OidcPermissions.GrantTypes.Password,
-                    OidcPermissions.GrantTypes.RefreshToken,
-                    OidcPermissions.ResponseTypes.Code,
-                    OidcPermissions.Prefixes.GrantType + OidcConstants.MfaOtpGrantType,
-                    OidcPermissions.Prefixes.GrantType + OidcConstants.TokenExchangeGrantType,
-                    OidcPermissions.Scopes.Email,
-                    OidcPermissions.Scopes.Profile,
-                    OidcPermissions.Prefixes.Scope + "ws",
-                    OidcPermissions.Prefixes.Scope + "phone"
-                },
-                Requirements =
-                {
-                    Requirements.Features.ProofKeyForCodeExchange
-                }
-            }, cancellationToken);
+            Applications.GrantTypeMapper.ApplyGrantTypes(descriptor,
+                ["client_credentials", "token_exchange", "password", "mfa_otp", "refresh_token"]);
+
+            foreach (var scope in (string[])["openid", "profile", "email", "ws", "offline_access"])
+                descriptor.Permissions.Add(OidcPermissions.Prefixes.Scope + scope);
+
+            await appManager.CreateAsync(descriptor, cancellationToken);
         }
     }
 }

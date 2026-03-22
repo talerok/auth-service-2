@@ -43,6 +43,17 @@ internal sealed class PatchApplicationCommandHandler(
         if (command.Scopes is not null)
             application.Scopes = command.Scopes;
 
+        if (command.GrantTypes is not null)
+            application.GrantTypes = command.GrantTypes;
+
+        if (command.AccessTokenLifetimeMinutes.HasValue)
+            application.AccessTokenLifetimeMinutes =
+                command.AccessTokenLifetimeMinutes == 0 ? null : command.AccessTokenLifetimeMinutes;
+
+        if (command.RefreshTokenLifetimeMinutes.HasValue)
+            application.RefreshTokenLifetimeMinutes =
+                command.RefreshTokenLifetimeMinutes == 0 ? null : command.RefreshTokenLifetimeMinutes;
+
         application.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -50,7 +61,10 @@ internal sealed class PatchApplicationCommandHandler(
                             || command.RedirectUris is not null
                             || command.PostLogoutRedirectUris is not null
                             || command.ConsentType is not null
-                            || command.Scopes is not null;
+                            || command.Scopes is not null
+                            || command.GrantTypes is not null
+                            || command.AccessTokenLifetimeMinutes.HasValue
+                            || command.RefreshTokenLifetimeMinutes.HasValue;
 
         if (needsOidcSync)
             await SyncOpenIddictApplication(application, command, cancellationToken);
@@ -96,6 +110,17 @@ internal sealed class PatchApplicationCommandHandler(
             };
         }
 
+        if (command.GrantTypes is not null)
+        {
+            descriptor.Permissions.RemoveWhere(p =>
+                p.StartsWith(OidcPermissions.Prefixes.GrantType)
+                || p.StartsWith(OidcPermissions.Prefixes.Endpoint)
+                || p.StartsWith(OidcPermissions.Prefixes.ResponseType));
+            descriptor.Requirements.Clear();
+
+            GrantTypeMapper.ApplyGrantTypes(descriptor, application.GrantTypes);
+        }
+
         if (command.Scopes is not null)
         {
             var scopePrefix = OidcPermissions.Prefixes.Scope;
@@ -104,11 +129,18 @@ internal sealed class PatchApplicationCommandHandler(
                 descriptor.Permissions.Add(scopePrefix + scope);
         }
 
+        if (command.AccessTokenLifetimeMinutes.HasValue || command.RefreshTokenLifetimeMinutes.HasValue)
+        {
+            GrantTypeMapper.ApplyTokenLifetimes(descriptor,
+                application.AccessTokenLifetimeMinutes, application.RefreshTokenLifetimeMinutes);
+        }
+
         await appManager.UpdateAsync(oidcApp, descriptor, cancellationToken);
     }
 
     private static ApplicationDto MapToDto(Domain.Application c) =>
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
-            c.RedirectUris, c.PostLogoutRedirectUris, c.Scopes);
+            c.RedirectUris, c.PostLogoutRedirectUris, c.Scopes,
+            c.GrantTypes, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
 }

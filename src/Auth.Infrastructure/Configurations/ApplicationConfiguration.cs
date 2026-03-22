@@ -31,6 +31,13 @@ public sealed class ApplicationConfiguration : IEntityTypeConfiguration<Domain.A
             .HasColumnType("jsonb")
             .HasDefaultValueSql("'[]'::jsonb");
 
+        builder.Property(x => x.GrantTypes)
+            .HasColumnType("jsonb")
+            .HasDefaultValueSql("'[\"authorization_code\", \"refresh_token\"]'::jsonb");
+
+        builder.Property(x => x.AccessTokenLifetimeMinutes);
+        builder.Property(x => x.RefreshTokenLifetimeMinutes);
+
         builder.HasQueryFilter(x => x.DeletedAt == null);
         builder.HasIndex(x => x.Name).IsUnique().HasFilter("\"DeletedAt\" IS NULL");
         builder.HasIndex(x => x.ClientId).IsUnique().HasFilter("\"DeletedAt\" IS NULL");

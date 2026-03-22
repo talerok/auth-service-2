@@ -30,6 +30,26 @@ public sealed class PatchApplicationCommandValidator : AbstractValidator<PatchAp
             .Must(x => x is "explicit" or "implicit")
             .WithMessage("ConsentType must be 'explicit' or 'implicit'.")
             .When(x => x.ConsentType is not null);
+
+        RuleFor(x => x.GrantTypes)
+            .Must(gt => gt!.Count > 0)
+            .WithMessage("Grant types list cannot be empty when provided.")
+            .When(x => x.GrantTypes is not null);
+
+        RuleForEach(x => x.GrantTypes)
+            .Must(gt => OidcConstants.AllowedGrantTypes.Contains(gt))
+            .WithMessage("Each grant type must be one of: " + string.Join(", ", OidcConstants.AllowedGrantTypes))
+            .When(x => x.GrantTypes is not null);
+
+        RuleFor(x => x.AccessTokenLifetimeMinutes)
+            .Must(x => x == 0 || (x >= 1 && x <= 1440))
+            .WithMessage("AccessTokenLifetimeMinutes must be 0 (reset to default) or between 1 and 1440.")
+            .When(x => x.AccessTokenLifetimeMinutes.HasValue);
+
+        RuleFor(x => x.RefreshTokenLifetimeMinutes)
+            .Must(x => x == 0 || (x >= 1 && x <= 43200))
+            .WithMessage("RefreshTokenLifetimeMinutes must be 0 (reset to default) or between 1 and 43200.")
+            .When(x => x.RefreshTokenLifetimeMinutes.HasValue);
     }
 
     private static bool BeValidAbsoluteUri(string? uri) =>

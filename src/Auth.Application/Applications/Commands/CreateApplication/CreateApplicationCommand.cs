@@ -12,4 +12,7 @@ public sealed record CreateApplicationCommand(
     List<string>? RedirectUris = null,
     List<string>? PostLogoutRedirectUris = null,
     string? ConsentType = null,
-    List<string>? Scopes = null) : IRequest<CreateApplicationResponse>;
+    List<string>? Scopes = null,
+    List<string>? GrantTypes = null,
+    int? AccessTokenLifetimeMinutes = null,
+    int? RefreshTokenLifetimeMinutes = null) : IRequest<CreateApplicationResponse>;

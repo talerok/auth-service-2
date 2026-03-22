@@ -32,6 +32,19 @@ public sealed class CreateApplicationCommandValidator : AbstractValidator<Create
             .Must(x => x is "explicit" or "implicit")
             .WithMessage("ConsentType must be 'explicit' or 'implicit'.")
             .When(x => x.ConsentType is not null);
+
+        RuleForEach(x => x.GrantTypes)
+            .Must(gt => OidcConstants.AllowedGrantTypes.Contains(gt))
+            .WithMessage("Each grant type must be one of: " + string.Join(", ", OidcConstants.AllowedGrantTypes))
+            .When(x => x.GrantTypes is not null);
+
+        RuleFor(x => x.AccessTokenLifetimeMinutes)
+            .InclusiveBetween(1, 1440)
+            .When(x => x.AccessTokenLifetimeMinutes.HasValue);
+
+        RuleFor(x => x.RefreshTokenLifetimeMinutes)
+            .InclusiveBetween(1, 43200)
+            .When(x => x.RefreshTokenLifetimeMinutes.HasValue);
     }
 
     private static bool BeValidAbsoluteUri(string? uri) =>

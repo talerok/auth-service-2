@@ -14,6 +14,7 @@ internal sealed class CreateApplicationCommandHandler(
     IOpenIddictApplicationManager appManager) : IRequestHandler<CreateApplicationCommand, CreateApplicationResponse>
 {
     private static readonly List<string> DefaultScopes = ["email", "profile", "ws"];
+    private static readonly List<string> DefaultGrantTypes = ["authorization_code", "refresh_token"];
 
     public async Task<CreateApplicationResponse> Handle(CreateApplicationCommand command, CancellationToken cancellationToken)
     {
@@ -21,6 +22,7 @@ internal sealed class CreateApplicationCommandHandler(
         var isConfidential = command.IsConfidential;
         var clientSecret = isConfidential ? GenerateSecret() : null;
         var scopes = command.Scopes is { Count: > 0 } ? command.Scopes : DefaultScopes;
+        var grantTypes = command.GrantTypes is { Count: > 0 } ? command.GrantTypes : DefaultGrantTypes;
 
         var application = new Domain.Application
         {
@@ -33,13 +35,16 @@ internal sealed class CreateApplicationCommandHandler(
             HomepageUrl = command.HomepageUrl,
             RedirectUris = command.RedirectUris ?? [],
             PostLogoutRedirectUris = command.PostLogoutRedirectUris ?? [],
-            Scopes = scopes
+            Scopes = scopes,
+            GrantTypes = grantTypes,
+            AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes,
+            RefreshTokenLifetimeMinutes = command.RefreshTokenLifetimeMinutes
         };
 
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var descriptor = BuildDescriptor(command, clientId, clientSecret, scopes);
+        var descriptor = BuildDescriptor(command, clientId, clientSecret, scopes, grantTypes);
         await appManager.CreateAsync(descriptor, cancellationToken);
 
         var dto = MapToDto(application);
@@ -48,7 +53,8 @@ internal sealed class CreateApplicationCommandHandler(
     }
 
     private static OpenIddictApplicationDescriptor BuildDescriptor(
-        CreateApplicationCommand command, string clientId, string? clientSecret, List<string> scopes)
+        CreateApplicationCommand command, string clientId, string? clientSecret,
+        List<string> scopes, List<string> grantTypes)
     {
         var descriptor = new OpenIddictApplicationDescriptor
         {
@@ -58,16 +64,7 @@ internal sealed class CreateApplicationCommandHandler(
             ClientType = command.IsConfidential ? ClientTypes.Confidential : ClientTypes.Public
         };
 
-        descriptor.Permissions.UnionWith(new[]
-        {
-            OidcPermissions.Endpoints.Authorization,
-            OidcPermissions.Endpoints.Token,
-            OidcPermissions.Endpoints.EndSession,
-            OidcPermissions.Endpoints.Revocation,
-            OidcPermissions.GrantTypes.AuthorizationCode,
-            OidcPermissions.GrantTypes.RefreshToken,
-            OidcPermissions.ResponseTypes.Code
-        });
+        GrantTypeMapper.ApplyGrantTypes(descriptor, grantTypes);
 
         foreach (var scope in scopes)
             descriptor.Permissions.Add(OidcPermissions.Prefixes.Scope + scope);
@@ -78,7 +75,8 @@ internal sealed class CreateApplicationCommandHandler(
         foreach (var uri in command.PostLogoutRedirectUris ?? [])
             descriptor.PostLogoutRedirectUris.Add(new Uri(uri));
 
-        descriptor.Requirements.Add(Requirements.Features.ProofKeyForCodeExchange);
+        GrantTypeMapper.ApplyTokenLifetimes(descriptor,
+            command.AccessTokenLifetimeMinutes, command.RefreshTokenLifetimeMinutes);
 
         descriptor.ConsentType = command.ConsentType switch
         {
@@ -92,7 +90,8 @@ internal sealed class CreateApplicationCommandHandler(
     private static ApplicationDto MapToDto(Domain.Application c) =>
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
-            c.RedirectUris, c.PostLogoutRedirectUris, c.Scopes);
+            c.RedirectUris, c.PostLogoutRedirectUris, c.Scopes,
+            c.GrantTypes, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
 
     private static string GenerateSecret()
     {
