@@ -45,13 +45,19 @@ internal sealed class GrantConsentCommandHandler(
             return (await authorizationManager.GetIdAsync(existing, cancellationToken))!;
         }
 
-        var auth = await authorizationManager.CreateAsync(
-            identity: null!,
-            subject: subject,
-            client: applicationId,
-            type: AuthorizationTypes.Permanent,
-            scopes: scopesArray,
-            cancellationToken: cancellationToken);
+        var descriptor = new OpenIddictAuthorizationDescriptor
+        {
+            ApplicationId = applicationId,
+            CreationDate = DateTimeOffset.UtcNow,
+            Status = Statuses.Valid,
+            Subject = subject,
+            Type = AuthorizationTypes.Permanent
+        };
+
+        foreach (var scope in scopesArray)
+            descriptor.Scopes.Add(scope);
+
+        var auth = await authorizationManager.CreateAsync(descriptor, cancellationToken);
 
         return (await authorizationManager.GetIdAsync(auth, cancellationToken))!;
     }
