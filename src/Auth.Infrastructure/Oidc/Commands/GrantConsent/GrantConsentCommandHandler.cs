@@ -30,18 +30,6 @@ internal sealed class GrantConsentCommandHandler(
         var applicationId = await appManager.GetIdAsync(application, cancellationToken)
             ?? throw new AuthException(AuthErrorCatalog.ApplicationNotFound);
 
-        // Validate that requested scopes are allowed for this application
-        var scopePrefix = OpenIddictConstants.Permissions.Prefixes.Scope;
-        var permissions = await appManager.GetPermissionsAsync(application, cancellationToken);
-
-        var allowedScopes = permissions
-            .Where(p => p.StartsWith(scopePrefix))
-            .Select(p => p[scopePrefix.Length..])
-            .ToHashSet(StringComparer.Ordinal);
-
-        if (command.Scopes.Any(s => !allowedScopes.Contains(s)))
-            throw new AuthException(AuthErrorCatalog.InvalidScope);
-
         var subject = command.UserId.ToString();
         var scopesArray = command.Scopes.ToImmutableArray();
 

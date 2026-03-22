@@ -104,24 +104,16 @@ public sealed class LoginController(ISender sender) : ControllerBase
 
         if (!consentRequest.Approved)
         {
-            return Ok(new
-            {
-                error = "access_denied",
-                redirect_url = safeReturnUrl
-            });
+            var separator = safeReturnUrl?.Contains('?') == true ? "&" : "?";
+            var denyUrl = safeReturnUrl != null
+                ? $"{safeReturnUrl}{separator}consent_denied=true"
+                : null;
+
+            return Ok(new { redirect_url = denyUrl });
         }
 
-        // Create the authorization now that consent is given — scope validation
-        // is handled by GrantConsentCommandHandler against the application's allowed scopes
-        try
-        {
-            await sender.Send(new GrantConsentCommand(
-                consentRequest.ClientId, userId, consentRequest.Scopes.ToList()), cancellationToken);
-        }
-        catch (AuthException e) when (e.Code == AuthErrorCatalog.InvalidScope)
-        {
-            return BadRequest(new { error = "invalid_scope" });
-        }
+        await sender.Send(new GrantConsentCommand(
+            consentRequest.ClientId, userId, consentRequest.Scopes.ToList()), cancellationToken);
 
         return Ok(new { redirect_url = safeReturnUrl });
     }

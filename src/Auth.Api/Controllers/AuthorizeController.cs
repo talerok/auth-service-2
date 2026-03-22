@@ -45,6 +45,9 @@ public sealed class AuthorizeController(
         if (!Guid.TryParse(subject, out var userId))
             return OidcForbid(Errors.InvalidGrant, "The user identifier is invalid.");
 
+        if (Request.Query.ContainsKey("consent_denied"))
+            return OidcForbid(Errors.AccessDenied, "The user denied the consent request.");
+
         var resolveResult = await sender.Send(new ResolveAuthorizeRequestQuery(
             request.ClientId!, userId, request.GetScopes().ToList()), cancellationToken);
 

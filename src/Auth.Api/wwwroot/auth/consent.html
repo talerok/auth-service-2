@@ -94,13 +94,15 @@
             return; 
           }
 
-          if (data.redirect_url) { 
-            location.href = data.redirect_url; 
-            return; 
+          if (data.redirect_url) {
+            location.href = data.redirect_url;
+            return;
           }
-  
-          if (data.error) this.error = data.error;
-          this.loading = false;
+
+          if (data.error) {
+            this.error = data.error;
+            this.loading = false;
+          }
         }
       }
     }
