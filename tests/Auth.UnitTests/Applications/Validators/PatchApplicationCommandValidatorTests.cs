@@ -45,7 +45,7 @@ public sealed class PatchApplicationCommandValidatorTests
     public async Task Validate_HttpsRedirectUri_IsValid()
     {
         var command = new PatchApplicationCommand(Guid.NewGuid(), null, null, null,
-            null, null, null, ["https://example.com/cb"], null, null);
+            null, null, ["https://example.com/cb"], null, null, null);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -56,7 +56,7 @@ public sealed class PatchApplicationCommandValidatorTests
     public async Task Validate_HttpRedirectUri_HasError()
     {
         var command = new PatchApplicationCommand(Guid.NewGuid(), null, null, null,
-            null, null, null, ["http://example.com/cb"], null, null);
+            null, null, ["http://example.com/cb"], null, null, null);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -68,7 +68,7 @@ public sealed class PatchApplicationCommandValidatorTests
     public async Task Validate_LocalhostHttp_IsValid()
     {
         var command = new PatchApplicationCommand(Guid.NewGuid(), null, null, null,
-            null, null, null, ["http://localhost:3000/cb"], null, null);
+            null, null, ["http://localhost:3000/cb"], null, null, null);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -79,7 +79,7 @@ public sealed class PatchApplicationCommandValidatorTests
     public async Task Validate_InvalidConsentType_HasError()
     {
         var command = new PatchApplicationCommand(Guid.NewGuid(), null, null, null,
-            null, null, null, null, null, "wrong");
+            null, null, null, null, "wrong", null);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -91,7 +91,7 @@ public sealed class PatchApplicationCommandValidatorTests
     public async Task Validate_InvalidLogoUrl_HasError()
     {
         var command = new PatchApplicationCommand(Guid.NewGuid(), null, null, null,
-            null, "not-a-url", null, null, null, null);
+            "not-a-url", null, null, null, null, null);
 
         var result = await _validator.ValidateAsync(command);
 

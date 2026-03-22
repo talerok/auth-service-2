@@ -22,11 +22,11 @@ internal sealed class UpdateApplicationCommandHandler(
         application.Name = command.Name;
         application.Description = command.Description;
         application.IsActive = command.IsActive;
-        application.IsConfidential = command.IsConfidential;
         application.LogoUrl = command.LogoUrl;
         application.HomepageUrl = command.HomepageUrl;
         application.RedirectUris = command.RedirectUris;
         application.PostLogoutRedirectUris = command.PostLogoutRedirectUris;
+        application.Scopes = command.Scopes;
         application.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -48,7 +48,6 @@ internal sealed class UpdateApplicationCommandHandler(
         await appManager.PopulateAsync(descriptor, oidcApp, cancellationToken);
 
         descriptor.DisplayName = command.Name;
-        descriptor.ClientType = command.IsConfidential ? ClientTypes.Confidential : ClientTypes.Public;
 
         descriptor.Permissions.Clear();
         descriptor.Permissions.UnionWith(new[]
@@ -59,11 +58,11 @@ internal sealed class UpdateApplicationCommandHandler(
             OidcPermissions.Endpoints.Revocation,
             OidcPermissions.GrantTypes.AuthorizationCode,
             OidcPermissions.GrantTypes.RefreshToken,
-            OidcPermissions.ResponseTypes.Code,
-            OidcPermissions.Scopes.Email,
-            OidcPermissions.Scopes.Profile,
-            OidcPermissions.Prefixes.Scope + "ws"
+            OidcPermissions.ResponseTypes.Code
         });
+
+        foreach (var scope in application.Scopes)
+            descriptor.Permissions.Add(OidcPermissions.Prefixes.Scope + scope);
 
         descriptor.RedirectUris.Clear();
         foreach (var uri in command.RedirectUris)
@@ -86,5 +85,5 @@ internal sealed class UpdateApplicationCommandHandler(
     private static ApplicationDto MapToDto(Domain.Application c) =>
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
-            c.RedirectUris, c.PostLogoutRedirectUris);
+            c.RedirectUris, c.PostLogoutRedirectUris, c.Scopes);
 }

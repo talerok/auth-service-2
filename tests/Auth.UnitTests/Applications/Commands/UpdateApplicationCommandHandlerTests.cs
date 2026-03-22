@@ -25,7 +25,7 @@ public sealed class UpdateApplicationCommandHandlerTests
 
         var result = await handler.Handle(
             new UpdateApplicationCommand(application.Id, "New", "New desc", false,
-                true, null, null, [], [], null),
+                null, null, [], [], null, []),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -44,7 +44,7 @@ public sealed class UpdateApplicationCommandHandlerTests
 
         var result = await handler.Handle(
             new UpdateApplicationCommand(Guid.NewGuid(), "Name", "Desc", true,
-                true, null, null, [], [], null),
+                null, null, [], [], null, []),
             CancellationToken.None);
 
         result.Should().BeNull();
@@ -63,14 +63,12 @@ public sealed class UpdateApplicationCommandHandlerTests
 
         var result = await handler.Handle(
             new UpdateApplicationCommand(application.Id, "OAuth App", "updated", true,
-                false,
                 "https://example.com/logo.png", "https://example.com",
-                ["https://example.com/cb"], ["https://example.com/logout"], "implicit"),
+                ["https://example.com/cb"], ["https://example.com/logout"], "implicit", []),
             CancellationToken.None);
 
         result.Should().NotBeNull();
-        result!.IsConfidential.Should().BeFalse();
-        result.LogoUrl.Should().Be("https://example.com/logo.png");
+        result!.LogoUrl.Should().Be("https://example.com/logo.png");
         result.HomepageUrl.Should().Be("https://example.com");
         result.RedirectUris.Should().ContainSingle("https://example.com/cb");
         result.PostLogoutRedirectUris.Should().ContainSingle("https://example.com/logout");
@@ -105,8 +103,8 @@ public sealed class UpdateApplicationCommandHandlerTests
 
         await handler.Handle(
             new UpdateApplicationCommand(application.Id, "OAuth App", "desc", true,
-                true, null, null,
-                ["https://example.com/cb"], [], "explicit"),
+                null, null,
+                ["https://example.com/cb"], [], "explicit", ["email", "profile"]),
             CancellationToken.None);
 
         capturedDescriptor.Should().NotBeNull();

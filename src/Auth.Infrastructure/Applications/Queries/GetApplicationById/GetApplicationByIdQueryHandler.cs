@@ -15,7 +15,7 @@ internal sealed class GetApplicationByIdQueryHandler(
             .Select(x => new ApplicationDto(
                 x.Id, x.Name, x.Description, x.ClientId, x.IsActive,
                 x.IsConfidential, x.LogoUrl, x.HomepageUrl,
-                x.RedirectUris, x.PostLogoutRedirectUris))
+                x.RedirectUris, x.PostLogoutRedirectUris, x.Scopes))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

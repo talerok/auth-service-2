@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
+using OidcPermissions = OpenIddict.Abstractions.OpenIddictConstants.Permissions;
 
 namespace Auth.Infrastructure.Applications.Commands.PatchApplication;
 
@@ -27,9 +28,6 @@ internal sealed class PatchApplicationCommandHandler(
         if (command.IsActive.HasValue)
             application.IsActive = command.IsActive.Value;
 
-        if (command.IsConfidential.HasValue)
-            application.IsConfidential = command.IsConfidential.Value;
-
         if (command.LogoUrl is not null)
             application.LogoUrl = command.LogoUrl;
 
@@ -42,14 +40,17 @@ internal sealed class PatchApplicationCommandHandler(
         if (command.PostLogoutRedirectUris is not null)
             application.PostLogoutRedirectUris = command.PostLogoutRedirectUris;
 
+        if (command.Scopes is not null)
+            application.Scopes = command.Scopes;
+
         application.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var needsOidcSync = command.Name is not null
-                            || command.IsConfidential.HasValue
                             || command.RedirectUris is not null
                             || command.PostLogoutRedirectUris is not null
-                            || command.ConsentType is not null;
+                            || command.ConsentType is not null
+                            || command.Scopes is not null;
 
         if (needsOidcSync)
             await SyncOpenIddictApplication(application, command, cancellationToken);
@@ -71,9 +72,6 @@ internal sealed class PatchApplicationCommandHandler(
 
         if (command.Name is not null)
             descriptor.DisplayName = application.Name;
-
-        if (command.IsConfidential.HasValue)
-            descriptor.ClientType = application.IsConfidential ? ClientTypes.Confidential : ClientTypes.Public;
 
         if (command.RedirectUris is not null)
         {
@@ -98,11 +96,19 @@ internal sealed class PatchApplicationCommandHandler(
             };
         }
 
+        if (command.Scopes is not null)
+        {
+            var scopePrefix = OidcPermissions.Prefixes.Scope;
+            descriptor.Permissions.RemoveWhere(p => p.StartsWith(scopePrefix));
+            foreach (var scope in application.Scopes)
+                descriptor.Permissions.Add(scopePrefix + scope);
+        }
+
         await appManager.UpdateAsync(oidcApp, descriptor, cancellationToken);
     }
 
     private static ApplicationDto MapToDto(Domain.Application c) =>
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
-            c.RedirectUris, c.PostLogoutRedirectUris);
+            c.RedirectUris, c.PostLogoutRedirectUris, c.Scopes);
 }

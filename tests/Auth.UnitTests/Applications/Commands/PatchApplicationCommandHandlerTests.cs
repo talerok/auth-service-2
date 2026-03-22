@@ -104,14 +104,12 @@ public sealed class PatchApplicationCommandHandlerTests
 
         var result = await handler.Handle(
             new PatchApplicationCommand(application.Id, null, null, null,
-                false,
                 "https://example.com/logo.png", "https://example.com",
-                ["https://example.com/cb"], ["https://example.com/logout"], "implicit"),
+                ["https://example.com/cb"], ["https://example.com/logout"], "implicit", null),
             CancellationToken.None);
 
         result.Should().NotBeNull();
-        result!.IsConfidential.Should().BeFalse();
-        result.LogoUrl.Should().Be("https://example.com/logo.png");
+        result!.LogoUrl.Should().Be("https://example.com/logo.png");
         result.HomepageUrl.Should().Be("https://example.com");
         result.RedirectUris.Should().ContainSingle("https://example.com/cb");
         result.PostLogoutRedirectUris.Should().ContainSingle("https://example.com/logout");
@@ -134,8 +132,8 @@ public sealed class PatchApplicationCommandHandlerTests
         var handler = new PatchApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
 
         await handler.Handle(
-            new PatchApplicationCommand(application.Id, null, null, null, null, null, null,
-                ["https://new.example.com/cb"], null, null),
+            new PatchApplicationCommand(application.Id, null, null, null, null, null,
+                ["https://new.example.com/cb"], null, null, null),
             CancellationToken.None);
 
         appManager.Verify(x => x.UpdateAsync(It.IsAny<object>(), It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()), Times.Once);

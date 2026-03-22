@@ -13,11 +13,14 @@ internal sealed class CreateApplicationCommandHandler(
     ISearchIndexService searchIndexService,
     IOpenIddictApplicationManager appManager) : IRequestHandler<CreateApplicationCommand, CreateApplicationResponse>
 {
+    private static readonly List<string> DefaultScopes = ["email", "profile", "ws"];
+
     public async Task<CreateApplicationResponse> Handle(CreateApplicationCommand command, CancellationToken cancellationToken)
     {
         var clientId = $"ac-{Guid.NewGuid():N}";
         var isConfidential = command.IsConfidential;
         var clientSecret = isConfidential ? GenerateSecret() : null;
+        var scopes = command.Scopes is { Count: > 0 } ? command.Scopes : DefaultScopes;
 
         var application = new Domain.Application
         {
@@ -29,13 +32,14 @@ internal sealed class CreateApplicationCommandHandler(
             LogoUrl = command.LogoUrl,
             HomepageUrl = command.HomepageUrl,
             RedirectUris = command.RedirectUris ?? [],
-            PostLogoutRedirectUris = command.PostLogoutRedirectUris ?? []
+            PostLogoutRedirectUris = command.PostLogoutRedirectUris ?? [],
+            Scopes = scopes
         };
 
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var descriptor = BuildDescriptor(command, clientId, clientSecret);
+        var descriptor = BuildDescriptor(command, clientId, clientSecret, scopes);
         await appManager.CreateAsync(descriptor, cancellationToken);
 
         var dto = MapToDto(application);
@@ -44,7 +48,7 @@ internal sealed class CreateApplicationCommandHandler(
     }
 
     private static OpenIddictApplicationDescriptor BuildDescriptor(
-        CreateApplicationCommand command, string clientId, string? clientSecret)
+        CreateApplicationCommand command, string clientId, string? clientSecret, List<string> scopes)
     {
         var descriptor = new OpenIddictApplicationDescriptor
         {
@@ -62,11 +66,11 @@ internal sealed class CreateApplicationCommandHandler(
             OidcPermissions.Endpoints.Revocation,
             OidcPermissions.GrantTypes.AuthorizationCode,
             OidcPermissions.GrantTypes.RefreshToken,
-            OidcPermissions.ResponseTypes.Code,
-            OidcPermissions.Scopes.Email,
-            OidcPermissions.Scopes.Profile,
-            OidcPermissions.Prefixes.Scope + "ws"
+            OidcPermissions.ResponseTypes.Code
         });
+
+        foreach (var scope in scopes)
+            descriptor.Permissions.Add(OidcPermissions.Prefixes.Scope + scope);
 
         foreach (var uri in command.RedirectUris ?? [])
             descriptor.RedirectUris.Add(new Uri(uri));
@@ -88,7 +92,7 @@ internal sealed class CreateApplicationCommandHandler(
     private static ApplicationDto MapToDto(Domain.Application c) =>
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
-            c.RedirectUris, c.PostLogoutRedirectUris);
+            c.RedirectUris, c.PostLogoutRedirectUris, c.Scopes);
 
     private static string GenerateSecret()
     {

@@ -38,7 +38,7 @@ public sealed class ApplicationsController(ISender sender) : ControllerBase
             request.Name, request.Description, request.IsActive,
             request.IsConfidential, request.LogoUrl, request.HomepageUrl,
             request.RedirectUris, request.PostLogoutRedirectUris,
-            request.ConsentType), cancellationToken);
+            request.ConsentType, request.Scopes), cancellationToken);
 
     [HttpPut("{id:guid}")]
     [HasPermissionIn("system", "system", "system.applications.update")]
@@ -46,9 +46,9 @@ public sealed class ApplicationsController(ISender sender) : ControllerBase
     {
         var updated = await sender.Send(new UpdateApplicationCommand(
             id, request.Name, request.Description, request.IsActive,
-            request.IsConfidential, request.LogoUrl, request.HomepageUrl,
+            request.LogoUrl, request.HomepageUrl,
             request.RedirectUris, request.PostLogoutRedirectUris,
-            request.ConsentType), cancellationToken);
+            request.ConsentType, request.Scopes), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -58,9 +58,9 @@ public sealed class ApplicationsController(ISender sender) : ControllerBase
     {
         var updated = await sender.Send(new PatchApplicationCommand(
             id, request.Name, request.Description, request.IsActive,
-            request.IsConfidential, request.LogoUrl, request.HomepageUrl,
+            request.LogoUrl, request.HomepageUrl,
             request.RedirectUris, request.PostLogoutRedirectUris,
-            request.ConsentType), cancellationToken);
+            request.ConsentType, request.Scopes), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 

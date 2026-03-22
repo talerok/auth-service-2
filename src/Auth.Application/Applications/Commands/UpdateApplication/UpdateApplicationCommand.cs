@@ -7,9 +7,9 @@ public sealed record UpdateApplicationCommand(
     string Name,
     string Description,
     bool IsActive,
-    bool IsConfidential,
     string? LogoUrl,
     string? HomepageUrl,
     List<string> RedirectUris,
     List<string> PostLogoutRedirectUris,
-    string? ConsentType) : IRequest<ApplicationDto?>;
+    string? ConsentType,
+    List<string> Scopes) : IRequest<ApplicationDto?>;

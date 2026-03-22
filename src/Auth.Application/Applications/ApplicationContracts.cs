@@ -10,7 +10,8 @@ public sealed record ApplicationDto(
     string? LogoUrl,
     string? HomepageUrl,
     IReadOnlyCollection<string> RedirectUris,
-    IReadOnlyCollection<string> PostLogoutRedirectUris);
+    IReadOnlyCollection<string> PostLogoutRedirectUris,
+    IReadOnlyCollection<string> Scopes);
 
 public sealed record CreateApplicationRequest(
     string Name,
@@ -21,7 +22,8 @@ public sealed record CreateApplicationRequest(
     string? HomepageUrl = null,
     List<string>? RedirectUris = null,
     List<string>? PostLogoutRedirectUris = null,
-    string? ConsentType = null);
+    string? ConsentType = null,
+    List<string>? Scopes = null);
 
 public sealed record CreateApplicationResponse(
     ApplicationDto Application,
@@ -31,22 +33,22 @@ public sealed record UpdateApplicationRequest(
     string Name,
     string Description,
     bool IsActive,
-    bool IsConfidential,
     string? LogoUrl,
     string? HomepageUrl,
     List<string> RedirectUris,
     List<string> PostLogoutRedirectUris,
-    string? ConsentType);
+    string? ConsentType,
+    List<string> Scopes);
 
 public sealed record PatchApplicationRequest(
     string? Name,
     string? Description,
     bool? IsActive,
-    bool? IsConfidential,
     string? LogoUrl,
     string? HomepageUrl,
     List<string>? RedirectUris,
     List<string>? PostLogoutRedirectUris,
-    string? ConsentType);
+    string? ConsentType,
+    List<string>? Scopes);
 
 public sealed record RegenerateApplicationSecretResponse(string ClientSecret);

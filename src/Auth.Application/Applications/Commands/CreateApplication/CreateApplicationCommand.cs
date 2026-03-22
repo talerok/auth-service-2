@@ -11,4 +11,5 @@ public sealed record CreateApplicationCommand(
     string? HomepageUrl = null,
     List<string>? RedirectUris = null,
     List<string>? PostLogoutRedirectUris = null,
-    string? ConsentType = null) : IRequest<CreateApplicationResponse>;
+    string? ConsentType = null,
+    List<string>? Scopes = null) : IRequest<CreateApplicationResponse>;

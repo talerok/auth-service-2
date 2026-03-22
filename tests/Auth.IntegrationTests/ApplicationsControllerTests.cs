@@ -99,9 +99,9 @@ public sealed class ApplicationsControllerTests(IntegrationTestFixture fixture)
         var created = await fixture.CreateApplicationAsync();
         var newName = $"updated-{Guid.NewGuid():N}";
         var request = new UpdateApplicationRequest(
-            newName, "Updated", IsActive: true, IsConfidential: false,
+            newName, "Updated", IsActive: true,
             LogoUrl: null, HomepageUrl: null,
-            RedirectUris: ["http://localhost:3000/callback"], PostLogoutRedirectUris: [], ConsentType: null);
+            RedirectUris: ["http://localhost:3000/callback"], PostLogoutRedirectUris: [], ConsentType: null, Scopes: []);
 
         var response = await Client.PutAsJsonAsync(
             $"/api/applications/{created.Application.Id}", request, IntegrationTestFixture.JsonOptions);
@@ -118,8 +118,8 @@ public sealed class ApplicationsControllerTests(IntegrationTestFixture fixture)
     {
         var created = await fixture.CreateApplicationAsync();
         var request = new PatchApplicationRequest(
-            Name: "patched-app", Description: null, IsActive: null, IsConfidential: null,
-            LogoUrl: null, HomepageUrl: null, RedirectUris: null, PostLogoutRedirectUris: null, ConsentType: null);
+            Name: "patched-app", Description: null, IsActive: null,
+            LogoUrl: null, HomepageUrl: null, RedirectUris: null, PostLogoutRedirectUris: null, ConsentType: null, Scopes: null);
 
         var response = await Client.PatchAsJsonAsync(
             $"/api/applications/{created.Application.Id}", request, IntegrationTestFixture.JsonOptions);
