@@ -153,7 +153,7 @@ public static class SeedDataExtensions
                 Name = "System Application",
                 Description = "System Application",
                 IsActive = true,
-                IsConfidential = true,
+                IsConfidential = false,
                 Scopes = ["openid", "profile", "email", "ws", "offline_access"],
                 GrantTypes = ["client_credentials", "token_exchange", "password", "mfa_otp", "refresh_token"]
             });
@@ -169,9 +169,8 @@ public static class SeedDataExtensions
             var descriptor = new OpenIddictApplicationDescriptor
             {
                 ClientId = "system-app",
-                ClientSecret = "system-secret",
                 DisplayName = "System Application",
-                ClientType = ClientTypes.Confidential,
+                ClientType = ClientTypes.Public,
                 ConsentType = ConsentTypes.Implicit
             };
 
