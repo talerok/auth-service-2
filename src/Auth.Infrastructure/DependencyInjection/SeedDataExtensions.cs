@@ -55,12 +55,18 @@ public static class SeedDataExtensions
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        var allPermissionIds = await db.Permissions.Select(x => x.Id).ToListAsync(cancellationToken);
-        var existingCount = await db.RolePermissions.CountAsync(x => x.RoleId == role.Id, cancellationToken);
-        if (existingCount != allPermissionIds.Count)
+        var systemPermissionIds = await db.Permissions
+            .Where(x => x.IsSystem)
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+        var existingRolePermissionIds = await db.RolePermissions
+            .Where(x => x.RoleId == role.Id)
+            .Select(x => x.PermissionId)
+            .ToListAsync(cancellationToken);
+        if (!existingRolePermissionIds.ToHashSet().SetEquals(systemPermissionIds))
         {
             db.RolePermissions.RemoveRange(db.RolePermissions.Where(x => x.RoleId == role.Id));
-            db.RolePermissions.AddRange(allPermissionIds.Select(id => new RolePermission { RoleId = role.Id, PermissionId = id }));
+            db.RolePermissions.AddRange(systemPermissionIds.Select(id => new RolePermission { RoleId = role.Id, PermissionId = id }));
             await db.SaveChangesAsync(cancellationToken);
         }
 
