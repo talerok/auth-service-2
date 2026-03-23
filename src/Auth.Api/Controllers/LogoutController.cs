@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Server.AspNetCore;
 
 namespace Auth.Api.Controllers;
 
 [ApiController]
+[EnableCors("Oidc")]
 public sealed class LogoutController : ControllerBase
 {
     private const string CookieScheme = "Identity.External";

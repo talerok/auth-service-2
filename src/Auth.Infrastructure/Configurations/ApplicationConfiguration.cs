@@ -27,6 +27,10 @@ public sealed class ApplicationConfiguration : IEntityTypeConfiguration<Domain.A
             .HasColumnType("jsonb")
             .HasDefaultValueSql("'[]'::jsonb");
 
+        builder.Property(x => x.AllowedOrigins)
+            .HasColumnType("jsonb")
+            .HasDefaultValueSql("'[]'::jsonb");
+
         builder.Property(x => x.Scopes)
             .HasColumnType("jsonb")
             .HasDefaultValueSql("'[]'::jsonb");

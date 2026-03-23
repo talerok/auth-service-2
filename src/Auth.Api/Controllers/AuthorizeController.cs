@@ -5,6 +5,7 @@ using Auth.Infrastructure;
 using MediatR;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using OpenIddict.Abstractions;
@@ -14,6 +15,7 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 namespace Auth.Api.Controllers;
 
 [ApiController]
+[EnableCors("Oidc")]
 public sealed class AuthorizeController(
     ISender sender,
     IOptions<IntegrationOptions> integrationOptions) : ControllerBase

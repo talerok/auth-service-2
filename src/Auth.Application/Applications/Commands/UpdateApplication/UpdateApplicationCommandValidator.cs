@@ -1,4 +1,5 @@
 using FluentValidation;
+using static Auth.Application.Applications.UriValidation;
 
 namespace Auth.Application.Applications.Commands.UpdateApplication;
 
@@ -20,6 +21,10 @@ public sealed class UpdateApplicationCommandValidator : AbstractValidator<Update
         RuleForEach(x => x.PostLogoutRedirectUris)
             .Must(BeValidAbsoluteUri).WithMessage("Each post-logout redirect URI must be a valid absolute URL.")
             .When(x => x.PostLogoutRedirectUris is { Count: > 0 });
+
+        RuleForEach(x => x.AllowedOrigins)
+            .Must(BeValidOrigin).WithMessage("Each allowed origin must be a valid http or https URL (e.g. https://example.com).")
+            .When(x => x.AllowedOrigins is { Count: > 0 });
 
         RuleFor(x => x.LogoUrl)
             .Must(BeValidAbsoluteUri).WithMessage("LogoUrl must be a valid absolute URL.")
@@ -51,10 +56,4 @@ public sealed class UpdateApplicationCommandValidator : AbstractValidator<Update
             .When(x => x.RefreshTokenLifetimeMinutes.HasValue);
     }
 
-    private static bool BeValidAbsoluteUri(string? uri) =>
-        Uri.TryCreate(uri, UriKind.Absolute, out _);
-
-    private static bool BeValidRedirectUri(string uri) =>
-        Uri.TryCreate(uri, UriKind.Absolute, out var parsed) &&
-        (parsed.Scheme == "https" || (parsed.Scheme == "http" && parsed.Host == "localhost"));
 }

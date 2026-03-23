@@ -11,7 +11,7 @@ public sealed class UpdateApplicationCommandValidatorTests
     public async Task Validate_WithValidCommand_IsValid()
     {
         var command = new UpdateApplicationCommand(Guid.NewGuid(), "Name", "Desc", true,
-            null, null, ["https://example.com/cb"], [], null, [], ["authorization_code", "refresh_token"], null, null);
+            null, null, ["https://example.com/cb"], [], [], null, [], ["authorization_code", "refresh_token"], null, null);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -22,7 +22,7 @@ public sealed class UpdateApplicationCommandValidatorTests
     public async Task Validate_WithEmptyId_HasError()
     {
         var command = new UpdateApplicationCommand(Guid.Empty, "Name", "Desc", true,
-            null, null, ["https://example.com/cb"], [], null, [], ["authorization_code", "refresh_token"], null, null);
+            null, null, ["https://example.com/cb"], [], [], null, [], ["authorization_code", "refresh_token"], null, null);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -34,7 +34,7 @@ public sealed class UpdateApplicationCommandValidatorTests
     public async Task Validate_WithEmptyName_HasError()
     {
         var command = new UpdateApplicationCommand(Guid.NewGuid(), "", "Desc", true,
-            null, null, ["https://example.com/cb"], [], null, [], ["authorization_code", "refresh_token"], null, null);
+            null, null, ["https://example.com/cb"], [], [], null, [], ["authorization_code", "refresh_token"], null, null);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -47,7 +47,7 @@ public sealed class UpdateApplicationCommandValidatorTests
     {
         var command = new UpdateApplicationCommand(Guid.NewGuid(), "OAuth", "desc", true,
             null, null,
-            ["https://example.com/callback"], [], "explicit", [], ["authorization_code", "refresh_token"], null, null);
+            ["https://example.com/callback"], [], [], "explicit", [], ["authorization_code", "refresh_token"], null, null);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -58,7 +58,7 @@ public sealed class UpdateApplicationCommandValidatorTests
     public async Task Validate_WithoutRedirectUris_HasError()
     {
         var command = new UpdateApplicationCommand(Guid.NewGuid(), "OAuth", "desc", true,
-            null, null, [], [], null, [], ["authorization_code", "refresh_token"], null, null);
+            null, null, [], [], [], null, [], ["authorization_code", "refresh_token"], null, null);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -71,7 +71,7 @@ public sealed class UpdateApplicationCommandValidatorTests
     {
         var command = new UpdateApplicationCommand(Guid.NewGuid(), "App", "desc", true,
             null, null,
-            ["https://example.com/cb"], [], "wrong", [], ["authorization_code", "refresh_token"], null, null);
+            ["https://example.com/cb"], [], [], "wrong", [], ["authorization_code", "refresh_token"], null, null);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -84,7 +84,7 @@ public sealed class UpdateApplicationCommandValidatorTests
     {
         var command = new UpdateApplicationCommand(Guid.NewGuid(), "App", "desc", true,
             null, null,
-            ["http://example.com/callback"], [], null, [], ["authorization_code", "refresh_token"], null, null);
+            ["http://example.com/callback"], [], [], null, [], ["authorization_code", "refresh_token"], null, null);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -97,7 +97,7 @@ public sealed class UpdateApplicationCommandValidatorTests
     {
         var command = new UpdateApplicationCommand(Guid.NewGuid(), "App", "desc", true,
             null, null,
-            ["http://localhost:5000/callback"], [], null, [], ["authorization_code", "refresh_token"], null, null);
+            ["http://localhost:5000/callback"], [], [], null, [], ["authorization_code", "refresh_token"], null, null);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -105,10 +105,48 @@ public sealed class UpdateApplicationCommandValidatorTests
     }
 
     [Fact]
+    public async Task Validate_WithValidAllowedOrigin_IsValid()
+    {
+        var command = new UpdateApplicationCommand(Guid.NewGuid(), "App", "desc", true,
+            null, null, ["https://example.com/cb"], [], ["https://example.com"], null, [],
+            ["authorization_code", "refresh_token"], null, null);
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Validate_WithAllowedOriginContainingPath_HasError()
+    {
+        var command = new UpdateApplicationCommand(Guid.NewGuid(), "App", "desc", true,
+            null, null, ["https://example.com/cb"], [], ["https://example.com/some/path"], null, [],
+            ["authorization_code", "refresh_token"], null, null);
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("AllowedOrigins"));
+    }
+
+    [Fact]
+    public async Task Validate_WithAllowedOriginNotUrl_HasError()
+    {
+        var command = new UpdateApplicationCommand(Guid.NewGuid(), "App", "desc", true,
+            null, null, ["https://example.com/cb"], [], ["not-a-url"], null, [],
+            ["authorization_code", "refresh_token"], null, null);
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("AllowedOrigins"));
+    }
+
+    [Fact]
     public async Task Validate_WithEmptyGrantTypes_HasError()
     {
         var command = new UpdateApplicationCommand(Guid.NewGuid(), "App", "desc", true,
-            null, null, ["https://example.com/cb"], [], null, [], [], null, null);
+            null, null, ["https://example.com/cb"], [], [], null, [], [], null, null);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -120,7 +158,7 @@ public sealed class UpdateApplicationCommandValidatorTests
     public async Task Validate_WithInvalidGrantType_HasError()
     {
         var command = new UpdateApplicationCommand(Guid.NewGuid(), "App", "desc", true,
-            null, null, ["https://example.com/cb"], [], null, [], ["invalid"], null, null);
+            null, null, ["https://example.com/cb"], [], [], null, [], ["invalid"], null, null);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -132,7 +170,7 @@ public sealed class UpdateApplicationCommandValidatorTests
     public async Task Validate_WithValidTokenLifetimes_IsValid()
     {
         var command = new UpdateApplicationCommand(Guid.NewGuid(), "App", "desc", true,
-            null, null, ["https://example.com/cb"], [], null, [],
+            null, null, ["https://example.com/cb"], [], [], null, [],
             ["authorization_code", "refresh_token"], 30, 10080);
 
         var result = await _validator.ValidateAsync(command);
@@ -144,7 +182,7 @@ public sealed class UpdateApplicationCommandValidatorTests
     public async Task Validate_WithAccessTokenLifetimeOutOfRange_HasError()
     {
         var command = new UpdateApplicationCommand(Guid.NewGuid(), "App", "desc", true,
-            null, null, ["https://example.com/cb"], [], null, [],
+            null, null, ["https://example.com/cb"], [], [], null, [],
             ["authorization_code", "refresh_token"], 1441, null);
 
         var result = await _validator.ValidateAsync(command);
@@ -157,7 +195,7 @@ public sealed class UpdateApplicationCommandValidatorTests
     public async Task Validate_WithRefreshTokenLifetimeOutOfRange_HasError()
     {
         var command = new UpdateApplicationCommand(Guid.NewGuid(), "App", "desc", true,
-            null, null, ["https://example.com/cb"], [], null, [],
+            null, null, ["https://example.com/cb"], [], [], null, [],
             ["authorization_code", "refresh_token"], null, 43201);
 
         var result = await _validator.ValidateAsync(command);

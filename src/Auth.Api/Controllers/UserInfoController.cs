@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Server.AspNetCore;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -6,6 +7,7 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 namespace Auth.Api.Controllers;
 
 [ApiController]
+[EnableCors("Oidc")]
 public sealed class UserInfoController : ControllerBase
 {
     [Authorize(AuthenticationSchemes = OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)]

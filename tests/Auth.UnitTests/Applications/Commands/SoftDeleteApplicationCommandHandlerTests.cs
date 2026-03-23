@@ -21,7 +21,8 @@ public sealed class SoftDeleteApplicationCommandHandlerTests
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new SoftDeleteApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var corsOriginService = new Mock<ICorsOriginService>();
+        var handler = new SoftDeleteApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         var result = await handler.Handle(
             new SoftDeleteApplicationCommand(application.Id),
@@ -39,7 +40,8 @@ public sealed class SoftDeleteApplicationCommandHandlerTests
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new SoftDeleteApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var corsOriginService = new Mock<ICorsOriginService>();
+        var handler = new SoftDeleteApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         var result = await handler.Handle(
             new SoftDeleteApplicationCommand(Guid.NewGuid()),

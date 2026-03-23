@@ -38,7 +38,7 @@ public sealed class ApplicationsController(ISender sender) : ControllerBase
             request.Name, request.Description, request.IsActive,
             request.IsConfidential, request.LogoUrl, request.HomepageUrl,
             request.RedirectUris, request.PostLogoutRedirectUris,
-            request.ConsentType, request.Scopes,
+            request.AllowedOrigins, request.ConsentType, request.Scopes,
             request.GrantTypes, request.AccessTokenLifetimeMinutes,
             request.RefreshTokenLifetimeMinutes), cancellationToken);
 
@@ -50,7 +50,7 @@ public sealed class ApplicationsController(ISender sender) : ControllerBase
             id, request.Name, request.Description, request.IsActive,
             request.LogoUrl, request.HomepageUrl,
             request.RedirectUris, request.PostLogoutRedirectUris,
-            request.ConsentType, request.Scopes,
+            request.AllowedOrigins, request.ConsentType, request.Scopes,
             request.GrantTypes, request.AccessTokenLifetimeMinutes,
             request.RefreshTokenLifetimeMinutes), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
@@ -64,7 +64,7 @@ public sealed class ApplicationsController(ISender sender) : ControllerBase
             id, request.Name, request.Description, request.IsActive,
             request.LogoUrl, request.HomepageUrl,
             request.RedirectUris, request.PostLogoutRedirectUris,
-            request.ConsentType, request.Scopes,
+            request.AllowedOrigins, request.ConsentType, request.Scopes,
             request.GrantTypes, request.AccessTokenLifetimeMinutes,
             request.RefreshTokenLifetimeMinutes), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);

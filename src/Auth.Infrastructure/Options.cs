@@ -64,7 +64,11 @@ public sealed class SmtpOptions
 
 public sealed class CorsOptions
 {
-    public string[] AllowedOrigins { get; set; } = [];
+    public string AllowedOrigins { get; set; } = string.Empty;
+
+    public string[] GetParsedOrigins() => string.IsNullOrWhiteSpace(AllowedOrigins)
+        ? []
+        : AllowedOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 }
 
 public sealed class SmsGatewayOptions

@@ -11,6 +11,7 @@ public sealed record CreateApplicationCommand(
     string? HomepageUrl = null,
     List<string>? RedirectUris = null,
     List<string>? PostLogoutRedirectUris = null,
+    List<string>? AllowedOrigins = null,
     string? ConsentType = null,
     List<string>? Scopes = null,
     List<string>? GrantTypes = null,

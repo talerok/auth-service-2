@@ -8,6 +8,7 @@ using Auth.Application.Oidc.Queries.BuildPrincipal;
 using MediatR;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
@@ -16,6 +17,7 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 namespace Auth.Api.Controllers;
 
 [ApiController]
+[EnableCors("Oidc")]
 public sealed class TokenController(ISender sender) : ControllerBase
 {
     // ─── Token Exchange ──────────────────────────────────────────────

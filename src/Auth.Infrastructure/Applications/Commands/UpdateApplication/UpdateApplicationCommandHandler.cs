@@ -11,6 +11,7 @@ namespace Auth.Infrastructure.Applications.Commands.UpdateApplication;
 internal sealed class UpdateApplicationCommandHandler(
     AuthDbContext dbContext,
     ISearchIndexService searchIndexService,
+    ICorsOriginService corsOriginService,
     IOpenIddictApplicationManager appManager) : IRequestHandler<UpdateApplicationCommand, ApplicationDto?>
 {
     public async Task<ApplicationDto?> Handle(UpdateApplicationCommand command, CancellationToken cancellationToken)
@@ -26,12 +27,14 @@ internal sealed class UpdateApplicationCommandHandler(
         application.HomepageUrl = command.HomepageUrl;
         application.RedirectUris = command.RedirectUris;
         application.PostLogoutRedirectUris = command.PostLogoutRedirectUris;
+        application.AllowedOrigins = command.AllowedOrigins;
         application.Scopes = command.Scopes;
         application.GrantTypes = command.GrantTypes;
         application.AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes;
         application.RefreshTokenLifetimeMinutes = command.RefreshTokenLifetimeMinutes;
         application.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
+        corsOriginService.InvalidateCache();
 
         await SyncOpenIddictApplication(application, command, cancellationToken);
 
@@ -83,6 +86,6 @@ internal sealed class UpdateApplicationCommandHandler(
     private static ApplicationDto MapToDto(Domain.Application c) =>
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
-            c.RedirectUris, c.PostLogoutRedirectUris, c.Scopes,
+            c.RedirectUris, c.PostLogoutRedirectUris, c.AllowedOrigins, c.Scopes,
             c.GrantTypes, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
 }

@@ -11,6 +11,7 @@ public sealed record UpdateApplicationCommand(
     string? HomepageUrl,
     List<string> RedirectUris,
     List<string> PostLogoutRedirectUris,
+    List<string> AllowedOrigins,
     string? ConsentType,
     List<string> Scopes,
     List<string> GrantTypes,

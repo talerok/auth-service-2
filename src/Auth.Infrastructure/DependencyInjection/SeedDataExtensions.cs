@@ -155,7 +155,8 @@ public static class SeedDataExtensions
                 IsActive = true,
                 IsConfidential = false,
                 Scopes = ["openid", "profile", "email", "ws", "offline_access"],
-                GrantTypes = ["client_credentials", "token_exchange", "password", "mfa_otp", "refresh_token"]
+                GrantTypes = ["client_credentials", "token_exchange", "password", "mfa_otp", "refresh_token"],
+                AllowedOrigins = ["http://localhost:4200"]
             });
         }
 

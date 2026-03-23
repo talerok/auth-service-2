@@ -17,8 +17,9 @@ public sealed class CreateApplicationCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
+        var corsOriginService = new Mock<ICorsOriginService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         var result = await handler.Handle(
             new CreateApplicationCommand("My Client", "Some description", true),
@@ -40,7 +41,8 @@ public sealed class CreateApplicationCommandHandlerTests
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var corsOriginService = new Mock<ICorsOriginService>();
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         await handler.Handle(
             new CreateApplicationCommand("My Client", "desc"),
@@ -57,7 +59,8 @@ public sealed class CreateApplicationCommandHandlerTests
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var corsOriginService = new Mock<ICorsOriginService>();
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         await handler.Handle(
             new CreateApplicationCommand("My Client", "desc"),
@@ -78,7 +81,8 @@ public sealed class CreateApplicationCommandHandlerTests
         appManager.Setup(x => x.CreateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()))
             .Callback<OpenIddictApplicationDescriptor, CancellationToken>((d, _) => capturedDescriptor = d)
             .ReturnsAsync(new object());
-        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var corsOriginService = new Mock<ICorsOriginService>();
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         await handler.Handle(
             new CreateApplicationCommand("OAuth App", "desc",
@@ -104,7 +108,8 @@ public sealed class CreateApplicationCommandHandlerTests
         appManager.Setup(x => x.CreateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()))
             .Callback<OpenIddictApplicationDescriptor, CancellationToken>((d, _) => capturedDescriptor = d)
             .ReturnsAsync(new object());
-        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var corsOriginService = new Mock<ICorsOriginService>();
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         await handler.Handle(
             new CreateApplicationCommand("OAuth App", "desc",
@@ -128,7 +133,8 @@ public sealed class CreateApplicationCommandHandlerTests
         appManager.Setup(x => x.CreateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()))
             .Callback<OpenIddictApplicationDescriptor, CancellationToken>((d, _) => capturedDescriptor = d)
             .ReturnsAsync(new object());
-        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var corsOriginService = new Mock<ICorsOriginService>();
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         var result = await handler.Handle(
             new CreateApplicationCommand("SPA App", "desc",
@@ -151,7 +157,8 @@ public sealed class CreateApplicationCommandHandlerTests
         appManager.Setup(x => x.CreateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()))
             .Callback<OpenIddictApplicationDescriptor, CancellationToken>((d, _) => capturedDescriptor = d)
             .ReturnsAsync(new object());
-        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var corsOriginService = new Mock<ICorsOriginService>();
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         await handler.Handle(
             new CreateApplicationCommand("OAuth App", "desc",
@@ -168,7 +175,8 @@ public sealed class CreateApplicationCommandHandlerTests
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var corsOriginService = new Mock<ICorsOriginService>();
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         var result = await handler.Handle(
             new CreateApplicationCommand("OAuth App", "desc",
@@ -196,7 +204,8 @@ public sealed class CreateApplicationCommandHandlerTests
         appManager.Setup(x => x.CreateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()))
             .Callback<OpenIddictApplicationDescriptor, CancellationToken>((d, _) => capturedDescriptor = d)
             .ReturnsAsync(new object());
-        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var corsOriginService = new Mock<ICorsOriginService>();
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         await handler.Handle(
             new CreateApplicationCommand("M2M App", "desc",
@@ -219,7 +228,8 @@ public sealed class CreateApplicationCommandHandlerTests
         appManager.Setup(x => x.CreateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()))
             .Callback<OpenIddictApplicationDescriptor, CancellationToken>((d, _) => capturedDescriptor = d)
             .ReturnsAsync(new object());
-        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var corsOriginService = new Mock<ICorsOriginService>();
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         await handler.Handle(
             new CreateApplicationCommand("Web App", "desc"),
@@ -241,7 +251,8 @@ public sealed class CreateApplicationCommandHandlerTests
         appManager.Setup(x => x.CreateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()))
             .Callback<OpenIddictApplicationDescriptor, CancellationToken>((d, _) => capturedDescriptor = d)
             .ReturnsAsync(new object());
-        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var corsOriginService = new Mock<ICorsOriginService>();
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         await handler.Handle(
             new CreateApplicationCommand("App", "desc",
@@ -264,7 +275,8 @@ public sealed class CreateApplicationCommandHandlerTests
         appManager.Setup(x => x.CreateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()))
             .Callback<OpenIddictApplicationDescriptor, CancellationToken>((d, _) => capturedDescriptor = d)
             .ReturnsAsync(new object());
-        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var corsOriginService = new Mock<ICorsOriginService>();
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         await handler.Handle(
             new CreateApplicationCommand("App", "desc"),
@@ -281,7 +293,8 @@ public sealed class CreateApplicationCommandHandlerTests
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var corsOriginService = new Mock<ICorsOriginService>();
+        var handler = new CreateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         var result = await handler.Handle(
             new CreateApplicationCommand("App", "desc",

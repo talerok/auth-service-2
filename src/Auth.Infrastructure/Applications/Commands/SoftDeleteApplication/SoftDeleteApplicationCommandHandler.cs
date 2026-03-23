@@ -9,6 +9,7 @@ namespace Auth.Infrastructure.Applications.Commands.SoftDeleteApplication;
 internal sealed class SoftDeleteApplicationCommandHandler(
     AuthDbContext dbContext,
     ISearchIndexService searchIndexService,
+    ICorsOriginService corsOriginService,
     IOpenIddictApplicationManager appManager) : IRequestHandler<SoftDeleteApplicationCommand, bool>
 {
     public async Task<bool> Handle(SoftDeleteApplicationCommand command, CancellationToken cancellationToken)
@@ -19,6 +20,7 @@ internal sealed class SoftDeleteApplicationCommandHandler(
 
         application.DeletedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
+        corsOriginService.InvalidateCache();
 
         var oidcApp = await appManager.FindByClientIdAsync(application.ClientId, cancellationToken);
         if (oidcApp is not null)

@@ -11,6 +11,7 @@ namespace Auth.Infrastructure.Applications.Commands.CreateApplication;
 internal sealed class CreateApplicationCommandHandler(
     AuthDbContext dbContext,
     ISearchIndexService searchIndexService,
+    ICorsOriginService corsOriginService,
     IOpenIddictApplicationManager appManager) : IRequestHandler<CreateApplicationCommand, CreateApplicationResponse>
 {
     private static readonly List<string> DefaultScopes = ["email", "profile", "ws"];
@@ -35,6 +36,7 @@ internal sealed class CreateApplicationCommandHandler(
             HomepageUrl = command.HomepageUrl,
             RedirectUris = command.RedirectUris ?? [],
             PostLogoutRedirectUris = command.PostLogoutRedirectUris ?? [],
+            AllowedOrigins = command.AllowedOrigins ?? [],
             Scopes = scopes,
             GrantTypes = grantTypes,
             AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes,
@@ -43,6 +45,7 @@ internal sealed class CreateApplicationCommandHandler(
 
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync(cancellationToken);
+        corsOriginService.InvalidateCache();
 
         var descriptor = BuildDescriptor(command, clientId, clientSecret, scopes, grantTypes);
         await appManager.CreateAsync(descriptor, cancellationToken);
@@ -90,7 +93,7 @@ internal sealed class CreateApplicationCommandHandler(
     private static ApplicationDto MapToDto(Domain.Application c) =>
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
-            c.RedirectUris, c.PostLogoutRedirectUris, c.Scopes,
+            c.RedirectUris, c.PostLogoutRedirectUris, c.AllowedOrigins, c.Scopes,
             c.GrantTypes, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
 
     private static string GenerateSecret()

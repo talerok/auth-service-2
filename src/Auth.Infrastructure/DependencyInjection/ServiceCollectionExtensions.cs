@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Infrastructure.Cors;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +30,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IOidcTokenValidator, OidcTokenValidator>();
         services.AddScoped<ILdapAuthenticator, LdapAuthenticator>();
         services.AddSingleton<IPermissionBitCache, PermissionBitCache>();
+        services.AddMemoryCache();
+        services.AddSingleton<ICorsOriginService, CorsOriginService>();
         services.AddScoped<ISearchIndexService, NullSearchIndexService>();
 
         if (integration.Smtp.Enabled)

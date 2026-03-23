@@ -11,6 +11,7 @@ namespace Auth.Infrastructure.Applications.Commands.PatchApplication;
 internal sealed class PatchApplicationCommandHandler(
     AuthDbContext dbContext,
     ISearchIndexService searchIndexService,
+    ICorsOriginService corsOriginService,
     IOpenIddictApplicationManager appManager) : IRequestHandler<PatchApplicationCommand, ApplicationDto?>
 {
     public async Task<ApplicationDto?> Handle(PatchApplicationCommand command, CancellationToken cancellationToken)
@@ -40,6 +41,9 @@ internal sealed class PatchApplicationCommandHandler(
         if (command.PostLogoutRedirectUris is not null)
             application.PostLogoutRedirectUris = command.PostLogoutRedirectUris;
 
+        if (command.AllowedOrigins is not null)
+            application.AllowedOrigins = command.AllowedOrigins;
+
         if (command.Scopes is not null)
             application.Scopes = command.Scopes;
 
@@ -56,6 +60,7 @@ internal sealed class PatchApplicationCommandHandler(
 
         application.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
+        corsOriginService.InvalidateCache();
 
         var needsOidcSync = command.Name is not null
                             || command.RedirectUris is not null
@@ -141,6 +146,6 @@ internal sealed class PatchApplicationCommandHandler(
     private static ApplicationDto MapToDto(Domain.Application c) =>
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
-            c.RedirectUris, c.PostLogoutRedirectUris, c.Scopes,
+            c.RedirectUris, c.PostLogoutRedirectUris, c.AllowedOrigins, c.Scopes,
             c.GrantTypes, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
 }

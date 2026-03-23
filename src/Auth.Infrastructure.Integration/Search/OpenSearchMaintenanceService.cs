@@ -123,8 +123,8 @@ public sealed class OpenSearchMaintenanceService(
         await ClearIndexAsync(indexNames.Applications, cancellationToken);
         var applications = await dbContext.Applications.AsNoTracking()
             .Select(x => new ApplicationDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive,
-                x.IsConfidential, x.LogoUrl, x.HomepageUrl, x.RedirectUris, x.PostLogoutRedirectUris, x.Scopes,
-                x.GrantTypes, x.AccessTokenLifetimeMinutes, x.RefreshTokenLifetimeMinutes))
+                x.IsConfidential, x.LogoUrl, x.HomepageUrl, x.RedirectUris, x.PostLogoutRedirectUris, x.AllowedOrigins,
+                x.Scopes, x.GrantTypes, x.AccessTokenLifetimeMinutes, x.RefreshTokenLifetimeMinutes))
             .ToListAsync(cancellationToken);
         await searchIndexService.BulkIndexApplicationsAsync(applications, cancellationToken);
     }

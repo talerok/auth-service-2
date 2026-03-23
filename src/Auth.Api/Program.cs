@@ -1,10 +1,13 @@
 using System.Security.Cryptography.X509Certificates;
 using Auth.Api;
+using Auth.Api.Cors;
 using Auth.Application;
 using Auth.Api.HealthChecks;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Integration;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.Extensions.Options;
 using OpenIddict.Validation.AspNetCore;
 using Serilog;
 using System.Text.Json;
@@ -94,20 +97,22 @@ builder.Services.AddOpenIddict()
         options.UseAspNetCore();
     });
 
-if (integration.Cors.AllowedOrigins.Length > 0)
+var corsOrigins = integration.Cors.GetParsedOrigins();
+builder.Services.AddCors(options =>
 {
-    builder.Services.AddCors(options =>
+    if (corsOrigins.Length > 0)
     {
         options.AddDefaultPolicy(policy =>
         {
             policy
-                .WithOrigins(integration.Cors.AllowedOrigins)
+                .WithOrigins(corsOrigins)
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials();
         });
-    });
-}
+    }
+});
+builder.Services.AddSingleton<IConfigureOptions<CorsOptions>, ConfigureOidcCorsOptions>();
 
 builder.Services.AddAuthentication(options =>
 {

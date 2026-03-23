@@ -6,12 +6,14 @@ using Auth.Application.Oidc.Commands.ValidateCredentialsForLogin;
 using Auth.Application.Oidc.Queries.GetClientInfo;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Auth.Api.Controllers;
 
 [ApiController]
+[EnableCors("Oidc")]
 public sealed class LoginController(ISender sender) : ControllerBase
 {
     private const string CookieScheme = "Identity.External";
