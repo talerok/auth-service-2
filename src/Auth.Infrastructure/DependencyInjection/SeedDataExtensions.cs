@@ -155,7 +155,7 @@ public static class SeedDataExtensions
                 IsActive = true,
                 IsConfidential = false,
                 Scopes = ["openid", "profile", "email", "ws", "offline_access"],
-                GrantTypes = ["client_credentials", "token_exchange", "password", "mfa_otp", "refresh_token"],
+                GrantTypes = ["client_credentials", "jwt-bearer", "ldap", "password", "mfa_otp", "refresh_token"],
                 AllowedOrigins = ["http://localhost:4200"]
             });
         }
@@ -176,7 +176,7 @@ public static class SeedDataExtensions
             };
 
             Applications.GrantTypeMapper.ApplyGrantTypes(descriptor,
-                ["client_credentials", "token_exchange", "password", "mfa_otp", "refresh_token"]);
+                ["client_credentials", "jwt-bearer", "ldap", "password", "mfa_otp", "refresh_token"]);
 
             foreach (var scope in (string[])["openid", "profile", "email", "ws", "offline_access"])
                 descriptor.Permissions.Add(OidcPermissions.Prefixes.Scope + scope);

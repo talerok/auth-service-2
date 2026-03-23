@@ -56,7 +56,8 @@ builder.Services.AddOpenIddict()
               .AllowAuthorizationCodeFlow()
               .AllowPasswordFlow()
               .AllowCustomFlow(OidcConstants.MfaOtpGrantType)
-              .AllowCustomFlow(OidcConstants.TokenExchangeGrantType);
+              .AllowCustomFlow(OidcConstants.JwtBearerGrantType)
+              .AllowCustomFlow(OidcConstants.LdapGrantType);
 
         options.RegisterScopes("openid", "profile", "email", "phone", "ws", "offline_access");
 

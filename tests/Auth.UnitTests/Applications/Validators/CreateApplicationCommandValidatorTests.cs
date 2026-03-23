@@ -225,7 +225,7 @@ public sealed class CreateApplicationCommandValidatorTests
     {
         var command = new CreateApplicationCommand("App", "desc",
             RedirectUris: ["https://example.com/cb"],
-            GrantTypes: ["authorization_code", "client_credentials", "refresh_token", "password", "token_exchange", "mfa_otp"]);
+            GrantTypes: ["authorization_code", "client_credentials", "refresh_token", "password", "jwt-bearer", "ldap", "mfa_otp"]);
 
         var result = await _validator.ValidateAsync(command);
 

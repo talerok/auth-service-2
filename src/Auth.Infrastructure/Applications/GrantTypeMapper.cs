@@ -39,8 +39,12 @@ internal static class GrantTypeMapper
                     descriptor.Permissions.Add(OidcPermissions.GrantTypes.Password);
                     break;
 
-                case "token_exchange":
-                    descriptor.Permissions.Add(OidcPermissions.Prefixes.GrantType + OidcConstants.TokenExchangeGrantType);
+                case "jwt-bearer":
+                    descriptor.Permissions.Add(OidcPermissions.Prefixes.GrantType + OidcConstants.JwtBearerGrantType);
+                    break;
+
+                case "ldap":
+                    descriptor.Permissions.Add(OidcPermissions.Prefixes.GrantType + OidcConstants.LdapGrantType);
                     break;
 
                 case "mfa_otp":

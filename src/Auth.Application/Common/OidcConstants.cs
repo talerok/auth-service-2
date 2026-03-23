@@ -3,7 +3,8 @@ namespace Auth.Application;
 public static class OidcConstants
 {
     public const string MfaOtpGrantType = "urn:custom:mfa_otp";
-    public const string TokenExchangeGrantType = "urn:custom:token_exchange";
+    public const string JwtBearerGrantType = "urn:ietf:params:oauth:grant-type:jwt-bearer";
+    public const string LdapGrantType = "urn:custom:ldap";
 
     public static readonly HashSet<string> AllowedGrantTypes = new(StringComparer.Ordinal)
     {
@@ -11,7 +12,8 @@ public static class OidcConstants
         "client_credentials",
         "refresh_token",
         "password",
-        "token_exchange",
+        "jwt-bearer",
+        "ldap",
         "mfa_otp"
     };
 }

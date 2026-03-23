@@ -1,7 +1,8 @@
 using System.Security.Claims;
 using Auth.Application;
-using Auth.Application.Oidc.Commands.AuthenticateViaIdentitySource;
 using Auth.Application.Oidc.Commands.HandleClientCredentialsGrant;
+using Auth.Application.Oidc.Commands.HandleJwtBearerGrant;
+using Auth.Application.Oidc.Commands.HandleLdapGrant;
 using Auth.Application.Oidc.Commands.HandleMfaOtpGrant;
 using Auth.Application.Oidc.Commands.ValidateCredentialsForLogin;
 using Auth.Application.Oidc.Queries.BuildPrincipal;
@@ -40,8 +41,11 @@ public sealed class TokenController(ISender sender) : ControllerBase
         if (request.GrantType == OidcConstants.MfaOtpGrantType)
             return await HandleMfaOtpGrant(request, cancellationToken);
 
-        if (request.GrantType == OidcConstants.TokenExchangeGrantType)
-            return await HandleTokenExchange(request, cancellationToken);
+        if (request.GrantType == OidcConstants.JwtBearerGrantType)
+            return await HandleJwtBearerGrant(request, cancellationToken);
+
+        if (request.GrantType == OidcConstants.LdapGrantType)
+            return await HandleLdapGrant(request, cancellationToken);
 
         if (request.IsClientCredentialsGrantType())
             return await HandleClientCredentialsGrant(request, cancellationToken);
@@ -107,21 +111,39 @@ public sealed class TokenController(ISender sender) : ControllerBase
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
-    private async Task<IActionResult> HandleTokenExchange(
+    private async Task<IActionResult> HandleJwtBearerGrant(
         OpenIddictRequest request, CancellationToken cancellationToken)
     {
         CredentialValidationResult result;
         try
         {
-            result = await sender.Send(new AuthenticateViaIdentitySourceCommand(
-                request.GetParameter("identity_source")?.ToString(),
-                request.GetParameter("username")?.ToString(),
-                request.GetParameter("token")?.ToString(),
+            result = await sender.Send(new HandleJwtBearerGrantCommand(
+                request.GetParameter("assertion")?.ToString(),
                 request.GetScopes().ToList()), cancellationToken);
         }
         catch (AuthException)
         {
-            return OidcForbid(Errors.InvalidGrant, "The token exchange failed.");
+            return OidcForbid(Errors.InvalidGrant, "The JWT assertion is invalid.");
+        }
+
+        return ToActionResult(result);
+    }
+
+    private async Task<IActionResult> HandleLdapGrant(
+        OpenIddictRequest request, CancellationToken cancellationToken)
+    {
+        CredentialValidationResult result;
+        try
+        {
+            result = await sender.Send(new HandleLdapGrantCommand(
+                request.GetParameter("identity_source")?.ToString(),
+                request.GetParameter("username")?.ToString(),
+                request.GetParameter("password")?.ToString(),
+                request.GetScopes().ToList()), cancellationToken);
+        }
+        catch (AuthException)
+        {
+            return OidcForbid(Errors.InvalidGrant, "The LDAP authentication failed.");
         }
 
         return ToActionResult(result);
