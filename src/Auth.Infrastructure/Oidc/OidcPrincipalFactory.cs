@@ -30,15 +30,14 @@ internal static class OidcPrincipalFactory
         if (scopeList.Contains(Scopes.Phone) && !string.IsNullOrWhiteSpace(user.Phone))
             identity.SetClaim(Claims.PhoneNumber, user.Phone);
 
-        var allMasks = await ResolveWorkspaceMasksAsync(
+        var accessibleMasks = await ResolveWorkspaceMasksAsync(
             OidcConstants.ExtractWorkspaceCodes(scopeList),
             userId => sender.Send(new BuildWorkspaceMasksQuery(userId), cancellationToken),
             user.Id);
-        ApplyWorkspaceClaims(identity, allMasks);
+        ApplyWorkspaceClaims(identity, accessibleMasks);
 
         var principal = new ClaimsPrincipal(identity);
         principal.SetScopes(scopeList);
-        ApplyWorkspaceAudiences(principal, allMasks);
 
         principal.SetDestinations(claim => claim.Type switch
         {
@@ -47,7 +46,8 @@ internal static class OidcPrincipalFactory
             Claims.PreferredUsername => [Destinations.IdentityToken],
             Claims.Email => [Destinations.IdentityToken],
             Claims.PhoneNumber => [Destinations.IdentityToken],
-            "ws" => [Destinations.AccessToken],
+            _ when claim.Type.StartsWith(OidcConstants.WorkspaceScopePrefix, StringComparison.Ordinal)
+                => [Destinations.AccessToken],
             _ => [Destinations.AccessToken]
         });
 
@@ -77,14 +77,7 @@ internal static class OidcPrincipalFactory
     internal static void ApplyWorkspaceClaims(
         ClaimsIdentity identity, Dictionary<string, Dictionary<string, string>> accessibleMasks)
     {
-        if (accessibleMasks.Count > 0)
-            identity.AddClaim(new Claim("ws", JsonSerializer.Serialize(accessibleMasks)));
-    }
-
-    internal static void ApplyWorkspaceAudiences(
-        ClaimsPrincipal principal, Dictionary<string, Dictionary<string, string>> accessibleMasks)
-    {
-        if (accessibleMasks.Count > 0)
-            principal.SetAudiences(accessibleMasks.Keys.Select(c => $"ws:{c}").ToArray());
+        foreach (var (code, domains) in accessibleMasks)
+            identity.AddClaim(new Claim($"ws:{code}", JsonSerializer.Serialize(domains)));
     }
 }

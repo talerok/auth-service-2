@@ -39,14 +39,14 @@ internal sealed class HandleClientCredentialsGrantCommandHandler(
 
         var principal = new ClaimsPrincipal(identity);
         principal.SetScopes(scopeList);
-        OidcPrincipalFactory.ApplyWorkspaceAudiences(principal, accessibleMasks);
 
         principal.SetDestinations(claim => claim.Type switch
         {
             Claims.Subject => [Destinations.AccessToken, Destinations.IdentityToken],
             Claims.Name => [Destinations.IdentityToken],
             Claims.PreferredUsername => [Destinations.IdentityToken],
-            "ws" => [Destinations.AccessToken],
+            _ when claim.Type.StartsWith(OidcConstants.WorkspaceScopePrefix, StringComparison.Ordinal)
+                => [Destinations.AccessToken],
             _ => [Destinations.AccessToken]
         });
 

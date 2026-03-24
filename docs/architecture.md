@@ -8,7 +8,7 @@
 - `Auth.Infrastructure.Integration` - OpenSearch интеграция
 - `Auth.Api` - контроллеры, middleware, authN/authZ
 
-JWT содержит claim `ws` (только запрошенные workspace) и `aud` с workspace-скоупами. Скоупы запрашиваются в формате `ws:<workspaceCode>`.
+JWT содержит per-workspace claims `ws:<code>` с bitmask-полномочиями. Скоупы запрашиваются в формате `ws:<workspaceCode>`.
 
 ## Error handling
 

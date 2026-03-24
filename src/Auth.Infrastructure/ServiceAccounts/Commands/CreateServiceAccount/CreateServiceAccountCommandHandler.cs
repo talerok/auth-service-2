@@ -41,8 +41,7 @@ internal sealed class CreateServiceAccountCommandHandler(
             OidcPermissions.Endpoints.Token,
             OidcPermissions.GrantTypes.ClientCredentials,
             OidcPermissions.Scopes.Email,
-            OidcPermissions.Scopes.Profile,
-            OidcPermissions.Prefixes.Scope + "ws"
+            OidcPermissions.Scopes.Profile
         });
         await appManager.CreateAsync(descriptor, cancellationToken);
 

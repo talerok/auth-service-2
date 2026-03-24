@@ -267,7 +267,7 @@ public sealed class OidcGrantServiceTests
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:system"]), CancellationToken.None);
 
-        var wsClaim = principal.FindFirst("ws");
+        var wsClaim = principal.FindFirst("ws:system");
         wsClaim.Should().NotBeNull();
         wsClaim!.Value.Should().Contain("system");
         wsClaim.Value.Should().Contain(Convert.ToBase64String([0b_0000_0101]));
@@ -295,11 +295,9 @@ public sealed class OidcGrantServiceTests
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:system", "ws:dev"]), CancellationToken.None);
 
-        var wsClaim = principal.FindFirst("ws");
-        wsClaim.Should().NotBeNull();
-        wsClaim!.Value.Should().Contain("system");
-        wsClaim.Value.Should().Contain("dev");
-        wsClaim.Value.Should().NotContain("other");
+        principal.FindFirst("ws:system").Should().NotBeNull();
+        principal.FindFirst("ws:dev").Should().NotBeNull();
+        principal.FindFirst("ws:other").Should().BeNull();
     }
 
     [Fact]
@@ -319,8 +317,7 @@ public sealed class OidcGrantServiceTests
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:unknown"]), CancellationToken.None);
 
-        principal.FindFirst("ws").Should().BeNull();
-        principal.GetAudiences().Should().BeEmpty();
+        principal.FindFirst("ws:unknown").Should().BeNull();
     }
 
     [Fact]
@@ -336,28 +333,8 @@ public sealed class OidcGrantServiceTests
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"]), CancellationToken.None);
 
-        principal.FindFirst("ws").Should().BeNull();
+        principal.Claims.Should().NotContain(c => c.Type.StartsWith("ws:"));
         sender.Verify(x => x.Send(It.IsAny<BuildWorkspaceMasksQuery>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task BuildPrincipal_WhenWsScope_SetsAudiences()
-    {
-        var sender = new Mock<ISender>();
-        sender.Setup(x => x.Send(
-                It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(TestUser);
-        sender.Setup(x => x.Send(
-                It.Is<BuildWorkspaceMasksQuery>(q => q.UserId == TestUser.Id),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>> { ["system"] = new() { ["system"] = [0x01] } });
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
-
-        var principal = await handler.Handle(
-            new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:system"]), CancellationToken.None);
-
-        principal.GetAudiences().Should().Contain("ws:system");
     }
 
     [Fact]
@@ -466,7 +443,7 @@ public sealed class OidcGrantServiceTests
         var principal = await handler.Handle(
             new HandleClientCredentialsGrantCommand("ws-client", ["openid", "ws:system"]), CancellationToken.None);
 
-        var wsClaim = principal.FindFirst("ws");
+        var wsClaim = principal.FindFirst("ws:system");
         wsClaim.Should().NotBeNull();
         wsClaim!.Value.Should().Contain("system");
     }
