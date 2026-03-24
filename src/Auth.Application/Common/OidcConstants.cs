@@ -7,6 +7,7 @@ public static class OidcConstants
     public const string LdapGrantType = "urn:custom:ldap";
 
     public const string WorkspaceScopePrefix = "ws:";
+    public const string WorkspaceWildcardScope = "ws:*";
 
     public static readonly HashSet<string> AllowedGrantTypes = new(StringComparer.Ordinal)
     {
@@ -19,9 +20,16 @@ public static class OidcConstants
         "mfa_otp"
     };
 
+    public static bool IsWildcardWorkspaceScope(IEnumerable<string> scopes)
+        => scopes.Contains(WorkspaceWildcardScope);
+
     public static IReadOnlyList<string> ExtractWorkspaceCodes(IEnumerable<string> scopes)
         => scopes
-            .Where(s => s.StartsWith(WorkspaceScopePrefix, StringComparison.Ordinal))
+            .Where(IsConcreteWorkspaceScope)
             .Select(s => s[WorkspaceScopePrefix.Length..])
             .ToList();
+
+    private static bool IsConcreteWorkspaceScope(string scope)
+        => scope != WorkspaceWildcardScope
+           && scope.StartsWith(WorkspaceScopePrefix, StringComparison.Ordinal);
 }

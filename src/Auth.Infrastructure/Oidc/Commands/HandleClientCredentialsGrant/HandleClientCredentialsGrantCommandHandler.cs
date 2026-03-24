@@ -31,10 +31,12 @@ internal sealed class HandleClientCredentialsGrantCommandHandler(
         identity.SetClaim(Claims.Name, serviceAccount.Name);
         identity.SetClaim(Claims.PreferredUsername, serviceAccount.ClientId);
 
+        var isWildcard = OidcConstants.IsWildcardWorkspaceScope(scopeList);
         var accessibleMasks = await OidcPrincipalFactory.ResolveWorkspaceMasksAsync(
             OidcConstants.ExtractWorkspaceCodes(scopeList),
             saId => sender.Send(new BuildServiceAccountWorkspaceMasksQuery(saId), cancellationToken),
-            serviceAccount.Id);
+            serviceAccount.Id,
+            isWildcard);
         OidcPrincipalFactory.ApplyWorkspaceClaims(identity, accessibleMasks);
 
         var principal = new ClaimsPrincipal(identity);

@@ -30,10 +30,13 @@ internal static class OidcPrincipalFactory
         if (scopeList.Contains(Scopes.Phone) && !string.IsNullOrWhiteSpace(user.Phone))
             identity.SetClaim(Claims.PhoneNumber, user.Phone);
 
+        var isWildcard = OidcConstants.IsWildcardWorkspaceScope(scopeList);
+        var workspaceCodes = OidcConstants.ExtractWorkspaceCodes(scopeList);
         var accessibleMasks = await ResolveWorkspaceMasksAsync(
-            OidcConstants.ExtractWorkspaceCodes(scopeList),
+            workspaceCodes,
             userId => sender.Send(new BuildWorkspaceMasksQuery(userId), cancellationToken),
-            user.Id);
+            user.Id,
+            isWildcard);
         ApplyWorkspaceClaims(identity, accessibleMasks);
 
         var principal = new ClaimsPrincipal(identity);
@@ -56,22 +59,27 @@ internal static class OidcPrincipalFactory
 
     /// <summary>
     /// Resolves workspace permission masks filtered to the requested workspace codes.
+    /// When <paramref name="wildcard"/> is true, returns all accessible workspaces without filtering.
     /// Returns encoded masks ready for JWT serialization.
     /// </summary>
     internal static async Task<Dictionary<string, Dictionary<string, string>>> ResolveWorkspaceMasksAsync<TId>(
         IReadOnlyList<string> workspaceCodes,
         Func<TId, Task<Dictionary<string, Dictionary<string, byte[]>>>> loadMasks,
-        TId subjectId)
+        TId subjectId,
+        bool wildcard = false)
     {
-        if (workspaceCodes.Count == 0)
+        if (!wildcard && workspaceCodes.Count == 0)
             return [];
 
         var allMasks = await loadMasks(subjectId);
-        return allMasks
-            .Where(kv => workspaceCodes.Contains(kv.Key))
-            .ToDictionary(
-                ws => ws.Key,
-                ws => ws.Value.ToDictionary(d => d.Key, d => Convert.ToBase64String(d.Value)));
+
+        var filtered = wildcard
+            ? allMasks
+            : allMasks.Where(kv => workspaceCodes.Contains(kv.Key));
+
+        return filtered.ToDictionary(
+            ws => ws.Key,
+            ws => ws.Value.ToDictionary(d => d.Key, d => Convert.ToBase64String(d.Value)));
     }
 
     internal static void ApplyWorkspaceClaims(

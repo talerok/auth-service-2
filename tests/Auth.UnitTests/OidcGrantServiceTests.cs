@@ -421,6 +421,84 @@ public sealed class OidcGrantServiceTests
     }
 
     [Fact]
+    public async Task BuildPrincipal_WhenWildcardWsScope_IncludesAllAccessibleWorkspaces()
+    {
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(
+                It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestUser);
+        sender.Setup(x => x.Send(
+                It.Is<BuildWorkspaceMasksQuery>(q => q.UserId == TestUser.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>>
+            {
+                ["system"] = new() { ["system"] = [0x01] },
+                ["dev"] = new() { ["system"] = [0x02] },
+                ["staging"] = new() { ["system"] = [0x04] }
+            });
+        var handler = new BuildPrincipalQueryHandler(sender.Object);
+
+        var principal = await handler.Handle(
+            new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:*"]), CancellationToken.None);
+
+        principal.FindFirst("ws:system").Should().NotBeNull();
+        principal.FindFirst("ws:dev").Should().NotBeNull();
+        principal.FindFirst("ws:staging").Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task BuildPrincipal_WhenWildcardWsScopeButNoAccess_NoClaims()
+    {
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(
+                It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestUser);
+        sender.Setup(x => x.Send(
+                It.Is<BuildWorkspaceMasksQuery>(q => q.UserId == TestUser.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>>());
+        var handler = new BuildPrincipalQueryHandler(sender.Object);
+
+        var principal = await handler.Handle(
+            new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:*"]), CancellationToken.None);
+
+        principal.Claims.Should().NotContain(c => c.Type.StartsWith("ws:"));
+    }
+
+    [Fact]
+    public async Task HandleClientCredentialsGrant_WhenWildcardWsScope_IncludesAllWorkspaces()
+    {
+        var dbContext = CreateDbContext();
+        var serviceAccount = new Domain.ServiceAccount
+        {
+            Name = "Wildcard Client",
+            ClientId = "wildcard-client",
+            IsActive = true
+        };
+        dbContext.ServiceAccounts.Add(serviceAccount);
+        await dbContext.SaveChangesAsync();
+
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(
+                It.Is<BuildServiceAccountWorkspaceMasksQuery>(q => q.ServiceAccountId == serviceAccount.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>>
+            {
+                ["system"] = new() { ["system"] = [0x01] },
+                ["dev"] = new() { ["system"] = [0x02] }
+            });
+        var handler = new HandleClientCredentialsGrantCommandHandler(sender.Object, dbContext);
+
+        var principal = await handler.Handle(
+            new HandleClientCredentialsGrantCommand("wildcard-client", ["openid", "ws:*"]), CancellationToken.None);
+
+        principal.FindFirst("ws:system").Should().NotBeNull();
+        principal.FindFirst("ws:dev").Should().NotBeNull();
+    }
+
+    [Fact]
     public async Task HandleClientCredentialsGrant_WhenWsScope_IncludesWorkspaceMasks()
     {
         var dbContext = CreateDbContext();
