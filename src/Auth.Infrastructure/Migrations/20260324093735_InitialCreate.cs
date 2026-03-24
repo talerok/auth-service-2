@@ -26,6 +26,11 @@ namespace Auth.Infrastructure.Migrations
                     HomepageUrl = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
                     RedirectUris = table.Column<List<string>>(type: "jsonb", nullable: false, defaultValueSql: "'[]'::jsonb"),
                     PostLogoutRedirectUris = table.Column<List<string>>(type: "jsonb", nullable: false, defaultValueSql: "'[]'::jsonb"),
+                    AllowedOrigins = table.Column<List<string>>(type: "jsonb", nullable: false, defaultValueSql: "'[]'::jsonb"),
+                    Scopes = table.Column<List<string>>(type: "jsonb", nullable: false, defaultValueSql: "'[]'::jsonb"),
+                    GrantTypes = table.Column<List<string>>(type: "jsonb", nullable: false, defaultValueSql: "'[\"authorization_code\", \"refresh_token\"]'::jsonb"),
+                    AccessTokenLifetimeMinutes = table.Column<int>(type: "integer", nullable: true),
+                    RefreshTokenLifetimeMinutes = table.Column<int>(type: "integer", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)

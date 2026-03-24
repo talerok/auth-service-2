@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Auth.Infrastructure.Migrations
 {
     [DbContext(typeof(AuthDbContext))]
-    [Migration("20260321205703_InitialCreate")]
+    [Migration("20260324093735_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -32,6 +32,15 @@ namespace Auth.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int?>("AccessTokenLifetimeMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<List<string>>("AllowedOrigins")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
                     b.Property<string>("ClientId")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -47,6 +56,12 @@ namespace Auth.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<List<string>>("GrantTypes")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[\"authorization_code\", \"refresh_token\"]'::jsonb");
 
                     b.Property<string>("HomepageUrl")
                         .HasMaxLength(2000)
@@ -78,6 +93,15 @@ namespace Auth.Infrastructure.Migrations
                         .HasDefaultValueSql("'[]'::jsonb");
 
                     b.Property<List<string>>("RedirectUris")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<int?>("RefreshTokenLifetimeMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<List<string>>("Scopes")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("jsonb")
