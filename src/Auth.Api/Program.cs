@@ -6,7 +6,6 @@ using Auth.Api.HealthChecks;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Integration;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.Extensions.Options;
 using OpenIddict.Validation.AspNetCore;
 using Serilog;
@@ -113,7 +112,7 @@ builder.Services.AddCors(options =>
         });
     }
 });
-builder.Services.AddSingleton<IConfigureOptions<CorsOptions>, ConfigureOidcCorsOptions>();
+builder.Services.AddSingleton<IConfigureOptions<Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions>, ConfigureOidcCorsOptions>();
 
 builder.Services.AddAuthentication(options =>
 {
