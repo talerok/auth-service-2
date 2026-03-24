@@ -95,8 +95,8 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         "Integration__OpenSearch__ReindexOnStartup",
         "Integration__Smtp__Enabled",
         "Integration__SmsGateway__Enabled",
+        "Integration__EncryptionKey",
         "Integration__TwoFactor__StaticOtpForTesting",
-        "Integration__TwoFactor__EncryptionKey",
         "Integration__Cors__AllowedOrigins__0",
         "Integration__Oidc__LoginUrl",
         "Integration__Oidc__ConsentUrl",
@@ -110,8 +110,8 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         Environment.SetEnvironmentVariable("Integration__OpenSearch__ReindexOnStartup", "false");
         Environment.SetEnvironmentVariable("Integration__Smtp__Enabled", "false");
         Environment.SetEnvironmentVariable("Integration__SmsGateway__Enabled", "false");
+        Environment.SetEnvironmentVariable("Integration__EncryptionKey", "dGVzdC1lbmNyeXB0aW9uLWtleS0xMjM0NTY3OA==");
         Environment.SetEnvironmentVariable("Integration__TwoFactor__StaticOtpForTesting", "123456");
-        Environment.SetEnvironmentVariable("Integration__TwoFactor__EncryptionKey", "dGVzdC1lbmNyeXB0aW9uLWtleS0xMjM0NTY3OA==");
         Environment.SetEnvironmentVariable("Integration__Cors__AllowedOrigins__0", "http://localhost:3000");
         Environment.SetEnvironmentVariable("Integration__Oidc__LoginUrl", "/auth/login.html");
         Environment.SetEnvironmentVariable("Integration__Oidc__ConsentUrl", "/auth/consent.html");
