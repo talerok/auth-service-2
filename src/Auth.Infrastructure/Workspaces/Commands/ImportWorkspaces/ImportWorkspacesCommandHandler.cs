@@ -82,7 +82,7 @@ internal sealed class ImportWorkspacesCommandHandler(
     {
         workspace.Name = item.Name;
         workspace.Description = item.Description;
-        workspace.DeletedAt = null;
+        workspace.Restore();
     }
 
     private void CreateWorkspace(ImportWorkspaceItem item)

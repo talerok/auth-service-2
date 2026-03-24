@@ -29,7 +29,9 @@ internal sealed class PatchUserCommandHandler(
             user.Phone = command.Phone;
 
         if (command.IsActive.HasValue)
-            user.IsActive = command.IsActive.Value;
+        {
+            if (command.IsActive.Value) user.Activate(); else user.Deactivate();
+        }
 
         if (command.IsInternalAuthEnabled.HasValue)
             user.IsInternalAuthEnabled = command.IsInternalAuthEnabled.Value;

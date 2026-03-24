@@ -117,7 +117,9 @@ public sealed class ImportRolesCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Bit = 128, Code = "perm.a", Description = "A" });
-        dbContext.Roles.Add(new Role { Name = "Deleted", Code = "deleted", Description = "Old", DeletedAt = DateTime.UtcNow });
+        var deletedRole = new Role { Name = "Deleted", Code = "deleted", Description = "Old" };
+        deletedRole.SoftDelete();
+        dbContext.Roles.Add(deletedRole);
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportRolesCommandHandler(dbContext, searchIndex.Object);

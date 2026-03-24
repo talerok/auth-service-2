@@ -18,7 +18,7 @@ internal sealed class SoftDeleteApplicationCommandHandler(
         if (application is null)
             return false;
 
-        application.DeletedAt = DateTime.UtcNow;
+        application.SoftDelete();
         await dbContext.SaveChangesAsync(cancellationToken);
         corsOriginService.InvalidateCache();
 

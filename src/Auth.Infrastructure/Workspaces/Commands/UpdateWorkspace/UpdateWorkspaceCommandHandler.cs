@@ -17,10 +17,7 @@ internal sealed class UpdateWorkspaceCommandHandler(
             return null;
         }
 
-        if (entity.IsSystem)
-        {
-            throw new AuthException(AuthErrorCatalog.SystemWorkspaceUpdateForbidden);
-        }
+        entity.GuardNotSystem();
 
         entity.Name = command.Name;
         entity.Code = command.Code;

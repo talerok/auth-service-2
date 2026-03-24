@@ -33,10 +33,10 @@ public sealed class GetApplicationByIdQueryHandlerTests
         {
             Name = "OAuth", Description = "desc", ClientId = "ac-oauth", IsActive = true,
             IsConfidential = false,
-            LogoUrl = "https://example.com/logo.png", HomepageUrl = "https://example.com",
-            RedirectUris = ["https://example.com/cb"],
-            PostLogoutRedirectUris = ["https://example.com/logout"]
+            LogoUrl = "https://example.com/logo.png", HomepageUrl = "https://example.com"
         };
+        application.SetRedirectUris(["https://example.com/cb"]);
+        application.SetPostLogoutRedirectUris(["https://example.com/logout"]);
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync();
         var handler = new GetApplicationByIdQueryHandler(dbContext);

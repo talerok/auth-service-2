@@ -110,7 +110,9 @@ public sealed class PermissionHandlerTests
     {
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Domain = "system.domain", Bit = 3, Code = "active", Description = "Active", IsSystem = true });
-        dbContext.Permissions.Add(new Permission { Domain = "other.domain", Bit = 7, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
+        var deletedPerm = new Permission { Domain = "other.domain", Bit = 7, Code = "deleted", Description = "Deleted" };
+        deletedPerm.SoftDelete();
+        dbContext.Permissions.Add(deletedPerm);
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new CreatePermissionCommandHandler(dbContext, searchIndex.Object);
@@ -306,9 +308,11 @@ public sealed class PermissionHandlerTests
     public async Task GetAll_ExcludesSoftDeleted()
     {
         await using var dbContext = CreateDbContext();
+        var deletedPerm = new Permission { Domain = "test.domain", Bit = 1, Code = "deleted", Description = "Deleted" };
+        deletedPerm.SoftDelete();
         dbContext.Permissions.AddRange(
             new Permission { Domain = "test.domain", Bit = 0, Code = "active", Description = "Active" },
-            new Permission { Domain = "test.domain", Bit = 1, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
+            deletedPerm);
         await dbContext.SaveChangesAsync();
         var handler = new GetAllPermissionsQueryHandler(dbContext);
 
@@ -403,9 +407,11 @@ public sealed class PermissionHandlerTests
     public async Task Export_ExcludesSoftDeleted()
     {
         await using var dbContext = CreateDbContext();
+        var deletedPerm = new Permission { Domain = "test.domain", Bit = 1, Code = "deleted", Description = "Deleted" };
+        deletedPerm.SoftDelete();
         dbContext.Permissions.AddRange(
             new Permission { Domain = "test.domain", Bit = 0, Code = "active", Description = "Active" },
-            new Permission { Domain = "test.domain", Bit = 1, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
+            deletedPerm);
         await dbContext.SaveChangesAsync();
         var handler = new ExportPermissionsQueryHandler(dbContext);
 
@@ -513,7 +519,9 @@ public sealed class PermissionHandlerTests
     public async Task Import_RestoresSoftDeletedPermission()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 0, Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
+        var deletedPerm = new Permission { Domain = "custom.domain", Bit = 0, Code = "deleted", Description = "Deleted" };
+        deletedPerm.SoftDelete();
+        dbContext.Permissions.Add(deletedPerm);
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object);

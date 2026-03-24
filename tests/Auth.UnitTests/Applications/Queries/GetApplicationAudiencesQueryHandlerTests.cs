@@ -13,11 +13,12 @@ public sealed class GetApplicationAudiencesQueryHandlerTests
     public async Task Handle_WhenApplicationHasAudiences_ReturnsThem()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Applications.Add(new Domain.Application
+        var app = new Domain.Application
         {
-            Name = "Test", Description = "d", ClientId = "ac-1", IsActive = true,
-            Audiences = ["api-orders", "api-billing"]
-        });
+            Name = "Test", Description = "d", ClientId = "ac-1", IsActive = true
+        };
+        app.SetAudiences(["api-orders", "api-billing"]);
+        dbContext.Applications.Add(app);
         await dbContext.SaveChangesAsync();
         var handler = new GetApplicationAudiencesQueryHandler(dbContext);
 

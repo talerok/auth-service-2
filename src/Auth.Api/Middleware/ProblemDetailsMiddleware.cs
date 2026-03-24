@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Domain;
 using FluentValidation;
 
 namespace Auth.Api;
@@ -10,6 +11,14 @@ public sealed class ProblemDetailsMiddleware(RequestDelegate next, ILogger<Probl
         try
         {
             await next(context);
+        }
+        catch (DomainException ex)
+        {
+            var problem = new AuthProblemDescriptor(
+                StatusCodes.Status400BadRequest,
+                "Business rule violation",
+                "System entities cannot be modified");
+            await ProblemDetailsResponseWriter.WriteAsync(context, problem, ex.Code);
         }
         catch (AuthException ex)
         {

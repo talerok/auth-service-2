@@ -20,7 +20,7 @@ internal sealed class UpdateUserCommandHandler(
         user.FullName = command.FullName;
         user.Email = command.Email;
         user.Phone = command.Phone;
-        user.IsActive = command.IsActive;
+        if (command.IsActive) user.Activate(); else user.Deactivate();
         user.IsInternalAuthEnabled = command.IsInternalAuthEnabled;
 
         if (command.TwoFactorEnabled)

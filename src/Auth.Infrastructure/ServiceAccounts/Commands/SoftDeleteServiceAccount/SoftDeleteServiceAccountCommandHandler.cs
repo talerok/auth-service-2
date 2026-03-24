@@ -17,7 +17,7 @@ internal sealed class SoftDeleteServiceAccountCommandHandler(
         if (serviceAccount is null)
             return false;
 
-        serviceAccount.DeletedAt = DateTime.UtcNow;
+        serviceAccount.SoftDelete();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var oidcApp = await appManager.FindByClientIdAsync(serviceAccount.ClientId, cancellationToken);

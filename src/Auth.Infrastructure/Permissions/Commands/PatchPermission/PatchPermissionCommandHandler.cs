@@ -15,8 +15,7 @@ internal sealed class PatchPermissionCommandHandler(
         if (entity is null)
             return null;
 
-        if (entity.IsSystem)
-            throw new AuthException(AuthErrorCatalog.SystemPermissionUpdateForbidden);
+        entity.GuardNotSystem();
 
         if (command.Code is not null)
             entity.Code = command.Code;

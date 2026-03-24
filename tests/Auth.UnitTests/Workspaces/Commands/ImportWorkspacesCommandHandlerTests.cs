@@ -90,7 +90,9 @@ public sealed class ImportWorkspacesCommandHandlerTests
     public async Task Import_RestoresSoftDeletedWorkspace()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Workspaces.Add(new Workspace { Name = "Deleted", Code = "deleted", Description = "Old", DeletedAt = DateTime.UtcNow });
+        var deletedWs = new Workspace { Name = "Deleted", Code = "deleted", Description = "Old" };
+        deletedWs.SoftDelete();
+        dbContext.Workspaces.Add(deletedWs);
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object);

@@ -26,7 +26,7 @@ internal sealed class ValidateForcedPasswordChangeCommandHandler(
         if (user is null || !user.IsActive)
             throw new AuthException(AuthErrorCatalog.UserInactive);
 
-        user.PasswordHash = passwordHasher.Hash(command.NewPassword);
+        user.SetPassword(passwordHasher.Hash(command.NewPassword));
         user.ClearMustChangePassword();
         passwordChallenge.MarkAsUsed();
         await dbContext.SaveChangesAsync(cancellationToken);

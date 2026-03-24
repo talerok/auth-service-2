@@ -14,7 +14,7 @@ internal sealed class DeleteIdentitySourceCommandHandler(
             .FirstOrDefaultAsync(x => x.Id == command.Id, cancellationToken)
             ?? throw new AuthException(AuthErrorCatalog.IdentitySourceNotFound);
 
-        source.DeletedAt = DateTime.UtcNow;
+        source.SoftDelete();
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

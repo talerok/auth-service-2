@@ -50,9 +50,9 @@ internal sealed class UserImportBuilder(AuthDbContext dbContext, IPasswordHasher
         user.FullName = item.FullName;
         user.Email = item.Email;
         user.Phone = item.Phone;
-        user.IsActive = item.IsActive;
+        if (item.IsActive) user.Activate(); else user.Deactivate();
         user.IsInternalAuthEnabled = item.IsInternalAuthEnabled;
-        user.DeletedAt = null;
+        user.Restore();
 
         if (item.MustChangePassword)
             user.MarkMustChangePassword();

@@ -17,7 +17,7 @@ internal sealed class SoftDeleteRoleCommandHandler(
             return false;
         }
 
-        entity.DeletedAt = DateTime.UtcNow;
+        entity.SoftDelete();
         await dbContext.SaveChangesAsync(cancellationToken);
         await searchIndexService.DeleteRoleAsync(command.Id, cancellationToken);
         return true;

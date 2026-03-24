@@ -13,7 +13,15 @@ public sealed class User : EntityBase
     public bool TwoFactorEnabled { get; private set; }
     public TwoFactorChannel? TwoFactorChannel { get; private set; }
     public ICollection<UserWorkspace> UserWorkspaces { get; private set; } = [];
-public ICollection<TwoFactorChallenge> TwoFactorChallenges { get; private set; } = [];
+    public ICollection<TwoFactorChallenge> TwoFactorChallenges { get; private set; } = [];
+
+    public void SetPassword(string hash)
+    {
+        PasswordHash = hash;
+    }
+
+    public void Activate() => IsActive = true;
+    public void Deactivate() => IsActive = false;
 
     public void MarkMustChangePassword()
     {

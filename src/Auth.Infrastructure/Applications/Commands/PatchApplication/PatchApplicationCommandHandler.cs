@@ -36,22 +36,22 @@ internal sealed class PatchApplicationCommandHandler(
             application.HomepageUrl = command.HomepageUrl;
 
         if (command.RedirectUris is not null)
-            application.RedirectUris = command.RedirectUris;
+            application.SetRedirectUris(command.RedirectUris);
 
         if (command.PostLogoutRedirectUris is not null)
-            application.PostLogoutRedirectUris = command.PostLogoutRedirectUris;
+            application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris);
 
         if (command.AllowedOrigins is not null)
-            application.AllowedOrigins = command.AllowedOrigins;
+            application.SetAllowedOrigins(command.AllowedOrigins);
 
         if (command.Scopes is not null)
-            application.Scopes = command.Scopes;
+            application.SetScopes(command.Scopes);
 
         if (command.GrantTypes is not null)
-            application.GrantTypes = command.GrantTypes;
+            application.SetGrantTypes(command.GrantTypes);
 
         if (command.Audiences is not null)
-            application.Audiences = command.Audiences;
+            application.SetAudiences(command.Audiences);
 
         if (command.AccessTokenLifetimeMinutes.HasValue)
             application.AccessTokenLifetimeMinutes =

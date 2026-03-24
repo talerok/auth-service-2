@@ -15,7 +15,7 @@ internal sealed class ResetPasswordCommandHandler(
         if (user is null)
             return false;
 
-        user.PasswordHash = passwordHasher.Hash(command.NewPassword);
+        user.SetPassword(passwordHasher.Hash(command.NewPassword));
         user.MarkMustChangePassword();
         await dbContext.SaveChangesAsync(cancellationToken);
         return true;

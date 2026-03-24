@@ -25,12 +25,12 @@ internal sealed class UpdateApplicationCommandHandler(
         application.IsActive = command.IsActive;
         application.LogoUrl = command.LogoUrl;
         application.HomepageUrl = command.HomepageUrl;
-        application.RedirectUris = command.RedirectUris;
-        application.PostLogoutRedirectUris = command.PostLogoutRedirectUris;
-        application.AllowedOrigins = command.AllowedOrigins;
-        application.Scopes = command.Scopes;
-        application.GrantTypes = command.GrantTypes;
-        application.Audiences = command.Audiences;
+        application.SetRedirectUris(command.RedirectUris);
+        application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris);
+        application.SetAllowedOrigins(command.AllowedOrigins);
+        application.SetScopes(command.Scopes);
+        application.SetGrantTypes(command.GrantTypes);
+        application.SetAudiences(command.Audiences);
         application.AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes;
         application.RefreshTokenLifetimeMinutes = command.RefreshTokenLifetimeMinutes;
         await dbContext.SaveChangesAsync(cancellationToken);

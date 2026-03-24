@@ -31,9 +31,11 @@ public sealed class ExportWorkspacesQueryHandlerTests
     public async Task Export_ExcludesSoftDeleted()
     {
         await using var dbContext = CreateDbContext();
+        var deleted = new Workspace { Name = "Deleted", Code = "deleted", Description = "Deleted" };
+        deleted.SoftDelete();
         dbContext.Workspaces.AddRange(
             new Workspace { Name = "Active", Code = "active", Description = "Active" },
-            new Workspace { Name = "Deleted", Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
+            deleted);
         await dbContext.SaveChangesAsync();
         var handler = new ExportWorkspacesQueryHandler(dbContext);
 

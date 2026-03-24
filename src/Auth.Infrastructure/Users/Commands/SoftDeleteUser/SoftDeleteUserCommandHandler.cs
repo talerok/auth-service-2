@@ -15,7 +15,7 @@ internal sealed class SoftDeleteUserCommandHandler(
         if (user is null)
             return false;
 
-        user.DeletedAt = DateTime.UtcNow;
+        user.SoftDelete();
         await dbContext.SaveChangesAsync(cancellationToken);
         await searchIndexService.DeleteUserAsync(command.Id, cancellationToken);
         return true;

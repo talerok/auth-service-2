@@ -64,9 +64,11 @@ public sealed class ExportUsersQueryHandlerTests
     public async Task Export_ExcludesSoftDeleted()
     {
         await using var dbContext = CreateDbContext();
+        var deletedUser = new User { Username = "deleted", FullName = "Deleted", Email = "d@test.com", PasswordHash = "hash" };
+        deletedUser.SoftDelete();
         dbContext.Users.AddRange(
             new User { Username = "active", FullName = "Active", Email = "a@test.com", PasswordHash = "hash" },
-            new User { Username = "deleted", FullName = "Deleted", Email = "d@test.com", PasswordHash = "hash", DeletedAt = DateTime.UtcNow });
+            deletedUser);
         await dbContext.SaveChangesAsync();
         var handler = new ExportUsersQueryHandler(dbContext);
 

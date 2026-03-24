@@ -34,15 +34,16 @@ internal sealed class CreateApplicationCommandHandler(
             IsConfidential = isConfidential,
             LogoUrl = command.LogoUrl,
             HomepageUrl = command.HomepageUrl,
-            RedirectUris = command.RedirectUris ?? [],
-            PostLogoutRedirectUris = command.PostLogoutRedirectUris ?? [],
-            AllowedOrigins = command.AllowedOrigins ?? [],
-            Scopes = scopes,
-            GrantTypes = grantTypes,
-            Audiences = command.Audiences ?? [],
             AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes,
             RefreshTokenLifetimeMinutes = command.RefreshTokenLifetimeMinutes
         };
+
+        application.SetRedirectUris(command.RedirectUris ?? []);
+        application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris ?? []);
+        application.SetAllowedOrigins(command.AllowedOrigins ?? []);
+        application.SetScopes(scopes);
+        application.SetGrantTypes(grantTypes);
+        application.SetAudiences(command.Audiences ?? []);
 
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync(cancellationToken);

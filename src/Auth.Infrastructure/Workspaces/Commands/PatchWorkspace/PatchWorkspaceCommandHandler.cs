@@ -17,10 +17,7 @@ internal sealed class PatchWorkspaceCommandHandler(
             return null;
         }
 
-        if (entity.IsSystem)
-        {
-            throw new AuthException(AuthErrorCatalog.SystemWorkspaceUpdateForbidden);
-        }
+        entity.GuardNotSystem();
 
         if (command.Name is not null)
         {

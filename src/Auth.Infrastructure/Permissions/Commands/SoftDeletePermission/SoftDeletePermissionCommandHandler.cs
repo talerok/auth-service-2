@@ -18,7 +18,7 @@ internal sealed class SoftDeletePermissionCommandHandler(
         if (entity.IsSystem)
             throw new AuthException(AuthErrorCatalog.SystemPermissionDeleteForbidden);
 
-        entity.DeletedAt = DateTime.UtcNow;
+        entity.SoftDelete();
         await dbContext.SaveChangesAsync(cancellationToken);
         await searchIndexService.DeletePermissionAsync(command.Id, cancellationToken);
         return true;

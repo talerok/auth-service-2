@@ -36,9 +36,11 @@ public sealed class ExportRolesQueryHandlerTests
     public async Task Export_ExcludesSoftDeleted()
     {
         await using var dbContext = CreateDbContext();
+        var deletedRole = new Role { Name = "Deleted", Code = "deleted", Description = "Deleted" };
+        deletedRole.SoftDelete();
         dbContext.Roles.AddRange(
             new Role { Name = "Active", Code = "active", Description = "Active" },
-            new Role { Name = "Deleted", Code = "deleted", Description = "Deleted", DeletedAt = DateTime.UtcNow });
+            deletedRole);
         await dbContext.SaveChangesAsync();
         var handler = new ExportRolesQueryHandler(dbContext);
 

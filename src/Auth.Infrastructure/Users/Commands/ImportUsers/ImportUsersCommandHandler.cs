@@ -105,7 +105,7 @@ internal sealed class ImportUsersCommandHandler(
 
         foreach (var user in usersToBlock)
         {
-            user.IsActive = false;
+            user.Deactivate();
         }
 
         return usersToBlock.Count;

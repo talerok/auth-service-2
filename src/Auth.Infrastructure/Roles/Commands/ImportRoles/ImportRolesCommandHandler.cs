@@ -81,7 +81,7 @@ internal sealed class ImportRolesCommandHandler(
     {
         role.Code = item.Code;
         role.Description = item.Description;
-        role.DeletedAt = null;
+        role.Restore();
 
         dbContext.RolePermissions.RemoveRange(role.RolePermissions);
         foreach (var code in item.Permissions)

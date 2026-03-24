@@ -23,7 +23,7 @@ internal sealed class SoftDeleteWorkspaceCommandHandler(
             throw new AuthException(AuthErrorCatalog.SystemWorkspaceDeleteForbidden);
         }
 
-        entity.DeletedAt = DateTime.UtcNow;
+        entity.SoftDelete();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var oidcScope = await scopeManager.FindByNameAsync($"ws:{entity.Code}", cancellationToken);

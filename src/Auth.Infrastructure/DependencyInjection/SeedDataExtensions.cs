@@ -149,17 +149,18 @@ public static class SeedDataExtensions
     {
         if (!await db.Applications.AnyAsync(x => x.ClientId == "system-app", cancellationToken))
         {
-            db.Applications.Add(new Domain.Application
+            var app = new Domain.Application
             {
                 ClientId = "system-app",
                 Name = "System Application",
                 Description = "System Application",
                 IsActive = true,
                 IsConfidential = false,
-                Scopes = ["openid", "profile", "email", "ws:system", "ws:*", "offline_access"],
-                GrantTypes = ["client_credentials", "jwt-bearer", "ldap", "password", "mfa_otp", "refresh_token"],
-                AllowedOrigins = ["http://localhost:4200"]
-            });
+            };
+            app.SetScopes(["openid", "profile", "email", "ws:system", "ws:*", "offline_access"]);
+            app.SetGrantTypes(["client_credentials", "jwt-bearer", "ldap", "password", "mfa_otp", "refresh_token"]);
+            app.SetAllowedOrigins(["http://localhost:4200"]);
+            db.Applications.Add(app);
         }
 
         await db.SaveChangesAsync(cancellationToken);

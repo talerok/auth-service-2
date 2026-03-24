@@ -168,11 +168,13 @@ public sealed class ImportUsersCommandHandlerTests
     public async Task Import_RestoresSoftDeletedUser()
     {
         await using var dbContext = CreateDbContext();
-        dbContext.Users.Add(new User
+        var deletedUser = new User
         {
             Username = "deleted", FullName = "Deleted", Email = "deleted@example.com",
-            PasswordHash = "hash", DeletedAt = DateTime.UtcNow
-        });
+            PasswordHash = "hash"
+        };
+        deletedUser.SoftDelete();
+        dbContext.Users.Add(deletedUser);
         await dbContext.SaveChangesAsync();
         var handler = CreateHandler(dbContext);
 

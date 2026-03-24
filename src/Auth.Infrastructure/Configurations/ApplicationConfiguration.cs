@@ -1,4 +1,3 @@
-using Auth.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -19,29 +18,12 @@ public sealed class ApplicationConfiguration : IEntityTypeConfiguration<Domain.A
         builder.Property(x => x.LogoUrl).HasMaxLength(2000);
         builder.Property(x => x.HomepageUrl).HasMaxLength(2000);
 
-        builder.Property(x => x.RedirectUris)
-            .HasColumnType("jsonb")
-            .HasDefaultValueSql("'[]'::jsonb");
-
-        builder.Property(x => x.PostLogoutRedirectUris)
-            .HasColumnType("jsonb")
-            .HasDefaultValueSql("'[]'::jsonb");
-
-        builder.Property(x => x.AllowedOrigins)
-            .HasColumnType("jsonb")
-            .HasDefaultValueSql("'[]'::jsonb");
-
-        builder.Property(x => x.Scopes)
-            .HasColumnType("jsonb")
-            .HasDefaultValueSql("'[]'::jsonb");
-
-        builder.Property(x => x.GrantTypes)
-            .HasColumnType("jsonb")
-            .HasDefaultValueSql("'[\"authorization_code\", \"refresh_token\"]'::jsonb");
-
-        builder.Property(x => x.Audiences)
-            .HasColumnType("jsonb")
-            .HasDefaultValueSql("'[]'::jsonb");
+        builder.Property(x => x.RedirectUris).HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
+        builder.Property(x => x.PostLogoutRedirectUris).HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
+        builder.Property(x => x.AllowedOrigins).HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
+        builder.Property(x => x.Scopes).HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
+        builder.Property(x => x.GrantTypes).HasColumnType("jsonb").HasDefaultValueSql("'[\"authorization_code\", \"refresh_token\"]'::jsonb");
+        builder.Property(x => x.Audiences).HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
 
         builder.Property(x => x.AccessTokenLifetimeMinutes);
         builder.Property(x => x.RefreshTokenLifetimeMinutes);
