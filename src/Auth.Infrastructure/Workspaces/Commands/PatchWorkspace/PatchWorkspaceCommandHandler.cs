@@ -37,7 +37,6 @@ internal sealed class PatchWorkspaceCommandHandler(
             entity.Description = command.Description;
         }
 
-        entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         var dto = new WorkspaceDto(entity.Id, entity.Name, entity.Code, entity.Description, entity.IsSystem);
         await searchIndexService.IndexWorkspaceAsync(dto, cancellationToken);

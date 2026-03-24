@@ -6,6 +6,7 @@ using Auth.Infrastructure.Users.Commands.ResetPassword;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Users.Commands;
 
@@ -46,11 +47,4 @@ public sealed class ResetPasswordCommandHandlerTests
         result.Should().BeFalse();
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

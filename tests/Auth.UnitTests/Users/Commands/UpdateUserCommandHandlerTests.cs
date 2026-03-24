@@ -6,6 +6,7 @@ using Auth.Infrastructure.Users.Commands.UpdateUser;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Users.Commands;
 
@@ -77,11 +78,4 @@ public sealed class UpdateUserCommandHandlerTests
         return new UpdateUserCommandHandler(dbContext, searchIndex.Object);
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

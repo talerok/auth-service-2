@@ -5,13 +5,15 @@ using Auth.Application.Oidc.Queries.BuildPrincipal;
 using Auth.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Auth.Infrastructure.Oidc.Commands.HandleLdapGrant;
 
 internal sealed class HandleLdapGrantCommandHandler(
     AuthDbContext dbContext,
     ISender sender,
-    ILdapAuthenticator ldapAuthenticator) : IRequestHandler<HandleLdapGrantCommand, CredentialValidationResult>
+    ILdapAuthenticator ldapAuthenticator,
+    IOptions<IntegrationOptions> options) : IRequestHandler<HandleLdapGrantCommand, CredentialValidationResult>
 {
     public async Task<CredentialValidationResult> Handle(HandleLdapGrantCommand command, CancellationToken cancellationToken)
     {
@@ -30,6 +32,9 @@ internal sealed class HandleLdapGrantCommandHandler(
 
         if (source.Type != IdentitySourceType.Ldap || source.LdapConfig is null)
             throw new AuthException(AuthErrorCatalog.IdentitySourceTypeMismatch);
+
+        if (source.LdapConfig.BindPassword is not null)
+            source.LdapConfig.BindPassword = FieldEncryption.Decrypt(source.LdapConfig.BindPassword, options.Value.EncryptionKey);
 
         await ldapAuthenticator.AuthenticateAsync(source.LdapConfig, command.Username, command.Password, cancellationToken);
 

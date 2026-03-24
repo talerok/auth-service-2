@@ -3,6 +3,7 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.Oidc.Queries.GetApplicationAudiences;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Applications.Queries;
 
@@ -52,11 +53,4 @@ public sealed class GetApplicationAudiencesQueryHandlerTests
         result.Should().BeEmpty();
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

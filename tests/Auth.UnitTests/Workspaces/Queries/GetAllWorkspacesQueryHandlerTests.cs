@@ -5,6 +5,7 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.Workspaces.Queries.GetAllWorkspaces;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Workspaces.Queries;
 
@@ -26,11 +27,4 @@ public sealed class GetAllWorkspacesQueryHandlerTests
         result.Select(x => x.Name).Should().BeEquivalentTo("Alpha", "Beta");
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

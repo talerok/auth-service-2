@@ -106,7 +106,6 @@ internal sealed class ImportUsersCommandHandler(
         foreach (var user in usersToBlock)
         {
             user.IsActive = false;
-            user.UpdatedAt = DateTime.UtcNow;
         }
 
         return usersToBlock.Count;

@@ -5,6 +5,7 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.Users.Queries.ExportUsers;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Users.Queries;
 
@@ -116,11 +117,4 @@ public sealed class ExportUsersQueryHandlerTests
         type.GetProperties().Select(p => p.Name).Should().NotContain("PasswordHash");
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

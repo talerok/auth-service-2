@@ -6,6 +6,7 @@ using Auth.Infrastructure.Roles.Commands.PatchRole;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Roles.Commands;
 
@@ -54,11 +55,4 @@ public sealed class PatchRoleCommandHandlerTests
         result.Should().BeNull();
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

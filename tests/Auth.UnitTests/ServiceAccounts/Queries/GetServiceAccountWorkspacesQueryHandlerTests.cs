@@ -4,6 +4,7 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.ServiceAccounts.Queries.GetServiceAccountWorkspaces;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.ServiceAccounts.Queries;
 
@@ -63,11 +64,4 @@ public sealed class GetServiceAccountWorkspacesQueryHandlerTests
         result.Single().RoleIds.Should().ContainSingle(id => id == role.Id);
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

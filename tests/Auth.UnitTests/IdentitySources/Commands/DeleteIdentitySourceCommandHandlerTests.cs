@@ -5,6 +5,7 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.IdentitySources.Commands.DeleteIdentitySource;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.IdentitySources.Commands;
 
@@ -37,11 +38,4 @@ public sealed class DeleteIdentitySourceCommandHandlerTests
             .Where(x => x.Code == AuthErrorCatalog.IdentitySourceNotFound);
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

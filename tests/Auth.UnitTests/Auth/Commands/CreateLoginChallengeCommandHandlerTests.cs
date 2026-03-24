@@ -7,6 +7,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Auth.Commands;
 
@@ -51,16 +52,7 @@ public sealed class CreateLoginChallengeCommandHandlerTests
         new(dbContext, CreateOptions(), NullLogger<CreateLoginChallengeCommandHandler>.Instance);
 
     private static IOptions<IntegrationOptions> CreateOptions() =>
-        Options.Create(new IntegrationOptions
-        {
-            TwoFactor = new TwoFactorOptions { EncryptionKey = "super-secret-key-min-32-characters-long!", StaticOtpForTesting = "123456" }
+        Options.Create(new IntegrationOptions { EncryptionKey = "super-secret-key-min-32-characters-long!", TwoFactor = new TwoFactorOptions { StaticOtpForTesting = "123456" }
         });
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

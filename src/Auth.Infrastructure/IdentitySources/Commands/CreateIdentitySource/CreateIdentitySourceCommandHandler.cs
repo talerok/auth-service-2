@@ -2,14 +2,18 @@ using Auth.Application;
 using Auth.Application.IdentitySources.Commands.CreateIdentitySource;
 using Auth.Domain;
 using MediatR;
+using Microsoft.Extensions.Options;
 
 namespace Auth.Infrastructure.IdentitySources.Commands.CreateIdentitySource;
 
 internal sealed class CreateIdentitySourceCommandHandler(
-    AuthDbContext dbContext) : IRequestHandler<CreateIdentitySourceCommand, IdentitySourceDetailDto>
+    AuthDbContext dbContext,
+    IOptions<IntegrationOptions> options) : IRequestHandler<CreateIdentitySourceCommand, IdentitySourceDetailDto>
 {
     public async Task<IdentitySourceDetailDto> Handle(CreateIdentitySourceCommand command, CancellationToken cancellationToken)
     {
+        var encryptionKey = options.Value.EncryptionKey;
+
         if (command.Type == IdentitySourceType.Oidc && command.OidcConfig is null)
             throw new AuthException(AuthErrorCatalog.IdentitySourceTypeMismatch);
 
@@ -32,7 +36,9 @@ internal sealed class CreateIdentitySourceCommandHandler(
                 IdentitySourceId = source.Id,
                 Authority = command.OidcConfig.Authority,
                 ClientId = command.OidcConfig.ClientId,
-                ClientSecret = command.OidcConfig.ClientSecret
+                ClientSecret = command.OidcConfig.ClientSecret is not null
+                    ? FieldEncryption.Encrypt(command.OidcConfig.ClientSecret, encryptionKey)
+                    : null
             };
         }
 
@@ -45,7 +51,9 @@ internal sealed class CreateIdentitySourceCommandHandler(
                 Port = command.LdapConfig.Port,
                 BaseDn = command.LdapConfig.BaseDn,
                 BindDn = command.LdapConfig.BindDn,
-                BindPassword = command.LdapConfig.BindPassword,
+                BindPassword = command.LdapConfig.BindPassword is not null
+                    ? FieldEncryption.Encrypt(command.LdapConfig.BindPassword, encryptionKey)
+                    : null,
                 UseSsl = command.LdapConfig.UseSsl,
                 SearchFilter = command.LdapConfig.SearchFilter
             };

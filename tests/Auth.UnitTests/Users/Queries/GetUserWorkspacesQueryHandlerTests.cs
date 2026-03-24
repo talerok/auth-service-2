@@ -5,6 +5,7 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.Users.Queries.GetUserWorkspaces;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Users.Queries;
 
@@ -106,11 +107,4 @@ public sealed class GetUserWorkspacesQueryHandlerTests
         result!.Select(x => x.WorkSpaceId).Should().BeEquivalentTo(new[] { ws1.Id, ws2.Id });
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

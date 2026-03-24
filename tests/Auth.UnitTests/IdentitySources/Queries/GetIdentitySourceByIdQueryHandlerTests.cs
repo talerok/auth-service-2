@@ -4,6 +4,7 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.IdentitySources.Queries.GetIdentitySourceById;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.IdentitySources.Queries;
 
@@ -70,11 +71,4 @@ public sealed class GetIdentitySourceByIdQueryHandlerTests
         result.OidcConfig.Should().BeNull();
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

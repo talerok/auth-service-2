@@ -15,7 +15,7 @@ internal sealed class EnableTwoFactorCommandHandler(
     ILogger<EnableTwoFactorCommandHandler> logger) : IRequestHandler<EnableTwoFactorCommand, EnableTwoFactorResponse>
 {
     private readonly TwoFactorOptions _twoFactor = options.Value.TwoFactor;
-    private readonly string _twoFactorKeyMaterial = options.Value.TwoFactor.EncryptionKey;
+    private readonly string _twoFactorKeyMaterial = options.Value.EncryptionKey;
 
     public async Task<EnableTwoFactorResponse> Handle(EnableTwoFactorCommand command, CancellationToken cancellationToken)
     {

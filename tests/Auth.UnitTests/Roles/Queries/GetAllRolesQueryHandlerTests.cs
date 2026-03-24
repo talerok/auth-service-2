@@ -5,6 +5,7 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.Roles.Queries.GetAllRoles;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Roles.Queries;
 
@@ -26,11 +27,4 @@ public sealed class GetAllRolesQueryHandlerTests
         result.Select(x => x.Name).Should().BeEquivalentTo("Admin", "Reader");
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

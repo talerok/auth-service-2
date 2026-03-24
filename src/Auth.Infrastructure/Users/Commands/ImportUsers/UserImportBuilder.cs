@@ -53,7 +53,6 @@ internal sealed class UserImportBuilder(AuthDbContext dbContext, IPasswordHasher
         user.IsActive = item.IsActive;
         user.IsInternalAuthEnabled = item.IsInternalAuthEnabled;
         user.DeletedAt = null;
-        user.UpdatedAt = DateTime.UtcNow;
 
         if (item.MustChangePassword)
             user.MarkMustChangePassword();

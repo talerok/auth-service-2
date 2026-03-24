@@ -5,11 +5,17 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.IdentitySources.Commands.UpdateIdentitySource;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.IdentitySources.Commands;
 
 public sealed class UpdateIdentitySourceCommandHandlerTests
 {
+    private const string TestEncryptionKey = "test-encryption-key-min-32-chars-long!";
+
+    private static IOptions<IntegrationOptions> CreateOptions() =>
+        Options.Create(new IntegrationOptions { EncryptionKey = TestEncryptionKey });
     [Fact]
     public async Task Handle_UpdatesDisplayNameAndIsEnabled()
     {
@@ -22,7 +28,7 @@ public sealed class UpdateIdentitySourceCommandHandlerTests
         source.OidcConfig.IdentitySourceId = source.Id;
         dbContext.IdentitySources.Add(source);
         await dbContext.SaveChangesAsync();
-        var handler = new UpdateIdentitySourceCommandHandler(dbContext);
+        var handler = new UpdateIdentitySourceCommandHandler(dbContext, CreateOptions());
 
         var result = await handler.Handle(
             new UpdateIdentitySourceCommand(source.Id, "keycloak-updated", "New Name", false,
@@ -39,7 +45,7 @@ public sealed class UpdateIdentitySourceCommandHandlerTests
     public async Task Handle_WhenNotFound_ThrowsException()
     {
         await using var dbContext = CreateDbContext();
-        var handler = new UpdateIdentitySourceCommandHandler(dbContext);
+        var handler = new UpdateIdentitySourceCommandHandler(dbContext, CreateOptions());
 
         var act = () => handler.Handle(
             new UpdateIdentitySourceCommand(Guid.NewGuid(), "code", "Name", true),
@@ -66,7 +72,7 @@ public sealed class UpdateIdentitySourceCommandHandlerTests
         source.LdapConfig.IdentitySourceId = source.Id;
         dbContext.IdentitySources.Add(source);
         await dbContext.SaveChangesAsync();
-        var handler = new UpdateIdentitySourceCommandHandler(dbContext);
+        var handler = new UpdateIdentitySourceCommandHandler(dbContext, CreateOptions());
 
         var result = await handler.Handle(
             new UpdateIdentitySourceCommand(source.Id, "corporate-ldap-v2", "New LDAP", false,
@@ -79,11 +85,4 @@ public sealed class UpdateIdentitySourceCommandHandlerTests
         result.LdapConfig.UseSsl.Should().BeTrue();
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

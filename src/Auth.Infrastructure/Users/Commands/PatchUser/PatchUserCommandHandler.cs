@@ -42,7 +42,6 @@ internal sealed class PatchUserCommandHandler(
                 user.DisableTwoFactor();
         }
 
-        user.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var dto = new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone,

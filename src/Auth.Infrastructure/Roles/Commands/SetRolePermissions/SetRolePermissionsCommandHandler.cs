@@ -44,7 +44,6 @@ internal sealed class SetRolePermissionsCommandHandler(
             }
 
             permission.Description = model.Description;
-            permission.UpdatedAt = DateTime.UtcNow;
             permissionsToReindex.Add(
                 new PermissionDto(permission.Id, permission.Domain, permission.Bit, permission.Code, permission.Description, permission.IsSystem));
         }

@@ -21,7 +21,6 @@ internal sealed class UpdateServiceAccountCommandHandler(
         serviceAccount.Name = command.Name;
         serviceAccount.Description = command.Description;
         serviceAccount.IsActive = command.IsActive;
-        serviceAccount.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var oidcApp = await appManager.FindByClientIdAsync(serviceAccount.ClientId, cancellationToken);

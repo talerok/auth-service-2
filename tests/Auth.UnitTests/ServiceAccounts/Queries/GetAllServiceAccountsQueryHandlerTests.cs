@@ -3,6 +3,7 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.ServiceAccounts.Queries.GetAllServiceAccounts;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.ServiceAccounts.Queries;
 
@@ -35,11 +36,4 @@ public sealed class GetAllServiceAccountsQueryHandlerTests
         result.Select(x => x.Name).Should().BeEquivalentTo("A", "B");
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

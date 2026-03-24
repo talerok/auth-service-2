@@ -7,6 +7,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using OpenIddict.Abstractions;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Workspaces.Commands;
 
@@ -72,11 +73,4 @@ public sealed class SoftDeleteWorkspaceCommandHandlerTests
         ex.Which.Code.Should().Be(AuthErrorCatalog.SystemWorkspaceDeleteForbidden);
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

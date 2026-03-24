@@ -83,7 +83,6 @@ internal sealed class ImportWorkspacesCommandHandler(
         workspace.Name = item.Name;
         workspace.Description = item.Description;
         workspace.DeletedAt = null;
-        workspace.UpdatedAt = DateTime.UtcNow;
     }
 
     private void CreateWorkspace(ImportWorkspaceItem item)

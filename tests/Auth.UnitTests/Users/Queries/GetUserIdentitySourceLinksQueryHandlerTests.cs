@@ -5,6 +5,7 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.Users.Queries.GetUserIdentitySourceLinks;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Users.Queries;
 
@@ -93,11 +94,4 @@ public sealed class GetUserIdentitySourceLinksQueryHandlerTests
         result!.Select(x => x.IdentitySourceName).Should().BeEquivalentTo("keycloak", "corporate-ldap");
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

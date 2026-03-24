@@ -4,6 +4,7 @@ namespace Auth.Infrastructure;
 
 public sealed class IntegrationOptions
 {
+    public string EncryptionKey { get; set; } = string.Empty;
     public PostgreSqlOptions PostgreSql { get; set; } = new();
     public OpenSearchOptions OpenSearch { get; set; } = new();
 
@@ -34,7 +35,6 @@ public sealed class OpenSearchOptions
 public sealed class TwoFactorOptions
 {
     public int OtpLength { get; set; } = 6;
-    public string EncryptionKey { get; set; } = string.Empty;
     public int StandardOtpTtlMinutes { get; set; } = 5;
     public int HighRiskOtpTtlMinutes { get; set; } = 3;
     public int MaxAttemptsPerChallenge { get; set; } = 5;

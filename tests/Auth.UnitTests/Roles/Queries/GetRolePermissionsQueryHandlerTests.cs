@@ -5,6 +5,7 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.Roles.Queries.GetRolePermissions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Roles.Queries;
 
@@ -61,11 +62,4 @@ public sealed class GetRolePermissionsQueryHandlerTests
         result!.Select(x => x.Code).Should().BeEquivalentTo("users.read", "users.write");
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

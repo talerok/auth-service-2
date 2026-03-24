@@ -5,6 +5,7 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.Authentication.Queries.GetActiveUser;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Auth.Queries;
 
@@ -58,11 +59,4 @@ public sealed class GetActiveUserQueryHandlerTests
             .Where(x => x.Code == AuthErrorCatalog.UserInactive);
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

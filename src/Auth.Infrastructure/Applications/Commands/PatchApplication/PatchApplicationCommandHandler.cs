@@ -61,7 +61,6 @@ internal sealed class PatchApplicationCommandHandler(
             application.RefreshTokenLifetimeMinutes =
                 command.RefreshTokenLifetimeMinutes == 0 ? null : command.RefreshTokenLifetimeMinutes;
 
-        application.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         corsOriginService.InvalidateCache();
 

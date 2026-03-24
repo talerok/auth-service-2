@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Auth.Api;
 
-public sealed class PermissionInHandler(IPermissionBitCache permissionBitCache) : AuthorizationHandler<PermissionInRequirement>
+public sealed class PermissionInHandler(
+    IPermissionBitCache permissionBitCache,
+    ILogger<PermissionInHandler> logger) : AuthorizationHandler<PermissionInRequirement>
 {
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionInRequirement requirement)
     {
@@ -21,8 +23,9 @@ public sealed class PermissionInHandler(IPermissionBitCache permissionBitCache) 
         {
             domainMasks = JsonSerializer.Deserialize<Dictionary<string, string>>(wsClaim);
         }
-        catch
+        catch (JsonException ex)
         {
+            logger.LogWarning(ex, "Failed to deserialize workspace claim for ws:{WorkspaceCode}", requirement.WorkspaceCode);
             return Task.CompletedTask;
         }
 

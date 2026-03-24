@@ -133,10 +133,10 @@ builder.Services.AddScoped<IAuthorizationHandler, PermissionInHandler>();
 
 var app = builder.Build();
 
-if (string.IsNullOrWhiteSpace(integration.TwoFactor.EncryptionKey))
+if (string.IsNullOrWhiteSpace(integration.EncryptionKey))
 {
     throw new InvalidOperationException(
-        "Integration:TwoFactor:EncryptionKey is required. It is used to encrypt OTP codes at rest.");
+        "Integration:EncryptionKey is required. It is used to encrypt secrets at rest.");
 }
 
 if (!app.Environment.IsDevelopment()
@@ -157,6 +157,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseHsts();
+}
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.XContentTypeOptions = "nosniff";
+    context.Response.Headers.XFrameOptions = "DENY";
+    await next();
+});
+
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseStaticFiles();

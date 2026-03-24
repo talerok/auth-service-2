@@ -18,26 +18,22 @@ public ICollection<TwoFactorChallenge> TwoFactorChallenges { get; private set; }
     public void MarkMustChangePassword()
     {
         MustChangePassword = true;
-        UpdatedAt = DateTime.UtcNow;
     }
 
     public void ClearMustChangePassword()
     {
         MustChangePassword = false;
-        UpdatedAt = DateTime.UtcNow;
     }
 
     public void EnableTwoFactor(TwoFactorChannel channel)
     {
         TwoFactorEnabled = true;
         TwoFactorChannel = channel;
-        UpdatedAt = DateTime.UtcNow;
     }
 
     public void DisableTwoFactor()
     {
         TwoFactorEnabled = false;
         TwoFactorChannel = null;
-        UpdatedAt = DateTime.UtcNow;
     }
 }

@@ -6,6 +6,7 @@ using Auth.Infrastructure.Roles.Commands.CreateRole;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Roles.Commands;
 
@@ -37,11 +38,4 @@ public sealed class CreateRoleCommandHandlerTests
         searchIndex.Verify(x => x.IndexRoleAsync(It.Is<RoleDto>(r => r.Id == result.Id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

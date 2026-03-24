@@ -73,7 +73,6 @@ internal sealed class ImportPermissionsCommandHandler(
         entity.Code = item.Code;
         entity.Description = item.Description;
         entity.DeletedAt = null;
-        entity.UpdatedAt = DateTime.UtcNow;
     }
 
     private void CreatePermission(ImportPermissionItem item)

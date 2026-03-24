@@ -22,7 +22,6 @@ internal sealed class UpdateNotificationTemplateCommandHandler(
 
         entity.Subject = command.Subject;
         entity.Body = command.Body;
-        entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return new NotificationTemplateDto(

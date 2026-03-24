@@ -6,6 +6,7 @@ using Auth.Infrastructure.Users.Commands.CreateUser;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Users.Commands;
 
@@ -125,11 +126,4 @@ public sealed class CreateUserCommandHandlerTests
         return new CreateUserCommandHandler(dbContext, passwordHasher.Object, searchIndex.Object);
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

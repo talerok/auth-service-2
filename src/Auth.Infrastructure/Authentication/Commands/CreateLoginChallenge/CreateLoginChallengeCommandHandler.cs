@@ -14,7 +14,7 @@ internal sealed class CreateLoginChallengeCommandHandler(
     ILogger<CreateLoginChallengeCommandHandler> logger) : IRequestHandler<CreateLoginChallengeCommand, TwoFactorChallenge>
 {
     private readonly TwoFactorOptions _twoFactor = options.Value.TwoFactor;
-    private readonly string _twoFactorKeyMaterial = options.Value.TwoFactor.EncryptionKey;
+    private readonly string _twoFactorKeyMaterial = options.Value.EncryptionKey;
 
     public async Task<TwoFactorChallenge> Handle(CreateLoginChallengeCommand command, CancellationToken cancellationToken)
     {

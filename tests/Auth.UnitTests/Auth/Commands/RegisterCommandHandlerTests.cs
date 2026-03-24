@@ -6,6 +6,7 @@ using Auth.Infrastructure.Authentication.Commands.Register;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Auth.Commands;
 
@@ -56,11 +57,4 @@ public sealed class RegisterCommandHandlerTests
             .Where(x => x.Code == AuthErrorCatalog.DuplicateIdentity);
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

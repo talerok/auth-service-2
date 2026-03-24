@@ -6,6 +6,7 @@ using Auth.Infrastructure.Roles.Commands.ImportRoles;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Roles.Commands;
 
@@ -199,11 +200,4 @@ public sealed class ImportRolesCommandHandlerTests
         result.Skipped.Should().Be(2);
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

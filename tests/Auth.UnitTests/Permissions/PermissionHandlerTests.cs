@@ -22,6 +22,7 @@ using Auth.Infrastructure.Permissions.Queries.SearchPermissions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Permissions;
 
@@ -594,11 +595,4 @@ public sealed class PermissionHandlerTests
 
     // -- Helper --────────────────────────────────────────────────────────
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

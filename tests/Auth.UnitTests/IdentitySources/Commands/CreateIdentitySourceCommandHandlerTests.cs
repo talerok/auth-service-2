@@ -5,16 +5,23 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.IdentitySources.Commands.CreateIdentitySource;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.IdentitySources.Commands;
 
 public sealed class CreateIdentitySourceCommandHandlerTests
 {
+    private const string TestEncryptionKey = "test-encryption-key-min-32-chars-long!";
+
+    private static IOptions<IntegrationOptions> CreateOptions() =>
+        Options.Create(new IntegrationOptions { EncryptionKey = TestEncryptionKey });
+
     [Fact]
     public async Task Handle_WithOidcConfig_CreatesSourceAndConfig()
     {
         await using var dbContext = CreateDbContext();
-        var handler = new CreateIdentitySourceCommandHandler(dbContext);
+        var handler = new CreateIdentitySourceCommandHandler(dbContext, CreateOptions());
 
         var result = await handler.Handle(
             new CreateIdentitySourceCommand("keycloak", "keycloak", "Keycloak", IdentitySourceType.Oidc,
@@ -33,7 +40,7 @@ public sealed class CreateIdentitySourceCommandHandlerTests
     public async Task Handle_WithLdapConfig_CreatesSourceAndConfig()
     {
         await using var dbContext = CreateDbContext();
-        var handler = new CreateIdentitySourceCommandHandler(dbContext);
+        var handler = new CreateIdentitySourceCommandHandler(dbContext, CreateOptions());
 
         var result = await handler.Handle(
             new CreateIdentitySourceCommand("corporate-ldap", "corporate-ldap", "Corporate LDAP", IdentitySourceType.Ldap,
@@ -50,7 +57,7 @@ public sealed class CreateIdentitySourceCommandHandlerTests
     public async Task Handle_OidcTypeWithoutConfig_ThrowsTypeMismatch()
     {
         await using var dbContext = CreateDbContext();
-        var handler = new CreateIdentitySourceCommandHandler(dbContext);
+        var handler = new CreateIdentitySourceCommandHandler(dbContext, CreateOptions());
 
         var act = () => handler.Handle(
             new CreateIdentitySourceCommand("keycloak", "keycloak", "Keycloak", IdentitySourceType.Oidc),
@@ -64,7 +71,7 @@ public sealed class CreateIdentitySourceCommandHandlerTests
     public async Task Handle_LdapTypeWithoutConfig_ThrowsTypeMismatch()
     {
         await using var dbContext = CreateDbContext();
-        var handler = new CreateIdentitySourceCommandHandler(dbContext);
+        var handler = new CreateIdentitySourceCommandHandler(dbContext, CreateOptions());
 
         var act = () => handler.Handle(
             new CreateIdentitySourceCommand("ldap", "ldap", "LDAP", IdentitySourceType.Ldap),
@@ -74,11 +81,4 @@ public sealed class CreateIdentitySourceCommandHandlerTests
             .Where(x => x.Code == AuthErrorCatalog.IdentitySourceTypeMismatch);
     }
 
-    private static AuthDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new AuthDbContext(options);
-    }
 }

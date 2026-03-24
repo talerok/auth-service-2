@@ -32,7 +32,6 @@ internal sealed class PatchRoleCommandHandler(
             entity.Description = command.Description;
         }
 
-        entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         var dto = new RoleDto(entity.Id, entity.Name, entity.Code, entity.Description);
         await searchIndexService.IndexRoleAsync(dto, cancellationToken);

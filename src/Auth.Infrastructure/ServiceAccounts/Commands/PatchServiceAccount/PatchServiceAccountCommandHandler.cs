@@ -26,7 +26,6 @@ internal sealed class PatchServiceAccountCommandHandler(
         if (command.IsActive.HasValue)
             serviceAccount.IsActive = command.IsActive.Value;
 
-        serviceAccount.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
         if (command.Name is not null)

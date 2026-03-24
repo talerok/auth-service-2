@@ -20,7 +20,6 @@ internal sealed class UpdatePermissionCommandHandler(
 
         entity.Code = command.Code;
         entity.Description = command.Description;
-        entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         var dto = new PermissionDto(entity.Id, entity.Domain, entity.Bit, entity.Code, entity.Description, entity.IsSystem);
         await searchIndexService.IndexPermissionAsync(dto, cancellationToken);

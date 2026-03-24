@@ -3,14 +3,18 @@ using Auth.Application.IdentitySources.Commands.UpdateIdentitySource;
 using Auth.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Auth.Infrastructure.IdentitySources.Commands.UpdateIdentitySource;
 
 internal sealed class UpdateIdentitySourceCommandHandler(
-    AuthDbContext dbContext) : IRequestHandler<UpdateIdentitySourceCommand, IdentitySourceDetailDto>
+    AuthDbContext dbContext,
+    IOptions<IntegrationOptions> options) : IRequestHandler<UpdateIdentitySourceCommand, IdentitySourceDetailDto>
 {
     public async Task<IdentitySourceDetailDto> Handle(UpdateIdentitySourceCommand command, CancellationToken cancellationToken)
     {
+        var encryptionKey = options.Value.EncryptionKey;
+
         var source = await dbContext.IdentitySources
             .Include(x => x.OidcConfig)
             .Include(x => x.LdapConfig)
@@ -20,7 +24,6 @@ internal sealed class UpdateIdentitySourceCommandHandler(
         source.Code = command.Code;
         source.DisplayName = command.DisplayName;
         source.IsEnabled = command.IsEnabled;
-        source.UpdatedAt = DateTime.UtcNow;
 
         if (command.OidcConfig is not null)
         {
@@ -29,7 +32,7 @@ internal sealed class UpdateIdentitySourceCommandHandler(
                 source.OidcConfig.Authority = command.OidcConfig.Authority;
                 source.OidcConfig.ClientId = command.OidcConfig.ClientId;
                 if (command.OidcConfig.ClientSecret is not null)
-                    source.OidcConfig.ClientSecret = command.OidcConfig.ClientSecret;
+                    source.OidcConfig.ClientSecret = FieldEncryption.Encrypt(command.OidcConfig.ClientSecret, encryptionKey);
             }
             else
             {
@@ -38,7 +41,9 @@ internal sealed class UpdateIdentitySourceCommandHandler(
                     IdentitySourceId = source.Id,
                     Authority = command.OidcConfig.Authority,
                     ClientId = command.OidcConfig.ClientId,
-                    ClientSecret = command.OidcConfig.ClientSecret
+                    ClientSecret = command.OidcConfig.ClientSecret is not null
+                        ? FieldEncryption.Encrypt(command.OidcConfig.ClientSecret, encryptionKey)
+                        : null
                 };
             }
         }
@@ -54,7 +59,7 @@ internal sealed class UpdateIdentitySourceCommandHandler(
                 source.LdapConfig.UseSsl = command.LdapConfig.UseSsl;
                 source.LdapConfig.SearchFilter = command.LdapConfig.SearchFilter;
                 if (command.LdapConfig.BindPassword is not null)
-                    source.LdapConfig.BindPassword = command.LdapConfig.BindPassword;
+                    source.LdapConfig.BindPassword = FieldEncryption.Encrypt(command.LdapConfig.BindPassword, encryptionKey);
             }
             else
             {
@@ -65,7 +70,9 @@ internal sealed class UpdateIdentitySourceCommandHandler(
                     Port = command.LdapConfig.Port,
                     BaseDn = command.LdapConfig.BaseDn,
                     BindDn = command.LdapConfig.BindDn,
-                    BindPassword = command.LdapConfig.BindPassword,
+                    BindPassword = command.LdapConfig.BindPassword is not null
+                        ? FieldEncryption.Encrypt(command.LdapConfig.BindPassword, encryptionKey)
+                        : null,
                     UseSsl = command.LdapConfig.UseSsl,
                     SearchFilter = command.LdapConfig.SearchFilter
                 };
