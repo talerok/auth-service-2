@@ -6,6 +6,7 @@ using Auth.Infrastructure.Workspaces.Commands.SoftDeleteWorkspace;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using OpenIddict.Abstractions;
 
 namespace Auth.UnitTests.Workspaces.Commands;
 
@@ -21,7 +22,10 @@ public sealed class SoftDeleteWorkspaceCommandHandlerTests
         var searchIndex = new Mock<ISearchIndexService>();
         searchIndex.Setup(x => x.DeleteWorkspaceAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object);
+        var scopeManager = new Mock<IOpenIddictScopeManager>();
+        scopeManager.Setup(x => x.FindByNameAsync("ws:del-ws", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new object());
+        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object);
 
         var result = await handler.Handle(
             new SoftDeleteWorkspaceCommand(workspace.Id),
@@ -31,6 +35,7 @@ public sealed class SoftDeleteWorkspaceCommandHandlerTests
         var updated = await dbContext.Workspaces.IgnoreQueryFilters().FirstAsync(x => x.Id == workspace.Id);
         updated.DeletedAt.Should().NotBeNull();
         searchIndex.Verify(x => x.DeleteWorkspaceAsync(workspace.Id, It.IsAny<CancellationToken>()), Times.Once);
+        scopeManager.Verify(x => x.DeleteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -38,7 +43,8 @@ public sealed class SoftDeleteWorkspaceCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object);
+        var scopeManager = new Mock<IOpenIddictScopeManager>();
+        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object);
 
         var result = await handler.Handle(
             new SoftDeleteWorkspaceCommand(Guid.NewGuid()),
@@ -55,7 +61,8 @@ public sealed class SoftDeleteWorkspaceCommandHandlerTests
         dbContext.Workspaces.Add(workspace);
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object);
+        var scopeManager = new Mock<IOpenIddictScopeManager>();
+        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object);
 
         var act = () => handler.Handle(
             new SoftDeleteWorkspaceCommand(workspace.Id),

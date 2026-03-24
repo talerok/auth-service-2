@@ -64,10 +64,16 @@ bitmask = [0x15, 0x00, 0x00, 0x00, 0x00]
 
 ## JWT-claim `ws`
 
-Токен содержит claim `ws` — вложенный словарь `workspaceCode → domain → base64(bitmask)`.
+Клиент запрашивает конкретные workspace через скоупы `ws:<workspaceCode>`:
+
+    scope=openid profile ws:system ws:dev
+
+Токен содержит claim `ws` — только запрошенные workspace, к которым у пользователя есть доступ.
+Claim `aud` содержит соответствующие скоупы: `["ws:system", "ws:dev"]`.
 
 ```json
 {
+  "aud": ["ws:system"],
   "ws": {
     "system": {
       "system": "//8f8A=="
@@ -75,6 +81,9 @@ bitmask = [0x15, 0x00, 0x00, 0x00, 0x00]
   }
 }
 ```
+
+Доступные workspace-скоупы настраиваются per-application в `Application.Scopes` (например `["openid", "profile", "ws:system"]`).
+При создании workspace автоматически регистрируется скоуп `ws:<code>` в OpenIddict scope store.
 
 Проверка полномочий выполняется в `PermissionInHandler` без обращения к БД: по workspace находится словарь доменов, по домену — bitmask, в котором проверяется нужный бит.
 

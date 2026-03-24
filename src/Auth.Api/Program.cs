@@ -59,7 +59,7 @@ builder.Services.AddOpenIddict()
               .AllowCustomFlow(OidcConstants.JwtBearerGrantType)
               .AllowCustomFlow(OidcConstants.LdapGrantType);
 
-        options.RegisterScopes("openid", "profile", "email", "phone", "ws", "offline_access");
+        options.RegisterScopes("openid", "profile", "email", "phone", "offline_access");
 
         options.SetAccessTokenLifetime(TimeSpan.FromMinutes(oidc.AccessTokenLifetimeMinutes));
         options.SetRefreshTokenLifetime(TimeSpan.FromDays(oidc.RefreshTokenLifetimeDays));

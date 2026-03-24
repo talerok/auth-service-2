@@ -14,7 +14,7 @@ public sealed class TokenControllerTests(IntegrationTestFixture fixture)
             ["username"] = "admin",
             ["password"] = "admin",
             ["client_id"] = "frontend-app",
-            ["scope"] = "openid profile email ws offline_access"
+            ["scope"] = "openid profile email ws:system offline_access"
         });
 
         var response = await Client.PostAsync("/connect/token", request);
@@ -141,7 +141,7 @@ public sealed class TokenControllerTests(IntegrationTestFixture fixture)
             ["grant_type"] = "client_credentials",
             ["client_id"] = sa.ServiceAccount.ClientId,
             ["client_secret"] = sa.ClientSecret,
-            ["scope"] = "openid ws"
+            ["scope"] = "openid ws:system"
         });
 
         var response = await Client.PostAsync("/connect/token", request);

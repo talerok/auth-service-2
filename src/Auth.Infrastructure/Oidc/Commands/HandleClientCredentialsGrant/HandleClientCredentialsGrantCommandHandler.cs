@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text.Json;
 using Auth.Application;
 using Auth.Application.Oidc.Commands.HandleClientCredentialsGrant;
 using Auth.Application.Workspaces.Queries.BuildServiceAccountWorkspaceMasks;
@@ -14,8 +13,6 @@ internal sealed class HandleClientCredentialsGrantCommandHandler(
     ISender sender,
     AuthDbContext dbContext) : IRequestHandler<HandleClientCredentialsGrantCommand, ClaimsPrincipal>
 {
-    private const string OidcServerScheme = "OpenIddict.Server.AspNetCore";
-
     public async Task<ClaimsPrincipal> Handle(HandleClientCredentialsGrantCommand command, CancellationToken cancellationToken)
     {
         var serviceAccount = await dbContext.ServiceAccounts
@@ -28,23 +25,21 @@ internal sealed class HandleClientCredentialsGrantCommandHandler(
             throw new AuthException(AuthErrorCatalog.ApplicationInactive);
 
         var scopeList = command.Scopes.ToList();
-        var identity = new ClaimsIdentity(OidcServerScheme, Claims.Name, Claims.Role);
+        var identity = new ClaimsIdentity(OidcPrincipalFactory.OidcServerScheme, Claims.Name, Claims.Role);
 
         identity.SetClaim(Claims.Subject, serviceAccount.Id.ToString());
         identity.SetClaim(Claims.Name, serviceAccount.Name);
         identity.SetClaim(Claims.PreferredUsername, serviceAccount.ClientId);
 
-        if (scopeList.Contains("ws"))
-        {
-            var masks = await sender.Send(new BuildServiceAccountWorkspaceMasksQuery(serviceAccount.Id), cancellationToken);
-            var wsPayload = masks.ToDictionary(
-                ws => ws.Key,
-                ws => ws.Value.ToDictionary(d => d.Key, d => Convert.ToBase64String(d.Value)));
-            identity.AddClaim(new Claim("ws", JsonSerializer.Serialize(wsPayload)));
-        }
+        var accessibleMasks = await OidcPrincipalFactory.ResolveWorkspaceMasksAsync(
+            OidcConstants.ExtractWorkspaceCodes(scopeList),
+            saId => sender.Send(new BuildServiceAccountWorkspaceMasksQuery(saId), cancellationToken),
+            serviceAccount.Id);
+        OidcPrincipalFactory.ApplyWorkspaceClaims(identity, accessibleMasks);
 
         var principal = new ClaimsPrincipal(identity);
         principal.SetScopes(scopeList);
+        OidcPrincipalFactory.ApplyWorkspaceAudiences(principal, accessibleMasks);
 
         principal.SetDestinations(claim => claim.Type switch
         {

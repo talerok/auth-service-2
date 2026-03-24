@@ -6,17 +6,19 @@ using Auth.Infrastructure.Workspaces.Commands.ImportWorkspaces;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using OpenIddict.Abstractions;
 
 namespace Auth.UnitTests.Workspaces.Commands;
 
 public sealed class ImportWorkspacesCommandHandlerTests
 {
+    private static readonly Mock<IOpenIddictScopeManager> ScopeManager = new();
     [Fact]
     public async Task Import_CreatesNewWorkspaces()
     {
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object);
+        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object);
 
         var items = new List<ImportWorkspaceItem> { new("Dev", "dev", "Development") };
         var result = await handler.Handle(new ImportWorkspacesCommand(items), CancellationToken.None);
@@ -35,7 +37,7 @@ public sealed class ImportWorkspacesCommandHandlerTests
         dbContext.Workspaces.Add(new Workspace { Name = "Old", Code = "dev", Description = "Old" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object);
+        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object);
 
         var items = new List<ImportWorkspaceItem> { new("New", "dev", "Updated") };
         var result = await handler.Handle(new ImportWorkspacesCommand(items), CancellationToken.None);
@@ -54,7 +56,7 @@ public sealed class ImportWorkspacesCommandHandlerTests
         dbContext.Workspaces.Add(new Workspace { Name = "System", Code = "system", Description = "System", IsSystem = true });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object);
+        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object);
 
         var items = new List<ImportWorkspaceItem> { new("Hacked", "system", "Hack") };
         var act = () => handler.Handle(new ImportWorkspacesCommand(items), CancellationToken.None);
@@ -70,7 +72,7 @@ public sealed class ImportWorkspacesCommandHandlerTests
         dbContext.Workspaces.Add(new Workspace { Name = "Existing", Code = "existing", Description = "Old" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object);
+        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object);
 
         var items = new List<ImportWorkspaceItem>
         {
@@ -90,7 +92,7 @@ public sealed class ImportWorkspacesCommandHandlerTests
         dbContext.Workspaces.Add(new Workspace { Name = "Deleted", Code = "deleted", Description = "Old", DeletedAt = DateTime.UtcNow });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object);
+        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object);
 
         var items = new List<ImportWorkspaceItem> { new("Restored", "deleted", "Restored") };
         var result = await handler.Handle(new ImportWorkspacesCommand(items), CancellationToken.None);
@@ -108,7 +110,7 @@ public sealed class ImportWorkspacesCommandHandlerTests
         dbContext.Workspaces.Add(new Workspace { Name = "Existing", Code = "existing", Description = "Old" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object);
+        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object);
 
         var items = new List<ImportWorkspaceItem>
         {
@@ -130,7 +132,7 @@ public sealed class ImportWorkspacesCommandHandlerTests
         dbContext.Workspaces.Add(new Workspace { Name = "Existing", Code = "existing", Description = "Old" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object);
+        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object);
 
         var items = new List<ImportWorkspaceItem>
         {
@@ -153,7 +155,7 @@ public sealed class ImportWorkspacesCommandHandlerTests
         dbContext.Workspaces.Add(new Workspace { Name = "Existing", Code = "existing", Description = "Old" });
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object);
+        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object);
 
         var items = new List<ImportWorkspaceItem>
         {

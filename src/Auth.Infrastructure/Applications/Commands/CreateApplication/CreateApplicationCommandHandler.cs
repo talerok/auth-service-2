@@ -14,7 +14,7 @@ internal sealed class CreateApplicationCommandHandler(
     ICorsOriginService corsOriginService,
     IOpenIddictApplicationManager appManager) : IRequestHandler<CreateApplicationCommand, CreateApplicationResponse>
 {
-    private static readonly List<string> DefaultScopes = ["email", "profile", "ws"];
+    private static readonly List<string> DefaultScopes = ["email", "profile"];
     private static readonly List<string> DefaultGrantTypes = ["authorization_code", "refresh_token"];
 
     public async Task<CreateApplicationResponse> Handle(CreateApplicationCommand command, CancellationToken cancellationToken)

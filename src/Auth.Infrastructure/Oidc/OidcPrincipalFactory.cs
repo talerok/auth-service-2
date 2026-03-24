@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
+using Auth.Application;
 using Auth.Application.Workspaces.Queries.BuildWorkspaceMasks;
 using Auth.Domain;
 using MediatR;
@@ -10,7 +11,7 @@ namespace Auth.Infrastructure.Oidc;
 
 internal static class OidcPrincipalFactory
 {
-    private const string OidcServerScheme = "OpenIddict.Server.AspNetCore";
+    internal const string OidcServerScheme = "OpenIddict.Server.AspNetCore";
 
     public static async Task<ClaimsPrincipal> CreateUserPrincipalAsync(
         User user, IEnumerable<string> scopes, ISender sender, CancellationToken cancellationToken)
@@ -29,17 +30,15 @@ internal static class OidcPrincipalFactory
         if (scopeList.Contains(Scopes.Phone) && !string.IsNullOrWhiteSpace(user.Phone))
             identity.SetClaim(Claims.PhoneNumber, user.Phone);
 
-        if (scopeList.Contains("ws"))
-        {
-            var masks = await sender.Send(new BuildWorkspaceMasksQuery(user.Id), cancellationToken);
-            var wsPayload = masks.ToDictionary(
-                ws => ws.Key,
-                ws => ws.Value.ToDictionary(d => d.Key, d => Convert.ToBase64String(d.Value)));
-            identity.AddClaim(new Claim("ws", JsonSerializer.Serialize(wsPayload)));
-        }
+        var allMasks = await ResolveWorkspaceMasksAsync(
+            OidcConstants.ExtractWorkspaceCodes(scopeList),
+            userId => sender.Send(new BuildWorkspaceMasksQuery(userId), cancellationToken),
+            user.Id);
+        ApplyWorkspaceClaims(identity, allMasks);
 
         var principal = new ClaimsPrincipal(identity);
         principal.SetScopes(scopeList);
+        ApplyWorkspaceAudiences(principal, allMasks);
 
         principal.SetDestinations(claim => claim.Type switch
         {
@@ -53,5 +52,39 @@ internal static class OidcPrincipalFactory
         });
 
         return principal;
+    }
+
+    /// <summary>
+    /// Resolves workspace permission masks filtered to the requested workspace codes.
+    /// Returns encoded masks ready for JWT serialization.
+    /// </summary>
+    internal static async Task<Dictionary<string, Dictionary<string, string>>> ResolveWorkspaceMasksAsync<TId>(
+        IReadOnlyList<string> workspaceCodes,
+        Func<TId, Task<Dictionary<string, Dictionary<string, byte[]>>>> loadMasks,
+        TId subjectId)
+    {
+        if (workspaceCodes.Count == 0)
+            return [];
+
+        var allMasks = await loadMasks(subjectId);
+        return allMasks
+            .Where(kv => workspaceCodes.Contains(kv.Key))
+            .ToDictionary(
+                ws => ws.Key,
+                ws => ws.Value.ToDictionary(d => d.Key, d => Convert.ToBase64String(d.Value)));
+    }
+
+    internal static void ApplyWorkspaceClaims(
+        ClaimsIdentity identity, Dictionary<string, Dictionary<string, string>> accessibleMasks)
+    {
+        if (accessibleMasks.Count > 0)
+            identity.AddClaim(new Claim("ws", JsonSerializer.Serialize(accessibleMasks)));
+    }
+
+    internal static void ApplyWorkspaceAudiences(
+        ClaimsPrincipal principal, Dictionary<string, Dictionary<string, string>> accessibleMasks)
+    {
+        if (accessibleMasks.Count > 0)
+            principal.SetAudiences(accessibleMasks.Keys.Select(c => $"ws:{c}").ToArray());
     }
 }

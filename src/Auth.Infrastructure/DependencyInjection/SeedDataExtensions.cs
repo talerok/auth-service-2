@@ -17,6 +17,7 @@ public static class SeedDataExtensions
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         var permissionCache = scope.ServiceProvider.GetRequiredService<IPermissionBitCache>();
         var appManager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
+        var scopeManager = scope.ServiceProvider.GetRequiredService<IOpenIddictScopeManager>();
         await db.Database.MigrateAsync(cancellationToken);
 
         var existingKeys = await db.Permissions.IgnoreQueryFilters()
@@ -104,6 +105,7 @@ public static class SeedDataExtensions
 
         await SeedNotificationTemplatesAsync(db, cancellationToken);
         await SeedApplicationsAsync(db, cancellationToken);
+        await SeedWorkspaceScopesAsync(scopeManager, db, cancellationToken);
 
         await permissionCache.WarmupAsync(cancellationToken);
         await SeedOidcClientsAsync(appManager, cancellationToken);
@@ -154,13 +156,34 @@ public static class SeedDataExtensions
                 Description = "System Application",
                 IsActive = true,
                 IsConfidential = false,
-                Scopes = ["openid", "profile", "email", "ws", "offline_access"],
+                Scopes = ["openid", "profile", "email", "ws:system", "offline_access"],
                 GrantTypes = ["client_credentials", "jwt-bearer", "ldap", "password", "mfa_otp", "refresh_token"],
                 AllowedOrigins = ["http://localhost:4200"]
             });
         }
 
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedWorkspaceScopesAsync(
+        IOpenIddictScopeManager scopeManager, AuthDbContext db, CancellationToken cancellationToken)
+    {
+        var workspaceCodes = await db.Workspaces
+            .Select(w => w.Code)
+            .ToListAsync(cancellationToken);
+
+        foreach (var code in workspaceCodes)
+        {
+            var scopeName = $"ws:{code}";
+            if (await scopeManager.FindByNameAsync(scopeName, cancellationToken) is null)
+            {
+                await scopeManager.CreateAsync(new OpenIddictScopeDescriptor
+                {
+                    Name = scopeName,
+                    DisplayName = $"Workspace: {code}"
+                }, cancellationToken);
+            }
+        }
     }
 
     private static async Task SeedOidcClientsAsync(IOpenIddictApplicationManager appManager, CancellationToken cancellationToken)
@@ -178,7 +201,7 @@ public static class SeedDataExtensions
             Applications.GrantTypeMapper.ApplyGrantTypes(descriptor,
                 ["client_credentials", "jwt-bearer", "ldap", "password", "mfa_otp", "refresh_token"]);
 
-            foreach (var scope in (string[])["openid", "profile", "email", "ws", "offline_access"])
+            foreach (var scope in (string[])["openid", "profile", "email", "ws:system", "offline_access"])
                 descriptor.Permissions.Add(OidcPermissions.Prefixes.Scope + scope);
 
             await appManager.CreateAsync(descriptor, cancellationToken);

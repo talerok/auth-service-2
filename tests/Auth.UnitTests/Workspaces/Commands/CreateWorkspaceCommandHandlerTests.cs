@@ -6,6 +6,7 @@ using Auth.Infrastructure.Workspaces.Commands.CreateWorkspace;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using OpenIddict.Abstractions;
 
 namespace Auth.UnitTests.Workspaces.Commands;
 
@@ -18,7 +19,8 @@ public sealed class CreateWorkspaceCommandHandlerTests
         var searchIndex = new Mock<ISearchIndexService>();
         searchIndex.Setup(x => x.IndexWorkspaceAsync(It.IsAny<WorkspaceDto>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var handler = new CreateWorkspaceCommandHandler(dbContext, searchIndex.Object);
+        var scopeManager = new Mock<IOpenIddictScopeManager>();
+        var handler = new CreateWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object);
 
         var result = await handler.Handle(
             new CreateWorkspaceCommand("Test Workspace", "test-ws", "A test workspace"),
@@ -35,6 +37,10 @@ public sealed class CreateWorkspaceCommandHandlerTests
 
         searchIndex.Verify(x => x.IndexWorkspaceAsync(
             It.Is<WorkspaceDto>(d => d.Name == "Test Workspace"),
+            It.IsAny<CancellationToken>()), Times.Once);
+
+        scopeManager.Verify(x => x.CreateAsync(
+            It.Is<OpenIddictScopeDescriptor>(d => d.Name == "ws:test-ws"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 

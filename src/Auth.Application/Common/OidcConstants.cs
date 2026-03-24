@@ -6,6 +6,8 @@ public static class OidcConstants
     public const string JwtBearerGrantType = "urn:ietf:params:oauth:grant-type:jwt-bearer";
     public const string LdapGrantType = "urn:custom:ldap";
 
+    public const string WorkspaceScopePrefix = "ws:";
+
     public static readonly HashSet<string> AllowedGrantTypes = new(StringComparer.Ordinal)
     {
         "authorization_code",
@@ -16,4 +18,10 @@ public static class OidcConstants
         "ldap",
         "mfa_otp"
     };
+
+    public static IReadOnlyList<string> ExtractWorkspaceCodes(IEnumerable<string> scopes)
+        => scopes
+            .Where(s => s.StartsWith(WorkspaceScopePrefix, StringComparison.Ordinal))
+            .Select(s => s[WorkspaceScopePrefix.Length..])
+            .ToList();
 }

@@ -3,12 +3,14 @@ using Auth.Application.Workspaces.Commands.ImportWorkspaces;
 using Auth.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OpenIddict.Abstractions;
 
 namespace Auth.Infrastructure.Workspaces.Commands.ImportWorkspaces;
 
 internal sealed class ImportWorkspacesCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService) : IRequestHandler<ImportWorkspacesCommand, ImportWorkspacesResult>
+    ISearchIndexService searchIndexService,
+    IOpenIddictScopeManager scopeManager) : IRequestHandler<ImportWorkspacesCommand, ImportWorkspacesResult>
 {
     public async Task<ImportWorkspacesResult> Handle(ImportWorkspacesCommand command, CancellationToken cancellationToken)
     {
@@ -25,9 +27,26 @@ internal sealed class ImportWorkspacesCommandHandler(
         var (created, updated, skipped, processed) = ApplyChanges(command, existing);
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await SyncWorkspaceScopesAsync(processed, cancellationToken);
         await IndexAsync(processed, existing, cancellationToken);
 
         return new ImportWorkspacesResult(created, updated, skipped);
+    }
+
+    private async Task SyncWorkspaceScopesAsync(List<string> codes, CancellationToken cancellationToken)
+    {
+        foreach (var code in codes)
+        {
+            var scopeName = $"ws:{code}";
+            if (await scopeManager.FindByNameAsync(scopeName, cancellationToken) is null)
+            {
+                await scopeManager.CreateAsync(new OpenIddictScopeDescriptor
+                {
+                    Name = scopeName,
+                    DisplayName = $"Workspace: {code}"
+                }, cancellationToken);
+            }
+        }
     }
 
     private (int Created, int Updated, int Skipped, List<string> Processed) ApplyChanges(
