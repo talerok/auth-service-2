@@ -12,7 +12,7 @@ internal sealed class GetServiceAccountByIdQueryHandler(
     {
         return await dbContext.ServiceAccounts.AsNoTracking()
             .Where(x => x.Id == query.Id)
-            .Select(x => new ServiceAccountDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive))
+            .Select(x => new ServiceAccountDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive, x.Audiences, x.AccessTokenLifetimeMinutes))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

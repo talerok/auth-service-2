@@ -216,18 +216,24 @@ sequenceDiagram
 
 ## Client Credentials Grant
 
-Аутентификация сервис-сервис без пользовательского контекста.
+Аутентификация сервис-сервис без пользовательского контекста. Используется сервисными аккаунтами.
 
 ```mermaid
 sequenceDiagram
     participant S as Сервис
     participant A as Auth Server
 
-    S->>A: POST /connect/token<br/>grant_type=client_credentials<br/>client_id=service1&client_secret=...<br/>scope=openid
+    S->>A: POST /connect/token<br/>grant_type=client_credentials<br/>client_id=sa-xxx&client_secret=...<br/>scope=ws:system
     A-->>S: 200 { access_token }
 
     Note over S: Без refresh_token и id_token (нет пользовательского контекста)
 ```
+
+Особенности SA:
+- При создании SA регистрируется OpenIddict application с `ws:*` scope permission
+- При назначении workspace (SetWorkspaces) scope permissions синхронизируются: `ws:*` + `ws:{code}` для каждого назначенного workspace
+- `audiences` (aud claim) берутся из поля SA, а не из таблицы applications
+- `access_token_lifetime_minutes` позволяет задать индивидуальный TTL токена
 
 ## Refresh Token Grant
 
@@ -299,7 +305,8 @@ sequenceDiagram
 | `profile` | Профиль пользователя | `name`, `preferred_username` |
 | `email` | Адрес электронной почты | `email` |
 | `phone` | Номер телефона | `phone_number` |
-| `ws` | Права доступа к рабочим пространствам | `ws` (base64-encoded permission masks) |
+| `ws:*` | Все доступные рабочие пространства | `ws:{code}` (base64-encoded permission masks) |
+| `ws:{code}` | Конкретное рабочее пространство | `ws:{code}` (base64-encoded permission masks) |
 | `offline_access` | Выдача refresh token | - |
 
 ## Время жизни токенов

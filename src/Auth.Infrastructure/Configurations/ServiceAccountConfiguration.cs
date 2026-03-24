@@ -14,6 +14,8 @@ public sealed class ServiceAccountConfiguration : IEntityTypeConfiguration<Servi
         builder.Property(x => x.Description).HasMaxLength(500);
         builder.Property(x => x.ClientId).IsRequired().HasMaxLength(200);
         builder.Property(x => x.IsActive).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.Audiences).HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
+        builder.Property(x => x.AccessTokenLifetimeMinutes);
 
         builder.HasQueryFilter(x => x.DeletedAt == null);
         builder.HasIndex(x => x.Name).IsUnique().HasFilter("\"DeletedAt\" IS NULL");

@@ -5,12 +5,16 @@ public sealed record ServiceAccountDto(
     string Name,
     string Description,
     string ClientId,
-    bool IsActive);
+    bool IsActive,
+    IReadOnlyCollection<string> Audiences,
+    int? AccessTokenLifetimeMinutes);
 
 public sealed record CreateServiceAccountRequest(
     string Name,
     string Description,
-    bool IsActive = true);
+    bool IsActive = true,
+    IReadOnlyCollection<string>? Audiences = null,
+    int? AccessTokenLifetimeMinutes = null);
 
 public sealed record CreateServiceAccountResponse(
     ServiceAccountDto ServiceAccount,
@@ -19,12 +23,16 @@ public sealed record CreateServiceAccountResponse(
 public sealed record UpdateServiceAccountRequest(
     string Name,
     string Description,
-    bool IsActive);
+    bool IsActive,
+    IReadOnlyCollection<string>? Audiences = null,
+    int? AccessTokenLifetimeMinutes = null);
 
 public sealed record PatchServiceAccountRequest(
     string? Name,
     string? Description,
-    bool? IsActive);
+    bool? IsActive,
+    IReadOnlyCollection<string>? Audiences = null,
+    int? AccessTokenLifetimeMinutes = null);
 
 public sealed record RegenerateServiceAccountSecretResponse(string ClientSecret);
 

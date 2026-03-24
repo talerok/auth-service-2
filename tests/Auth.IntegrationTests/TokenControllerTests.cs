@@ -13,7 +13,7 @@ public sealed class TokenControllerTests(IntegrationTestFixture fixture)
             ["grant_type"] = "password",
             ["username"] = "admin",
             ["password"] = "admin",
-            ["client_id"] = "frontend-app",
+            ["client_id"] = "system-app",
             ["scope"] = "openid profile email ws:system offline_access"
         });
 
@@ -34,7 +34,7 @@ public sealed class TokenControllerTests(IntegrationTestFixture fixture)
             ["grant_type"] = "password",
             ["username"] = "admin",
             ["password"] = "wrong-password",
-            ["client_id"] = "frontend-app",
+            ["client_id"] = "system-app",
             ["scope"] = "openid"
         });
 
@@ -51,7 +51,7 @@ public sealed class TokenControllerTests(IntegrationTestFixture fixture)
             ["grant_type"] = "password",
             ["username"] = "nonexistent-user",
             ["password"] = "Test1234!",
-            ["client_id"] = "frontend-app",
+            ["client_id"] = "system-app",
             ["scope"] = "openid"
         });
 
@@ -70,7 +70,7 @@ public sealed class TokenControllerTests(IntegrationTestFixture fixture)
             ["grant_type"] = "password",
             ["username"] = user.Username,
             ["password"] = "Test1234!",
-            ["client_id"] = "frontend-app",
+            ["client_id"] = "system-app",
             ["scope"] = "openid"
         });
 
@@ -88,7 +88,7 @@ public sealed class TokenControllerTests(IntegrationTestFixture fixture)
         {
             ["grant_type"] = "refresh_token",
             ["refresh_token"] = refreshToken,
-            ["client_id"] = "frontend-app"
+            ["client_id"] = "system-app"
         });
 
         var response = await Client.PostAsync("/connect/token", request);
@@ -114,7 +114,7 @@ public sealed class TokenControllerTests(IntegrationTestFixture fixture)
         var payloadJson = System.Text.Encoding.UTF8.GetString(payloadBytes);
         var claims = JsonSerializer.Deserialize<JsonElement>(payloadJson);
 
-        claims.TryGetProperty("ws", out var wsClaim).Should().BeTrue();
+        claims.TryGetProperty("ws:system", out var wsClaim).Should().BeTrue();
         wsClaim.GetString().Should().NotBeNullOrWhiteSpace();
     }
 

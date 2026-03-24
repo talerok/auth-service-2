@@ -472,6 +472,15 @@ namespace Auth.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int?>("AccessTokenLifetimeMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<List<string>>("Audiences")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
                     b.Property<string>("ClientId")
                         .IsRequired()
                         .HasMaxLength(200)

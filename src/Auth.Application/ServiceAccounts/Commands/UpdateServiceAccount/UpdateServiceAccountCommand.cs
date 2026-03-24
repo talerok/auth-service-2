@@ -6,4 +6,6 @@ public sealed record UpdateServiceAccountCommand(
     Guid Id,
     string Name,
     string Description,
-    bool IsActive) : IRequest<ServiceAccountDto?>;
+    bool IsActive,
+    IReadOnlyCollection<string>? Audiences = null,
+    int? AccessTokenLifetimeMinutes = null) : IRequest<ServiceAccountDto?>;

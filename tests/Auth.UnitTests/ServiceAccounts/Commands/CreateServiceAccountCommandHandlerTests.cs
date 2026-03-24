@@ -88,6 +88,9 @@ public sealed class CreateServiceAccountCommandHandlerTests
         capturedDescriptor.Should().NotBeNull();
         capturedDescriptor!.Permissions.Should().Contain(OidcConstants.Permissions.GrantTypes.ClientCredentials);
         capturedDescriptor.Permissions.Should().Contain(OidcConstants.Permissions.Endpoints.Token);
+        capturedDescriptor.Permissions.Should().Contain(OidcConstants.Permissions.Prefixes.Scope + "ws:*");
+        capturedDescriptor.Permissions.Should().NotContain(OidcConstants.Permissions.Scopes.Email);
+        capturedDescriptor.Permissions.Should().NotContain(OidcConstants.Permissions.Scopes.Profile);
         capturedDescriptor.ClientType.Should().Be(OidcConstants.ClientTypes.Confidential);
     }
 

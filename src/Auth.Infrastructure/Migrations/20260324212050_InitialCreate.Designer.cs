@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Auth.Infrastructure.Migrations
 {
     [DbContext(typeof(AuthDbContext))]
-    [Migration("20260324093735_InitialCreate")]
+    [Migration("20260324212050_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -474,6 +474,15 @@ namespace Auth.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<int?>("AccessTokenLifetimeMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<List<string>>("Audiences")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[]'::jsonb");
 
                     b.Property<string>("ClientId")
                         .IsRequired()

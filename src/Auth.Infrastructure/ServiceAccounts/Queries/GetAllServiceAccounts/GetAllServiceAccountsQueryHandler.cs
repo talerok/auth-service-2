@@ -11,7 +11,7 @@ internal sealed class GetAllServiceAccountsQueryHandler(
     public async Task<IReadOnlyCollection<ServiceAccountDto>> Handle(GetAllServiceAccountsQuery query, CancellationToken cancellationToken)
     {
         return await dbContext.ServiceAccounts.AsNoTracking()
-            .Select(x => new ServiceAccountDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive))
+            .Select(x => new ServiceAccountDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive, x.Audiences, x.AccessTokenLifetimeMinutes))
             .ToListAsync(cancellationToken);
     }
 }

@@ -69,7 +69,7 @@ public sealed class LoginControllerTests(IntegrationTestFixture fixture)
     [Fact]
     public async Task ClientInfo_ExistingClient_ReturnsInfo()
     {
-        var response = await Client.GetAsync("/connect/client-info?client_id=frontend-app");
+        var response = await Client.GetAsync("/connect/client-info?client_id=system-app");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }

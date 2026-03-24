@@ -41,7 +41,9 @@ internal sealed class HandleClientCredentialsGrantCommandHandler(
 
         var principal = new ClaimsPrincipal(identity);
         principal.SetScopes(scopeList);
-        await OidcPrincipalFactory.ApplyAudiencesAsync(principal, command.ClientId, sender, cancellationToken);
+
+        if (serviceAccount.Audiences.Count > 0)
+            principal.SetResources(serviceAccount.Audiences);
 
         principal.SetDestinations(claim => claim.Type switch
         {

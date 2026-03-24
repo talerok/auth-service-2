@@ -21,7 +21,7 @@ services:
       Integration__OpenSearch__Username: ${OPENSEARCH_USERNAME}
       Integration__OpenSearch__Password: ${OPENSEARCH_PASSWORD}
 
-      Integration__TwoFactor__EncryptionKey: ${TWO_FACTOR_ENCRYPTION_KEY}
+      Integration__EncryptionKey: ${ENCRYPTION_KEY}
       Integration__Smtp__Enabled: ${SMTP_ENABLED}
       Integration__Smtp__Host: ${SMTP_HOST}
       Integration__Smtp__Port: ${SMTP_PORT}

@@ -132,8 +132,8 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
             ["grant_type"] = "password",
             ["username"] = username,
             ["password"] = password,
-            ["client_id"] = "frontend-app",
-            ["scope"] = "openid profile email phone ws:system offline_access"
+            ["client_id"] = "system-app",
+            ["scope"] = "openid profile email ws:system offline_access"
         });
 
         using var tempClient = _factory!.CreateClient();
@@ -153,8 +153,8 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
             ["grant_type"] = "password",
             ["username"] = username,
             ["password"] = password,
-            ["client_id"] = "frontend-app",
-            ["scope"] = "openid profile email phone ws:system offline_access"
+            ["client_id"] = "system-app",
+            ["scope"] = "openid profile email ws:system offline_access"
         });
 
         using var tempClient = _factory!.CreateClient();

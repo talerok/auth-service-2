@@ -70,7 +70,8 @@ public sealed class OpenSearchMaintenanceService(
                 .Keyword(k => k.Name(n => n.Name))
                 .Keyword(k => k.Name(n => n.Description))
                 .Keyword(k => k.Name(n => n.ClientId))
-                .Boolean(b => b.Name(n => n.IsActive)), cancellationToken))
+                .Boolean(b => b.Name(n => n.IsActive))
+                .Number(n => n.Name(x => x.AccessTokenLifetimeMinutes).Type(NumberType.Integer)), cancellationToken))
         {
             await ReindexServiceAccountsAsync(cancellationToken);
         }
@@ -133,7 +134,7 @@ public sealed class OpenSearchMaintenanceService(
     {
         await ClearIndexAsync(indexNames.ServiceAccounts, cancellationToken);
         var serviceAccounts = await dbContext.ServiceAccounts.AsNoTracking()
-            .Select(x => new ServiceAccountDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive))
+            .Select(x => new ServiceAccountDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive, x.Audiences, x.AccessTokenLifetimeMinutes))
             .ToListAsync(cancellationToken);
         await searchIndexService.BulkIndexServiceAccountsAsync(serviceAccounts, cancellationToken);
     }

@@ -37,14 +37,16 @@ public sealed class ServiceAccountsController(ISender sender) : ControllerBase
     [HasPermissionIn("system", "system", "system.service-accounts.create")]
     public Task<CreateServiceAccountResponse> Create([FromBody] CreateServiceAccountRequest request, CancellationToken cancellationToken) =>
         sender.Send(new CreateServiceAccountCommand(
-            request.Name, request.Description, request.IsActive), cancellationToken);
+            request.Name, request.Description, request.IsActive,
+            request.Audiences, request.AccessTokenLifetimeMinutes), cancellationToken);
 
     [HttpPut("{id:guid}")]
     [HasPermissionIn("system", "system", "system.service-accounts.update")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateServiceAccountRequest request, CancellationToken cancellationToken)
     {
         var updated = await sender.Send(new UpdateServiceAccountCommand(
-            id, request.Name, request.Description, request.IsActive), cancellationToken);
+            id, request.Name, request.Description, request.IsActive,
+            request.Audiences, request.AccessTokenLifetimeMinutes), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -53,7 +55,8 @@ public sealed class ServiceAccountsController(ISender sender) : ControllerBase
     public async Task<IActionResult> Patch(Guid id, [FromBody] PatchServiceAccountRequest request, CancellationToken cancellationToken)
     {
         var updated = await sender.Send(new PatchServiceAccountCommand(
-            id, request.Name, request.Description, request.IsActive), cancellationToken);
+            id, request.Name, request.Description, request.IsActive,
+            request.Audiences, request.AccessTokenLifetimeMinutes), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 

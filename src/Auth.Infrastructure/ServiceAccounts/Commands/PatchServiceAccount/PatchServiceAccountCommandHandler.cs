@@ -26,6 +26,12 @@ internal sealed class PatchServiceAccountCommandHandler(
         if (command.IsActive.HasValue)
             serviceAccount.IsActive = command.IsActive.Value;
 
+        if (command.Audiences is not null)
+            serviceAccount.SetAudiences(command.Audiences.ToList());
+
+        if (command.AccessTokenLifetimeMinutes.HasValue)
+            serviceAccount.AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes.Value;
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         if (command.Name is not null)
@@ -46,5 +52,5 @@ internal sealed class PatchServiceAccountCommandHandler(
     }
 
     private static ServiceAccountDto MapToDto(Domain.ServiceAccount sa) =>
-        new(sa.Id, sa.Name, sa.Description, sa.ClientId, sa.IsActive);
+        new(sa.Id, sa.Name, sa.Description, sa.ClientId, sa.IsActive, sa.Audiences, sa.AccessTokenLifetimeMinutes);
 }

@@ -33,7 +33,7 @@ public sealed class ApplicationsControllerTests(IntegrationTestFixture fixture)
         var apps = await response.Content
             .ReadFromJsonAsync<IReadOnlyCollection<ApplicationDto>>(IntegrationTestFixture.JsonOptions);
         apps.Should().NotBeEmpty();
-        apps.Should().Contain(a => a.ClientId == "frontend-app");
+        apps.Should().Contain(a => a.ClientId == "system-app");
     }
 
     // --- GetById ---

@@ -23,8 +23,11 @@ internal sealed class CreateServiceAccountCommandHandler(
             Name = command.Name,
             Description = command.Description,
             ClientId = clientId,
-            IsActive = command.IsActive
+            IsActive = command.IsActive,
+            AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes
         };
+        if (command.Audiences is { Count: > 0 })
+            serviceAccount.SetAudiences(command.Audiences.ToList());
 
         dbContext.ServiceAccounts.Add(serviceAccount);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -40,8 +43,7 @@ internal sealed class CreateServiceAccountCommandHandler(
         {
             OidcPermissions.Endpoints.Token,
             OidcPermissions.GrantTypes.ClientCredentials,
-            OidcPermissions.Scopes.Email,
-            OidcPermissions.Scopes.Profile
+            OidcPermissions.Prefixes.Scope + "ws:*"
         });
         await appManager.CreateAsync(descriptor, cancellationToken);
 
@@ -51,7 +53,7 @@ internal sealed class CreateServiceAccountCommandHandler(
     }
 
     private static ServiceAccountDto MapToDto(Domain.ServiceAccount sa) =>
-        new(sa.Id, sa.Name, sa.Description, sa.ClientId, sa.IsActive);
+        new(sa.Id, sa.Name, sa.Description, sa.ClientId, sa.IsActive, sa.Audiences, sa.AccessTokenLifetimeMinutes);
 
     private static string GenerateSecret()
     {

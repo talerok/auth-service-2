@@ -225,14 +225,16 @@ OAuth2-приложения (authorization code flow). Могут быть publi
 
 | Колонка       | Тип          | Nullable | Описание                                                |
 | ------------- | ------------ | -------- | ------------------------------------------------------- |
-| `id`          | uuid         | NO       | PK                                                      |
-| `name`        | varchar(120) | NO       | Уникальное название сервисного аккаунта (partial index) |
-| `description` | varchar(500) | YES      | Описание                                                |
-| `client_id`   | varchar(200) | NO       | Уникальный OAuth ClientId (partial index)               |
-| `is_active`   | boolean      | NO       | Признак активности (DEFAULT true)                       |
-| `created_at`  | timestamptz  | NO       |                                                         |
-| `updated_at`  | timestamptz  | NO       |                                                         |
-| `deleted_at`  | timestamptz  | YES      | Soft delete                                             |
+| `id`                           | uuid         | NO       | PK                                                      |
+| `name`                         | varchar(120) | NO       | Уникальное название сервисного аккаунта (partial index) |
+| `description`                  | varchar(500) | YES      | Описание                                                |
+| `client_id`                    | varchar(200) | NO       | Уникальный OAuth ClientId (partial index)               |
+| `is_active`                    | boolean      | NO       | Признак активности (DEFAULT true)                       |
+| `audiences`                    | jsonb        | NO       | Список ресурсов (aud claim) (DEFAULT '[]'::jsonb)       |
+| `access_token_lifetime_minutes`| integer      | YES      | TTL access-токена в минутах (null = значение по умолчанию)|
+| `created_at`                   | timestamptz  | NO       |                                                         |
+| `updated_at`                   | timestamptz  | NO       |                                                         |
+| `deleted_at`                   | timestamptz  | YES      | Soft delete                                             |
 
 Индексы:
 

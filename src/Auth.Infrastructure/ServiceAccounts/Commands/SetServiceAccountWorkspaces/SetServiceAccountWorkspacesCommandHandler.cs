@@ -2,11 +2,14 @@ using Auth.Application.ServiceAccounts.Commands.SetServiceAccountWorkspaces;
 using Auth.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OpenIddict.Abstractions;
+using OidcPermissions = OpenIddict.Abstractions.OpenIddictConstants.Permissions;
 
 namespace Auth.Infrastructure.ServiceAccounts.Commands.SetServiceAccountWorkspaces;
 
 internal sealed class SetServiceAccountWorkspacesCommandHandler(
-    AuthDbContext dbContext) : IRequestHandler<SetServiceAccountWorkspacesCommand>
+    AuthDbContext dbContext,
+    IOpenIddictApplicationManager appManager) : IRequestHandler<SetServiceAccountWorkspacesCommand>
 {
     public async Task Handle(SetServiceAccountWorkspacesCommand command, CancellationToken cancellationToken)
     {
@@ -61,5 +64,38 @@ internal sealed class SetServiceAccountWorkspacesCommandHandler(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await tx.CommitAsync(cancellationToken);
+
+        await SyncOidcScopePermissionsAsync(command.ServiceAccountId, workspaceIds, cancellationToken);
+    }
+
+    private async Task SyncOidcScopePermissionsAsync(
+        Guid serviceAccountId, Guid[] workspaceIds, CancellationToken cancellationToken)
+    {
+        var sa = await dbContext.ServiceAccounts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == serviceAccountId, cancellationToken);
+        if (sa is null) return;
+
+        var oidcApp = await appManager.FindByClientIdAsync(sa.ClientId, cancellationToken);
+        if (oidcApp is null) return;
+
+        var workspaceCodes = await dbContext.Workspaces
+            .Where(w => workspaceIds.Contains(w.Id))
+            .Select(w => w.Code)
+            .ToListAsync(cancellationToken);
+
+        var descriptor = new OpenIddictApplicationDescriptor();
+        await appManager.PopulateAsync(descriptor, oidcApp, cancellationToken);
+
+        // Remove old workspace scope permissions
+        descriptor.Permissions.RemoveWhere(p =>
+            p.StartsWith(OidcPermissions.Prefixes.Scope + "ws:", StringComparison.Ordinal));
+
+        // Add ws:* (always) + ws:{code} for each assigned workspace
+        descriptor.Permissions.Add(OidcPermissions.Prefixes.Scope + "ws:*");
+        foreach (var code in workspaceCodes)
+            descriptor.Permissions.Add(OidcPermissions.Prefixes.Scope + $"ws:{code}");
+
+        await appManager.UpdateAsync(oidcApp, descriptor, cancellationToken);
     }
 }

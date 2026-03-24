@@ -21,6 +21,9 @@ internal sealed class UpdateServiceAccountCommandHandler(
         serviceAccount.Name = command.Name;
         serviceAccount.Description = command.Description;
         serviceAccount.IsActive = command.IsActive;
+        serviceAccount.AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes;
+        if (command.Audiences is not null)
+            serviceAccount.SetAudiences(command.Audiences.ToList());
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var oidcApp = await appManager.FindByClientIdAsync(serviceAccount.ClientId, cancellationToken);
@@ -38,5 +41,5 @@ internal sealed class UpdateServiceAccountCommandHandler(
     }
 
     private static ServiceAccountDto MapToDto(Domain.ServiceAccount sa) =>
-        new(sa.Id, sa.Name, sa.Description, sa.ClientId, sa.IsActive);
+        new(sa.Id, sa.Name, sa.Description, sa.ClientId, sa.IsActive, sa.Audiences, sa.AccessTokenLifetimeMinutes);
 }
