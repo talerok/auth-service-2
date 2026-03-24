@@ -39,7 +39,7 @@ public sealed class ApplicationsController(ISender sender) : ControllerBase
             request.IsConfidential, request.LogoUrl, request.HomepageUrl,
             request.RedirectUris, request.PostLogoutRedirectUris,
             request.AllowedOrigins, request.ConsentType, request.Scopes,
-            request.GrantTypes, request.AccessTokenLifetimeMinutes,
+            request.GrantTypes, request.Audiences, request.AccessTokenLifetimeMinutes,
             request.RefreshTokenLifetimeMinutes), cancellationToken);
 
     [HttpPut("{id:guid}")]
@@ -51,7 +51,7 @@ public sealed class ApplicationsController(ISender sender) : ControllerBase
             request.LogoUrl, request.HomepageUrl,
             request.RedirectUris, request.PostLogoutRedirectUris,
             request.AllowedOrigins, request.ConsentType, request.Scopes,
-            request.GrantTypes, request.AccessTokenLifetimeMinutes,
+            request.GrantTypes, request.Audiences, request.AccessTokenLifetimeMinutes,
             request.RefreshTokenLifetimeMinutes), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
@@ -65,7 +65,7 @@ public sealed class ApplicationsController(ISender sender) : ControllerBase
             request.LogoUrl, request.HomepageUrl,
             request.RedirectUris, request.PostLogoutRedirectUris,
             request.AllowedOrigins, request.ConsentType, request.Scopes,
-            request.GrantTypes, request.AccessTokenLifetimeMinutes,
+            request.GrantTypes, request.Audiences, request.AccessTokenLifetimeMinutes,
             request.RefreshTokenLifetimeMinutes), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }

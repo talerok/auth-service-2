@@ -15,5 +15,6 @@ public sealed record PatchApplicationCommand(
     string? ConsentType,
     List<string>? Scopes,
     List<string>? GrantTypes,
+    List<string>? Audiences,
     int? AccessTokenLifetimeMinutes,
     int? RefreshTokenLifetimeMinutes) : IRequest<ApplicationDto?>;

@@ -29,6 +29,7 @@ namespace Auth.Infrastructure.Migrations
                     AllowedOrigins = table.Column<List<string>>(type: "jsonb", nullable: false, defaultValueSql: "'[]'::jsonb"),
                     Scopes = table.Column<List<string>>(type: "jsonb", nullable: false, defaultValueSql: "'[]'::jsonb"),
                     GrantTypes = table.Column<List<string>>(type: "jsonb", nullable: false, defaultValueSql: "'[\"authorization_code\", \"refresh_token\"]'::jsonb"),
+                    Audiences = table.Column<List<string>>(type: "jsonb", nullable: false, defaultValueSql: "'[]'::jsonb"),
                     AccessTokenLifetimeMinutes = table.Column<int>(type: "integer", nullable: true),
                     RefreshTokenLifetimeMinutes = table.Column<int>(type: "integer", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),

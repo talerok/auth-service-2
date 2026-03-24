@@ -50,7 +50,7 @@ internal sealed class HandleLdapGrantCommandHandler(
             return new CredentialValidationResult.MfaRequired(mfaChallenge.Id, mfaChallenge.Channel);
         }
 
-        var principal = await sender.Send(new BuildPrincipalQuery(user.Id, command.Scopes), cancellationToken);
+        var principal = await sender.Send(new BuildPrincipalQuery(user.Id, command.Scopes, command.ClientId), cancellationToken);
         return new CredentialValidationResult.Success(principal);
     }
 }

@@ -4,6 +4,7 @@ using Auth.Application.Auth.Commands.CreateLoginChallenge;
 using Auth.Application.Auth.Commands.CreatePasswordChangeChallenge;
 using Auth.Application.Auth.Commands.ValidateCredentials;
 using Auth.Application.Auth.Queries.GetActiveUser;
+using Auth.Application.Oidc.Queries.GetApplicationAudiences;
 using Auth.Application.Oidc.Commands.HandleClientCredentialsGrant;
 using Auth.Application.Oidc.Commands.HandleMfaOtpGrant;
 using Auth.Application.Oidc.Commands.ValidateCredentialsForLogin;
@@ -375,6 +376,8 @@ public sealed class OidcGrantServiceTests
         await dbContext.SaveChangesAsync();
 
         var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(It.IsAny<GetApplicationAudiencesQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
         var handler = new HandleClientCredentialsGrantCommandHandler(sender.Object, dbContext);
 
         var principal = await handler.Handle(
@@ -489,6 +492,8 @@ public sealed class OidcGrantServiceTests
                 ["system"] = new() { ["system"] = [0x01] },
                 ["dev"] = new() { ["system"] = [0x02] }
             });
+        sender.Setup(x => x.Send(It.IsAny<GetApplicationAudiencesQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
         var handler = new HandleClientCredentialsGrantCommandHandler(sender.Object, dbContext);
 
         var principal = await handler.Handle(
@@ -516,6 +521,8 @@ public sealed class OidcGrantServiceTests
                 It.Is<BuildServiceAccountWorkspaceMasksQuery>(q => q.ServiceAccountId == serviceAccount.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>> { ["system"] = new() { ["system"] = [0b_0000_0011] } });
+        sender.Setup(x => x.Send(It.IsAny<GetApplicationAudiencesQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
         var handler = new HandleClientCredentialsGrantCommandHandler(sender.Object, dbContext);
 
         var principal = await handler.Handle(

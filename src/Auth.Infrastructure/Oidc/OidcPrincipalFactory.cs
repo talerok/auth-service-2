@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Auth.Application;
+using Auth.Application.Oidc.Queries.GetApplicationAudiences;
 using Auth.Application.Workspaces.Queries.BuildWorkspaceMasks;
 using Auth.Domain;
 using MediatR;
@@ -14,7 +15,8 @@ internal static class OidcPrincipalFactory
     internal const string OidcServerScheme = "OpenIddict.Server.AspNetCore";
 
     public static async Task<ClaimsPrincipal> CreateUserPrincipalAsync(
-        User user, IEnumerable<string> scopes, ISender sender, CancellationToken cancellationToken)
+        User user, IEnumerable<string> scopes, ISender sender, string? clientId,
+        CancellationToken cancellationToken)
     {
         var scopeList = scopes.ToList();
 
@@ -41,6 +43,7 @@ internal static class OidcPrincipalFactory
 
         var principal = new ClaimsPrincipal(identity);
         principal.SetScopes(scopeList);
+        await ApplyAudiencesAsync(principal, clientId, sender, cancellationToken);
 
         principal.SetDestinations(claim => claim.Type switch
         {
@@ -80,6 +83,16 @@ internal static class OidcPrincipalFactory
         return filtered.ToDictionary(
             ws => ws.Key,
             ws => ws.Value.ToDictionary(d => d.Key, d => Convert.ToBase64String(d.Value)));
+    }
+
+    internal static async Task ApplyAudiencesAsync(
+        ClaimsPrincipal principal, string? clientId, ISender sender, CancellationToken cancellationToken)
+    {
+        if (clientId is null) return;
+
+        var audiences = await sender.Send(new GetApplicationAudiencesQuery(clientId), cancellationToken);
+        if (audiences.Count > 0)
+            principal.SetResources(audiences);
     }
 
     internal static void ApplyWorkspaceClaims(

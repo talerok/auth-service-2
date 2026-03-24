@@ -14,6 +14,7 @@ public sealed record ApplicationDto(
     IReadOnlyCollection<string> AllowedOrigins,
     IReadOnlyCollection<string> Scopes,
     IReadOnlyCollection<string> GrantTypes,
+    IReadOnlyCollection<string> Audiences,
     int? AccessTokenLifetimeMinutes,
     int? RefreshTokenLifetimeMinutes);
 
@@ -30,6 +31,7 @@ public sealed record CreateApplicationRequest(
     string? ConsentType = null,
     List<string>? Scopes = null,
     List<string>? GrantTypes = null,
+    List<string>? Audiences = null,
     int? AccessTokenLifetimeMinutes = null,
     int? RefreshTokenLifetimeMinutes = null);
 
@@ -49,6 +51,7 @@ public sealed record UpdateApplicationRequest(
     string? ConsentType,
     List<string> Scopes,
     List<string> GrantTypes,
+    List<string> Audiences,
     int? AccessTokenLifetimeMinutes,
     int? RefreshTokenLifetimeMinutes);
 
@@ -64,6 +67,7 @@ public sealed record PatchApplicationRequest(
     string? ConsentType,
     List<string>? Scopes,
     List<string>? GrantTypes,
+    List<string>? Audiences,
     int? AccessTokenLifetimeMinutes,
     int? RefreshTokenLifetimeMinutes);
 

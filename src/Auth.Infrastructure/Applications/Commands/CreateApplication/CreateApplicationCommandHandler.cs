@@ -39,6 +39,7 @@ internal sealed class CreateApplicationCommandHandler(
             AllowedOrigins = command.AllowedOrigins ?? [],
             Scopes = scopes,
             GrantTypes = grantTypes,
+            Audiences = command.Audiences ?? [],
             AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes,
             RefreshTokenLifetimeMinutes = command.RefreshTokenLifetimeMinutes
         };
@@ -94,7 +95,7 @@ internal sealed class CreateApplicationCommandHandler(
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
             c.RedirectUris, c.PostLogoutRedirectUris, c.AllowedOrigins, c.Scopes,
-            c.GrantTypes, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
+            c.GrantTypes, c.Audiences, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
 
     private static string GenerateSecret()
     {

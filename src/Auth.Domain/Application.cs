@@ -14,6 +14,7 @@ public sealed class Application : EntityBase
     public List<string> AllowedOrigins { get; set; } = [];
     public List<string> Scopes { get; set; } = [];
     public List<string> GrantTypes { get; set; } = [];
+    public List<string> Audiences { get; set; } = [];
     public int? AccessTokenLifetimeMinutes { get; set; }
     public int? RefreshTokenLifetimeMinutes { get; set; }
 }

@@ -43,6 +43,10 @@ public sealed class CreateApplicationCommandValidator : AbstractValidator<Create
             .WithMessage("Each grant type must be one of: " + string.Join(", ", OidcConstants.AllowedGrantTypes))
             .When(x => x.GrantTypes is not null);
 
+        RuleForEach(x => x.Audiences)
+            .NotEmpty().MaximumLength(500)
+            .When(x => x.Audiences is not null);
+
         RuleFor(x => x.AccessTokenLifetimeMinutes)
             .InclusiveBetween(1, 1440)
             .When(x => x.AccessTokenLifetimeMinutes.HasValue);

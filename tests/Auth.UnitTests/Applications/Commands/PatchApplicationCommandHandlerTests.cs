@@ -24,7 +24,7 @@ public sealed class PatchApplicationCommandHandlerTests
         var handler = new PatchApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         var result = await handler.Handle(
-            new PatchApplicationCommand(application.Id, "Patched", null, null, null, null, null, null, null, null, null, null, null, null),
+            new PatchApplicationCommand(application.Id, "Patched", null, null, null, null, null, null, null, null, null, null, null, null, null),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -43,7 +43,7 @@ public sealed class PatchApplicationCommandHandlerTests
         var handler = new PatchApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         var result = await handler.Handle(
-            new PatchApplicationCommand(Guid.NewGuid(), "Name", null, null, null, null, null, null, null, null, null, null, null, null),
+            new PatchApplicationCommand(Guid.NewGuid(), "Name", null, null, null, null, null, null, null, null, null, null, null, null, null),
             CancellationToken.None);
 
         result.Should().BeNull();
@@ -64,7 +64,7 @@ public sealed class PatchApplicationCommandHandlerTests
         var handler = new PatchApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         await handler.Handle(
-            new PatchApplicationCommand(application.Id, "New Name", null, null, null, null, null, null, null, null, null, null, null, null),
+            new PatchApplicationCommand(application.Id, "New Name", null, null, null, null, null, null, null, null, null, null, null, null, null),
             CancellationToken.None);
 
         appManager.Verify(x => x.UpdateAsync(It.IsAny<object>(), It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -83,7 +83,7 @@ public sealed class PatchApplicationCommandHandlerTests
         var handler = new PatchApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
 
         await handler.Handle(
-            new PatchApplicationCommand(application.Id, null, "new desc", null, null, null, null, null, null, null, null, null, null, null),
+            new PatchApplicationCommand(application.Id, null, "new desc", null, null, null, null, null, null, null, null, null, null, null, null),
             CancellationToken.None);
 
         appManager.Verify(x => x.FindByClientIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -110,7 +110,7 @@ public sealed class PatchApplicationCommandHandlerTests
         var result = await handler.Handle(
             new PatchApplicationCommand(application.Id, null, null, null,
                 "https://example.com/logo.png", "https://example.com",
-                ["https://example.com/cb"], ["https://example.com/logout"], null, "implicit", null, null, null, null),
+                ["https://example.com/cb"], ["https://example.com/logout"], null, "implicit", null, null, null, null, null),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -139,7 +139,7 @@ public sealed class PatchApplicationCommandHandlerTests
 
         await handler.Handle(
             new PatchApplicationCommand(application.Id, null, null, null, null, null,
-                ["https://new.example.com/cb"], null, null, null, null, null, null, null),
+                ["https://new.example.com/cb"], null, null, null, null, null, null, null, null),
             CancellationToken.None);
 
         appManager.Verify(x => x.UpdateAsync(It.IsAny<object>(), It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()), Times.Once);

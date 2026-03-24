@@ -22,6 +22,7 @@ internal sealed class HandleMfaOtpGrantCommandHandler(
             throw new AuthException(AuthErrorCatalog.InvalidRequest);
 
         var user = await sender.Send(new ValidateLoginOtpCommand(challengeId, channel, command.Otp), cancellationToken);
-        return await OidcPrincipalFactory.CreateUserPrincipalAsync(user, command.Scopes, sender, cancellationToken);
+        return await OidcPrincipalFactory.CreateUserPrincipalAsync(
+            user, command.Scopes, sender, command.ClientId, cancellationToken);
     }
 }

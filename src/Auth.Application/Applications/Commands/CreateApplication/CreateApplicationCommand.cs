@@ -15,5 +15,6 @@ public sealed record CreateApplicationCommand(
     string? ConsentType = null,
     List<string>? Scopes = null,
     List<string>? GrantTypes = null,
+    List<string>? Audiences = null,
     int? AccessTokenLifetimeMinutes = null,
     int? RefreshTokenLifetimeMinutes = null) : IRequest<CreateApplicationResponse>;

@@ -26,7 +26,7 @@ public sealed class UpdateApplicationCommandHandlerTests
 
         var result = await handler.Handle(
             new UpdateApplicationCommand(application.Id, "New", "New desc", false,
-                null, null, [], [], [], null, [], ["authorization_code", "refresh_token"], null, null),
+                null, null, [], [], [], null, [], ["authorization_code", "refresh_token"], [], null, null),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -46,7 +46,7 @@ public sealed class UpdateApplicationCommandHandlerTests
 
         var result = await handler.Handle(
             new UpdateApplicationCommand(Guid.NewGuid(), "Name", "Desc", true,
-                null, null, [], [], [], null, [], ["authorization_code", "refresh_token"], null, null),
+                null, null, [], [], [], null, [], ["authorization_code", "refresh_token"], [], null, null),
             CancellationToken.None);
 
         result.Should().BeNull();
@@ -67,7 +67,7 @@ public sealed class UpdateApplicationCommandHandlerTests
         var result = await handler.Handle(
             new UpdateApplicationCommand(application.Id, "OAuth App", "updated", true,
                 "https://example.com/logo.png", "https://example.com",
-                ["https://example.com/cb"], ["https://example.com/logout"], [], "implicit", [], ["authorization_code", "refresh_token"], null, null),
+                ["https://example.com/cb"], ["https://example.com/logout"], [], "implicit", [], ["authorization_code", "refresh_token"], [], null, null),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -108,7 +108,7 @@ public sealed class UpdateApplicationCommandHandlerTests
         await handler.Handle(
             new UpdateApplicationCommand(application.Id, "OAuth App", "desc", true,
                 null, null,
-                ["https://example.com/cb"], [], [], "explicit", ["email", "profile"], ["authorization_code", "refresh_token"], null, null),
+                ["https://example.com/cb"], [], [], "explicit", ["email", "profile"], ["authorization_code", "refresh_token"], [], null, null),
             CancellationToken.None);
 
         capturedDescriptor.Should().NotBeNull();

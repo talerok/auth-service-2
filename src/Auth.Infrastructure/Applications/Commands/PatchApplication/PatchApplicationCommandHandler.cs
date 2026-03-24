@@ -50,6 +50,9 @@ internal sealed class PatchApplicationCommandHandler(
         if (command.GrantTypes is not null)
             application.GrantTypes = command.GrantTypes;
 
+        if (command.Audiences is not null)
+            application.Audiences = command.Audiences;
+
         if (command.AccessTokenLifetimeMinutes.HasValue)
             application.AccessTokenLifetimeMinutes =
                 command.AccessTokenLifetimeMinutes == 0 ? null : command.AccessTokenLifetimeMinutes;
@@ -62,6 +65,8 @@ internal sealed class PatchApplicationCommandHandler(
         await dbContext.SaveChangesAsync(cancellationToken);
         corsOriginService.InvalidateCache();
 
+        // Audiences are not synced to OpenIddict — stored only in our DB
+        // and applied at token issuance time via OidcPrincipalFactory.
         var needsOidcSync = command.Name is not null
                             || command.RedirectUris is not null
                             || command.PostLogoutRedirectUris is not null
@@ -147,5 +152,5 @@ internal sealed class PatchApplicationCommandHandler(
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
             c.RedirectUris, c.PostLogoutRedirectUris, c.AllowedOrigins, c.Scopes,
-            c.GrantTypes, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
+            c.GrantTypes, c.Audiences, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
 }

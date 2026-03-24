@@ -46,6 +46,10 @@ public sealed class PatchApplicationCommandValidator : AbstractValidator<PatchAp
             .WithMessage("Each grant type must be one of: " + string.Join(", ", OidcConstants.AllowedGrantTypes))
             .When(x => x.GrantTypes is not null);
 
+        RuleForEach(x => x.Audiences)
+            .NotEmpty().MaximumLength(500)
+            .When(x => x.Audiences is not null);
+
         RuleFor(x => x.AccessTokenLifetimeMinutes)
             .Must(x => x == 0 || (x >= 1 && x <= 1440))
             .WithMessage("AccessTokenLifetimeMinutes must be 0 (reset to default) or between 1 and 1440.")

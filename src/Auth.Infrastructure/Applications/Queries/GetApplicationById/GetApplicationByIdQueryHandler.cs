@@ -16,7 +16,7 @@ internal sealed class GetApplicationByIdQueryHandler(
                 x.Id, x.Name, x.Description, x.ClientId, x.IsActive,
                 x.IsConfidential, x.LogoUrl, x.HomepageUrl,
                 x.RedirectUris, x.PostLogoutRedirectUris, x.AllowedOrigins, x.Scopes,
-                x.GrantTypes, x.AccessTokenLifetimeMinutes, x.RefreshTokenLifetimeMinutes))
+                x.GrantTypes, x.Audiences, x.AccessTokenLifetimeMinutes, x.RefreshTokenLifetimeMinutes))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

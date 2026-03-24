@@ -30,6 +30,7 @@ internal sealed class UpdateApplicationCommandHandler(
         application.AllowedOrigins = command.AllowedOrigins;
         application.Scopes = command.Scopes;
         application.GrantTypes = command.GrantTypes;
+        application.Audiences = command.Audiences;
         application.AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes;
         application.RefreshTokenLifetimeMinutes = command.RefreshTokenLifetimeMinutes;
         application.UpdatedAt = DateTime.UtcNow;
@@ -87,5 +88,5 @@ internal sealed class UpdateApplicationCommandHandler(
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
             c.RedirectUris, c.PostLogoutRedirectUris, c.AllowedOrigins, c.Scopes,
-            c.GrantTypes, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
+            c.GrantTypes, c.Audiences, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
 }

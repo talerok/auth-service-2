@@ -27,7 +27,8 @@ internal sealed class ValidateCredentialsForLoginCommandHandler(
             return new CredentialValidationResult.MfaRequired(mfaChallenge.Id, mfaChallenge.Channel);
         }
 
-        var principal = await OidcPrincipalFactory.CreateUserPrincipalAsync(user, command.Scopes, sender, cancellationToken);
+        var principal = await OidcPrincipalFactory.CreateUserPrincipalAsync(
+            user, command.Scopes, sender, command.ClientId, cancellationToken);
         return new CredentialValidationResult.Success(principal);
     }
 }

@@ -30,10 +30,10 @@ public sealed class TokenController(ISender sender) : ControllerBase
             ?? throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
 
         if (request.IsAuthorizationCodeGrantType())
-            return await HandleSubjectGrant("The authorization code is no longer valid.", cancellationToken);
+            return await HandleSubjectGrant("The authorization code is no longer valid.", request.ClientId, cancellationToken);
 
         if (request.IsRefreshTokenGrantType())
-            return await HandleSubjectGrant("The refresh token is no longer valid.", cancellationToken);
+            return await HandleSubjectGrant("The refresh token is no longer valid.", request.ClientId, cancellationToken);
 
         if (request.IsPasswordGrantType())
             return await HandlePasswordGrant(request, cancellationToken);
@@ -56,7 +56,7 @@ public sealed class TokenController(ISender sender) : ControllerBase
     // ─── Grant Handlers ──────────────────────────────────────────────
 
     private async Task<IActionResult> HandleSubjectGrant(
-        string errorDescription, CancellationToken cancellationToken)
+        string errorDescription, string? clientId, CancellationToken cancellationToken)
     {
         var authResult = await HttpContext.AuthenticateAsync(
             OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
@@ -69,7 +69,7 @@ public sealed class TokenController(ISender sender) : ControllerBase
             return OidcForbid(Errors.InvalidGrant, "The user identifier is invalid.");
 
         var principal = await sender.Send(new BuildPrincipalQuery(
-            userId, authResult.Principal.GetScopes().ToList()), cancellationToken);
+            userId, authResult.Principal.GetScopes().ToList(), clientId), cancellationToken);
 
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
@@ -81,7 +81,7 @@ public sealed class TokenController(ISender sender) : ControllerBase
         try
         {
             result = await sender.Send(new ValidateCredentialsForLoginCommand(
-                request.Username!, request.Password!, request.GetScopes().ToList()), cancellationToken);
+                request.Username!, request.Password!, request.GetScopes().ToList(), request.ClientId), cancellationToken);
         }
         catch (AuthException)
         {
@@ -101,7 +101,7 @@ public sealed class TokenController(ISender sender) : ControllerBase
                 request.GetParameter("mfa_token")?.ToString(),
                 request.GetParameter("mfa_channel")?.ToString(),
                 request.GetParameter("otp")?.ToString(),
-                request.GetScopes().ToList()), cancellationToken);
+                request.GetScopes().ToList(), request.ClientId), cancellationToken);
         }
         catch (AuthException)
         {
@@ -119,7 +119,7 @@ public sealed class TokenController(ISender sender) : ControllerBase
         {
             result = await sender.Send(new HandleJwtBearerGrantCommand(
                 request.GetParameter("assertion")?.ToString(),
-                request.GetScopes().ToList()), cancellationToken);
+                request.GetScopes().ToList(), request.ClientId), cancellationToken);
         }
         catch (AuthException)
         {
@@ -139,7 +139,7 @@ public sealed class TokenController(ISender sender) : ControllerBase
                 request.GetParameter("identity_source")?.ToString(),
                 request.GetParameter("username")?.ToString(),
                 request.GetParameter("password")?.ToString(),
-                request.GetScopes().ToList()), cancellationToken);
+                request.GetScopes().ToList(), request.ClientId), cancellationToken);
         }
         catch (AuthException)
         {
