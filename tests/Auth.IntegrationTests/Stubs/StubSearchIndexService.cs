@@ -20,4 +20,6 @@ internal sealed class StubSearchIndexService : ISearchIndexService
     public Task BulkIndexWorkspacesAsync(IReadOnlyCollection<WorkspaceDto> workspaces, CancellationToken cancellationToken) => Task.CompletedTask;
     public Task BulkIndexApplicationsAsync(IReadOnlyCollection<ApplicationDto> applications, CancellationToken cancellationToken) => Task.CompletedTask;
     public Task BulkIndexServiceAccountsAsync(IReadOnlyCollection<ServiceAccountDto> serviceAccounts, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task IndexAuditLogAsync(AuditLogDto auditLog, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task BulkIndexAuditLogsAsync(IReadOnlyCollection<AuditLogDto> auditLogs, CancellationToken cancellationToken) => Task.CompletedTask;
 }

@@ -7,7 +7,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Auth.Infrastructure.Users.Commands.SetUserIdentitySourceLinks;
 
 internal sealed class SetUserIdentitySourceLinksCommandHandler(
-    AuthDbContext dbContext) : IRequestHandler<SetUserIdentitySourceLinksCommand>
+    AuthDbContext dbContext,
+    IAuditContext auditContext) : IRequestHandler<SetUserIdentitySourceLinksCommand>
 {
     public async Task Handle(SetUserIdentitySourceLinksCommand command, CancellationToken cancellationToken)
     {
@@ -46,6 +47,12 @@ internal sealed class SetUserIdentitySourceLinksCommandHandler(
             if (link.ExternalIdentity != desired)
                 link.ExternalIdentity = desired;
         }
+
+        auditContext.Details = new Dictionary<string, object?>
+        {
+            ["added"] = diff.ToAdd.ToList(),
+            ["removed"] = diff.ToRemove.ToList()
+        };
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }

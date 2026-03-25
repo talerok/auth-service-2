@@ -1,5 +1,6 @@
 using Auth.Application;
 using Auth.Application.Workspaces.Commands.PatchWorkspace;
+using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +8,8 @@ namespace Auth.Infrastructure.Workspaces.Commands.PatchWorkspace;
 
 internal sealed class PatchWorkspaceCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService) : IRequestHandler<PatchWorkspaceCommand, WorkspaceDto?>
+    ISearchIndexService searchIndexService,
+    IAuditContext auditContext) : IRequestHandler<PatchWorkspaceCommand, WorkspaceDto?>
 {
     public async Task<WorkspaceDto?> Handle(PatchWorkspaceCommand command, CancellationToken cancellationToken)
     {
@@ -33,6 +35,10 @@ internal sealed class PatchWorkspaceCommandHandler(
         {
             entity.Description = command.Description;
         }
+
+        var changes = AuditDiff.CaptureChanges(dbContext.Entry(entity));
+        if (changes.Count > 0)
+            auditContext.Details = changes;
 
         await dbContext.SaveChangesAsync(cancellationToken);
         var dto = new WorkspaceDto(entity.Id, entity.Name, entity.Code, entity.Description, entity.IsSystem);

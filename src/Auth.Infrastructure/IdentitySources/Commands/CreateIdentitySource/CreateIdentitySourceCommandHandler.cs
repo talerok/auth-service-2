@@ -1,6 +1,7 @@
 using Auth.Application;
 using Auth.Application.IdentitySources.Commands.CreateIdentitySource;
 using Auth.Domain;
+using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using Microsoft.Extensions.Options;
 
@@ -8,7 +9,8 @@ namespace Auth.Infrastructure.IdentitySources.Commands.CreateIdentitySource;
 
 internal sealed class CreateIdentitySourceCommandHandler(
     AuthDbContext dbContext,
-    IOptions<IntegrationOptions> options) : IRequestHandler<CreateIdentitySourceCommand, IdentitySourceDetailDto>
+    IOptions<IntegrationOptions> options,
+    IAuditContext auditContext) : IRequestHandler<CreateIdentitySourceCommand, IdentitySourceDetailDto>
 {
     public async Task<IdentitySourceDetailDto> Handle(CreateIdentitySourceCommand command, CancellationToken cancellationToken)
     {
@@ -22,6 +24,7 @@ internal sealed class CreateIdentitySourceCommandHandler(
 
         var source = new IdentitySource
         {
+            Id = command.EntityId,
             Name = command.Name,
             Code = command.Code,
             DisplayName = command.DisplayName,
@@ -60,6 +63,7 @@ internal sealed class CreateIdentitySourceCommandHandler(
         }
 
         dbContext.IdentitySources.Add(source);
+        auditContext.Details = AuditDiff.CaptureState(dbContext.Entry(source));
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return IdentitySourceMapper.ToDetailDto(source);

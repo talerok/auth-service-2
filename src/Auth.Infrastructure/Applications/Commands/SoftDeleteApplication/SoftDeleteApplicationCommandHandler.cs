@@ -10,7 +10,8 @@ internal sealed class SoftDeleteApplicationCommandHandler(
     AuthDbContext dbContext,
     ISearchIndexService searchIndexService,
     ICorsOriginService corsOriginService,
-    IOpenIddictApplicationManager appManager) : IRequestHandler<SoftDeleteApplicationCommand, bool>
+    IOpenIddictApplicationManager appManager,
+    IAuditContext auditContext) : IRequestHandler<SoftDeleteApplicationCommand, bool>
 {
     public async Task<bool> Handle(SoftDeleteApplicationCommand command, CancellationToken cancellationToken)
     {
@@ -18,6 +19,7 @@ internal sealed class SoftDeleteApplicationCommandHandler(
         if (application is null)
             return false;
 
+        auditContext.Details = new Dictionary<string, object?> { ["name"] = application.Name, ["clientId"] = application.ClientId };
         application.SoftDelete();
         await dbContext.SaveChangesAsync(cancellationToken);
         corsOriginService.InvalidateCache();

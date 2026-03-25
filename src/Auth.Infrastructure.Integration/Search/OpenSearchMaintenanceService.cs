@@ -75,6 +75,22 @@ public sealed class OpenSearchMaintenanceService(
         {
             await ReindexServiceAccountsAsync(cancellationToken);
         }
+
+        if (await EnsureIndexExistsAsync<AuditLogDto>(indexNames.AuditLogs, p => p
+                .Keyword(k => k.Name(n => n.Id))
+                .Keyword(k => k.Name(n => n.ActorId))
+                .Keyword(k => k.Name(n => n.ActorName))
+                .Keyword(k => k.Name(n => n.ActorType))
+                .Keyword(k => k.Name(n => n.EntityType))
+                .Keyword(k => k.Name(n => n.EntityId))
+                .Keyword(k => k.Name(n => n.Action))
+                .Keyword(k => k.Name(n => n.CorrelationId))
+                .Keyword(k => k.Name(n => n.IpAddress))
+                .Keyword(k => k.Name(n => n.UserAgent))
+                .Date(d => d.Name(n => n.Timestamp)), cancellationToken))
+        {
+            await ReindexAuditLogsAsync(cancellationToken);
+        }
     }
 
     public async Task ReindexAllAsync(CancellationToken cancellationToken)
@@ -139,6 +155,16 @@ public sealed class OpenSearchMaintenanceService(
         await searchIndexService.BulkIndexServiceAccountsAsync(serviceAccounts, cancellationToken);
     }
 
+    public async Task ReindexAuditLogsAsync(CancellationToken cancellationToken)
+    {
+        await ClearIndexAsync(indexNames.AuditLogs, cancellationToken);
+        var entries = await dbContext.AuditLogEntries.AsNoTracking()
+            .Select(x => new AuditLogDto(x.Id, x.Timestamp, x.ActorId, x.ActorName, x.ActorType,
+                x.EntityType, x.EntityId, x.Action, x.Details, x.IpAddress, x.UserAgent, x.CorrelationId))
+            .ToListAsync(cancellationToken);
+        await searchIndexService.BulkIndexAuditLogsAsync(entries, cancellationToken);
+    }
+
     private async Task ClearIndexAsync(string indexName, CancellationToken cancellationToken)
     {
         var response = await client.DeleteByQueryAsync<object>(d => d
@@ -154,7 +180,7 @@ public sealed class OpenSearchMaintenanceService(
 
     private async Task DeleteAllIndicesAsync(CancellationToken cancellationToken)
     {
-        var all = string.Join(",", indexNames.Users, indexNames.Roles, indexNames.Permissions, indexNames.Workspaces, indexNames.Applications, indexNames.ServiceAccounts);
+        var all = string.Join(",", indexNames.Users, indexNames.Roles, indexNames.Permissions, indexNames.Workspaces, indexNames.Applications, indexNames.ServiceAccounts, indexNames.AuditLogs);
         await client.Indices.DeleteAsync(all, ct: cancellationToken);
     }
 

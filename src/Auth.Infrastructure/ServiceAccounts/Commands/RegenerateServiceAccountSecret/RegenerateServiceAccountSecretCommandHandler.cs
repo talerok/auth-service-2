@@ -9,7 +9,11 @@ namespace Auth.Infrastructure.ServiceAccounts.Commands.RegenerateServiceAccountS
 
 internal sealed class RegenerateServiceAccountSecretCommandHandler(
     AuthDbContext dbContext,
-    IOpenIddictApplicationManager appManager) : IRequestHandler<RegenerateServiceAccountSecretCommand, RegenerateServiceAccountSecretResponse?>
+    IOpenIddictApplicationManager appManager,
+    #pragma warning disable CS9113
+    IAuditContext auditContext
+    #pragma warning restore CS9113
+    ) : IRequestHandler<RegenerateServiceAccountSecretCommand, RegenerateServiceAccountSecretResponse?>
 {
     public async Task<RegenerateServiceAccountSecretResponse?> Handle(RegenerateServiceAccountSecretCommand command, CancellationToken cancellationToken)
     {

@@ -22,7 +22,7 @@ public sealed class PatchWorkspaceCommandHandlerTests
         var searchIndex = new Mock<ISearchIndexService>();
         searchIndex.Setup(x => x.IndexWorkspaceAsync(It.IsAny<WorkspaceDto>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var handler = new PatchWorkspaceCommandHandler(dbContext, searchIndex.Object);
+        var handler = new PatchWorkspaceCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchWorkspaceCommand(workspace.Id, "Patched", null, null),
@@ -43,7 +43,7 @@ public sealed class PatchWorkspaceCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new PatchWorkspaceCommandHandler(dbContext, searchIndex.Object);
+        var handler = new PatchWorkspaceCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchWorkspaceCommand(Guid.NewGuid(), "Name", null, null),

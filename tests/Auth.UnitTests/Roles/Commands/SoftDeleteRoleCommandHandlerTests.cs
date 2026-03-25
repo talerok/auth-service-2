@@ -20,7 +20,7 @@ public sealed class SoftDeleteRoleCommandHandlerTests
         dbContext.Roles.Add(role);
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new SoftDeleteRoleCommandHandler(dbContext, searchIndex.Object);
+        var handler = new SoftDeleteRoleCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeleteRoleCommand(role.Id),
@@ -37,7 +37,7 @@ public sealed class SoftDeleteRoleCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new SoftDeleteRoleCommandHandler(dbContext, searchIndex.Object);
+        var handler = new SoftDeleteRoleCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeleteRoleCommand(Guid.NewGuid()),

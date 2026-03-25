@@ -7,7 +7,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Auth.Infrastructure.Users.Commands.SetUserWorkspaces;
 
 internal sealed class SetUserWorkspacesCommandHandler(
-    AuthDbContext dbContext) : IRequestHandler<SetUserWorkspacesCommand>
+    AuthDbContext dbContext,
+    IAuditContext auditContext) : IRequestHandler<SetUserWorkspacesCommand>
 {
     public async Task Handle(SetUserWorkspacesCommand command, CancellationToken cancellationToken)
     {
@@ -60,6 +61,12 @@ internal sealed class SetUserWorkspacesCommandHandler(
             foreach (var roleId in roleDiff.ToAdd)
                 dbContext.UserWorkspaceRoles.Add(new UserWorkspaceRole { UserWorkspaceId = userWorkspace.Id, RoleId = roleId });
         }
+
+        auditContext.Details = new Dictionary<string, object?>
+        {
+            ["added"] = diff.ToAdd.ToList(),
+            ["removed"] = diff.ToRemove.ToList()
+        };
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await tx.CommitAsync(cancellationToken);

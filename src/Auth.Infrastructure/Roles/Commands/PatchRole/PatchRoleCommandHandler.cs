@@ -1,5 +1,6 @@
 using Auth.Application;
 using Auth.Application.Roles.Commands.PatchRole;
+using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +8,8 @@ namespace Auth.Infrastructure.Roles.Commands.PatchRole;
 
 internal sealed class PatchRoleCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService) : IRequestHandler<PatchRoleCommand, RoleDto?>
+    ISearchIndexService searchIndexService,
+    IAuditContext auditContext) : IRequestHandler<PatchRoleCommand, RoleDto?>
 {
     public async Task<RoleDto?> Handle(PatchRoleCommand command, CancellationToken cancellationToken)
     {
@@ -32,6 +34,9 @@ internal sealed class PatchRoleCommandHandler(
             entity.Description = command.Description;
         }
 
+        var changes = AuditDiff.CaptureChanges(dbContext.Entry(entity));
+        if (changes.Count > 0)
+            auditContext.Details = changes;
         await dbContext.SaveChangesAsync(cancellationToken);
         var dto = new RoleDto(entity.Id, entity.Name, entity.Code, entity.Description);
         await searchIndexService.IndexRoleAsync(dto, cancellationToken);

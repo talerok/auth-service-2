@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Auth.Application;
 using Auth.Application.ServiceAccounts.Commands.CreateServiceAccount;
+using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -11,7 +12,8 @@ namespace Auth.Infrastructure.ServiceAccounts.Commands.CreateServiceAccount;
 internal sealed class CreateServiceAccountCommandHandler(
     AuthDbContext dbContext,
     ISearchIndexService searchIndexService,
-    IOpenIddictApplicationManager appManager) : IRequestHandler<CreateServiceAccountCommand, CreateServiceAccountResponse>
+    IOpenIddictApplicationManager appManager,
+    IAuditContext auditContext) : IRequestHandler<CreateServiceAccountCommand, CreateServiceAccountResponse>
 {
     public async Task<CreateServiceAccountResponse> Handle(CreateServiceAccountCommand command, CancellationToken cancellationToken)
     {
@@ -20,6 +22,7 @@ internal sealed class CreateServiceAccountCommandHandler(
 
         var serviceAccount = new Domain.ServiceAccount
         {
+            Id = command.EntityId,
             Name = command.Name,
             Description = command.Description,
             ClientId = clientId,
@@ -30,6 +33,7 @@ internal sealed class CreateServiceAccountCommandHandler(
             serviceAccount.SetAudiences(command.Audiences.ToList());
 
         dbContext.ServiceAccounts.Add(serviceAccount);
+        auditContext.Details = AuditDiff.CaptureState(dbContext.Entry(serviceAccount));
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var descriptor = new OpenIddictApplicationDescriptor

@@ -21,7 +21,7 @@ public sealed class UpdateServiceAccountCommandHandlerTests
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var handler = new UpdateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateServiceAccountCommand(serviceAccount.Id, "New", "New desc", false),
@@ -39,7 +39,7 @@ public sealed class UpdateServiceAccountCommandHandlerTests
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var handler = new UpdateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateServiceAccountCommand(Guid.NewGuid(), "Name", "Desc", true),
@@ -73,7 +73,7 @@ public sealed class UpdateServiceAccountCommandHandlerTests
             .Callback<object, OpenIddictApplicationDescriptor, CancellationToken>((_, d, _) => capturedDescriptor = d)
             .Returns(ValueTask.CompletedTask);
 
-        var handler = new UpdateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var handler = new UpdateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new UpdateServiceAccountCommand(serviceAccount.Id, "Updated SA", "desc", true),
@@ -92,7 +92,7 @@ public sealed class UpdateServiceAccountCommandHandlerTests
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var handler = new UpdateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new UpdateServiceAccountCommand(serviceAccount.Id, "Updated", "updated desc", true),

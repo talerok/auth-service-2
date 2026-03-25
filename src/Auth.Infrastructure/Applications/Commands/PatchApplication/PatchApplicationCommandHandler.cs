@@ -1,5 +1,6 @@
 using Auth.Application;
 using Auth.Application.Applications.Commands.PatchApplication;
+using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
@@ -12,7 +13,8 @@ internal sealed class PatchApplicationCommandHandler(
     AuthDbContext dbContext,
     ISearchIndexService searchIndexService,
     ICorsOriginService corsOriginService,
-    IOpenIddictApplicationManager appManager) : IRequestHandler<PatchApplicationCommand, ApplicationDto?>
+    IOpenIddictApplicationManager appManager,
+    IAuditContext auditContext) : IRequestHandler<PatchApplicationCommand, ApplicationDto?>
 {
     public async Task<ApplicationDto?> Handle(PatchApplicationCommand command, CancellationToken cancellationToken)
     {
@@ -60,6 +62,10 @@ internal sealed class PatchApplicationCommandHandler(
         if (command.RefreshTokenLifetimeMinutes.HasValue)
             application.RefreshTokenLifetimeMinutes =
                 command.RefreshTokenLifetimeMinutes == 0 ? null : command.RefreshTokenLifetimeMinutes;
+
+        var changes = AuditDiff.CaptureChanges(dbContext.Entry(application));
+        if (changes.Count > 0)
+            auditContext.Details = changes;
 
         await dbContext.SaveChangesAsync(cancellationToken);
         corsOriginService.InvalidateCache();

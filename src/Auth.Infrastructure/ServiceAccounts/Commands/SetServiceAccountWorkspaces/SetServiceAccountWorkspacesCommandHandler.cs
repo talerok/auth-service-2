@@ -1,3 +1,4 @@
+using Auth.Application;
 using Auth.Application.ServiceAccounts.Commands.SetServiceAccountWorkspaces;
 using Auth.Domain;
 using MediatR;
@@ -9,7 +10,8 @@ namespace Auth.Infrastructure.ServiceAccounts.Commands.SetServiceAccountWorkspac
 
 internal sealed class SetServiceAccountWorkspacesCommandHandler(
     AuthDbContext dbContext,
-    IOpenIddictApplicationManager appManager) : IRequestHandler<SetServiceAccountWorkspacesCommand>
+    IOpenIddictApplicationManager appManager,
+    IAuditContext auditContext) : IRequestHandler<SetServiceAccountWorkspacesCommand>
 {
     public async Task Handle(SetServiceAccountWorkspacesCommand command, CancellationToken cancellationToken)
     {
@@ -29,9 +31,18 @@ internal sealed class SetServiceAccountWorkspacesCommandHandler(
             .Where(x => x.ServiceAccountId == command.ServiceAccountId)
             .ToListAsync(cancellationToken);
 
+        var currentWorkspaceIds = current.Select(x => x.WorkspaceId).ToHashSet();
         var toRemove = current.Where(x => !workspaceIds.Contains(x.WorkspaceId)).ToList();
         if (toRemove.Count > 0)
             dbContext.ServiceAccountWorkspaces.RemoveRange(toRemove);
+
+        var addedWorkspaceIds = workspaceIds.Where(id => !currentWorkspaceIds.Contains(id)).ToList();
+        var removedWorkspaceIds = toRemove.Select(x => x.WorkspaceId).ToList();
+        auditContext.Details = new Dictionary<string, object?>
+        {
+            ["added"] = addedWorkspaceIds,
+            ["removed"] = removedWorkspaceIds
+        };
 
         foreach (var workspaceId in workspaceIds)
         {

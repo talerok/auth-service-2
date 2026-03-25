@@ -12,6 +12,7 @@ namespace Auth.Infrastructure.TwoFactor.Commands.EnableTwoFactor;
 internal sealed class EnableTwoFactorCommandHandler(
     AuthDbContext dbContext,
     IOptions<IntegrationOptions> options,
+    IAuditContext auditContext,
     ILogger<EnableTwoFactorCommandHandler> logger) : IRequestHandler<EnableTwoFactorCommand, EnableTwoFactorResponse>
 {
     private readonly TwoFactorOptions _twoFactor = options.Value.TwoFactor;
@@ -46,6 +47,11 @@ internal sealed class EnableTwoFactorCommandHandler(
 
         dbContext.TwoFactorChallenges.Add(challenge);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        auditContext.Details = new Dictionary<string, object?>
+        {
+            ["channel"] = command.Channel.ToString()
+        };
 
         logger.LogInformation(
             "TwoFactorOperation userId={UserId} operation={Operation} result={Result}",

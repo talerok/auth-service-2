@@ -9,7 +9,8 @@ namespace Auth.Infrastructure.Users.Commands.ImportUsers;
 internal sealed class ImportUsersCommandHandler(
     AuthDbContext dbContext,
     IPasswordHasher passwordHasher,
-    ISearchIndexService searchIndexService) : IRequestHandler<ImportUsersCommand, ImportUsersResult>
+    ISearchIndexService searchIndexService,
+    IAuditContext auditContext) : IRequestHandler<ImportUsersCommand, ImportUsersResult>
 {
     public async Task<ImportUsersResult> Handle(ImportUsersCommand command, CancellationToken cancellationToken)
     {
@@ -90,6 +91,16 @@ internal sealed class ImportUsersCommandHandler(
         var blocked = 0;
         if (command.BlockMissing)
             blocked = await BlockMissingUsers(processedUserIds, cancellationToken);
+
+        var created = results.Count(r => r.Status == "created");
+        var updated = results.Count(r => r.Status == "updated");
+        auditContext.Details = new Dictionary<string, object?>
+        {
+            ["count"] = command.Items.Count,
+            ["added"] = created,
+            ["updated"] = updated,
+            ["blocked"] = blocked
+        };
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await IndexProcessedUsers(processedUserIds, existingUsers, cancellationToken);

@@ -19,4 +19,7 @@ internal sealed class StubSearchService : ISearchService
 
     public Task<SearchResponse<ServiceAccountDto>> SearchServiceAccountsAsync(SearchRequest request, CancellationToken cancellationToken)
         => Task.FromResult(new SearchResponse<ServiceAccountDto>([], request.Page, request.PageSize, 0));
+
+    public Task<SearchResponse<AuditLogDto>> SearchAuditLogsAsync(SearchRequest request, CancellationToken cancellationToken)
+        => Task.FromResult(new SearchResponse<AuditLogDto>([], request.Page, request.PageSize, 0));
 }

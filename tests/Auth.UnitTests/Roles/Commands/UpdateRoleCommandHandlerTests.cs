@@ -22,7 +22,7 @@ public sealed class UpdateRoleCommandHandlerTests
         var searchIndex = new Mock<ISearchIndexService>();
         searchIndex.Setup(x => x.IndexRoleAsync(It.IsAny<RoleDto>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var handler = new UpdateRoleCommandHandler(dbContext, searchIndex.Object);
+        var handler = new UpdateRoleCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateRoleCommand(role.Id, "NewName", "new-code", "NewDesc"),
@@ -46,7 +46,7 @@ public sealed class UpdateRoleCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new UpdateRoleCommandHandler(dbContext, searchIndex.Object);
+        var handler = new UpdateRoleCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateRoleCommand(Guid.NewGuid(), "Name", "code", "Desc"),

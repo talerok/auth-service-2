@@ -21,7 +21,7 @@ public sealed class SoftDeleteServiceAccountCommandHandlerTests
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new SoftDeleteServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var handler = new SoftDeleteServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeleteServiceAccountCommand(serviceAccount.Id),
@@ -39,7 +39,7 @@ public sealed class SoftDeleteServiceAccountCommandHandlerTests
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new SoftDeleteServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var handler = new SoftDeleteServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeleteServiceAccountCommand(Guid.NewGuid()),
@@ -60,7 +60,7 @@ public sealed class SoftDeleteServiceAccountCommandHandlerTests
         var oidcApp = new object();
         appManager.Setup(x => x.FindByClientIdAsync("sa-oidc", It.IsAny<CancellationToken>()))
             .ReturnsAsync(oidcApp);
-        var handler = new SoftDeleteServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var handler = new SoftDeleteServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new SoftDeleteServiceAccountCommand(serviceAccount.Id),

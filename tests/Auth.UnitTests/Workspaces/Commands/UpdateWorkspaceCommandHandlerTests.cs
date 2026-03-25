@@ -22,7 +22,7 @@ public sealed class UpdateWorkspaceCommandHandlerTests
         var searchIndex = new Mock<ISearchIndexService>();
         searchIndex.Setup(x => x.IndexWorkspaceAsync(It.IsAny<WorkspaceDto>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var handler = new UpdateWorkspaceCommandHandler(dbContext, searchIndex.Object);
+        var handler = new UpdateWorkspaceCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateWorkspaceCommand(workspace.Id, "New", "new-code", "New desc"),
@@ -43,7 +43,7 @@ public sealed class UpdateWorkspaceCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new UpdateWorkspaceCommandHandler(dbContext, searchIndex.Object);
+        var handler = new UpdateWorkspaceCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateWorkspaceCommand(Guid.NewGuid(), "Name", "code", "Desc"),

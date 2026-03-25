@@ -8,7 +8,8 @@ namespace Auth.Infrastructure.Roles.Commands.SetRolePermissions;
 
 internal sealed class SetRolePermissionsCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService) : IRequestHandler<SetRolePermissionsCommand>
+    ISearchIndexService searchIndexService,
+    IAuditContext auditContext) : IRequestHandler<SetRolePermissionsCommand>
 {
     public async Task Handle(SetRolePermissionsCommand command, CancellationToken cancellationToken)
     {
@@ -27,6 +28,12 @@ internal sealed class SetRolePermissionsCommandHandler(
         {
             dbContext.RolePermissions.Add(new RolePermission { RoleId = command.RoleId, PermissionId = permissionId });
         }
+
+        auditContext.Details = new Dictionary<string, object?>
+        {
+            ["added"] = diff.ToAdd.ToList(),
+            ["removed"] = diff.ToRemove.ToList()
+        };
 
         var permissionById = command.Permissions.ToDictionary(x => x.Id);
         var permissionsToReindex = new List<PermissionDto>();

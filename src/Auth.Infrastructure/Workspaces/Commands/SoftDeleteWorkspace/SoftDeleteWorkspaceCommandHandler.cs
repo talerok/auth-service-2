@@ -9,7 +9,8 @@ namespace Auth.Infrastructure.Workspaces.Commands.SoftDeleteWorkspace;
 internal sealed class SoftDeleteWorkspaceCommandHandler(
     AuthDbContext dbContext,
     ISearchIndexService searchIndexService,
-    IOpenIddictScopeManager scopeManager) : IRequestHandler<SoftDeleteWorkspaceCommand, bool>
+    IOpenIddictScopeManager scopeManager,
+    IAuditContext auditContext) : IRequestHandler<SoftDeleteWorkspaceCommand, bool>
 {
     public async Task<bool> Handle(SoftDeleteWorkspaceCommand command, CancellationToken cancellationToken)
     {
@@ -23,6 +24,7 @@ internal sealed class SoftDeleteWorkspaceCommandHandler(
             throw new AuthException(AuthErrorCatalog.SystemWorkspaceDeleteForbidden);
         }
 
+        auditContext.Details = new Dictionary<string, object?> { ["name"] = entity.Name, ["code"] = entity.Code };
         entity.SoftDelete();
         await dbContext.SaveChangesAsync(cancellationToken);
 

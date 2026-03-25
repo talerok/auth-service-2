@@ -60,6 +60,9 @@ public static class SystemPermissionCatalog
         ("system", 36, "system.service-accounts.view", "View service accounts"),
         ("system", 37, "system.service-accounts.create", "Create service accounts"),
         ("system", 38, "system.service-accounts.update", "Update service accounts"),
-        ("system", 39, "system.service-accounts.delete", "Delete service accounts")
+        ("system", 39, "system.service-accounts.delete", "Delete service accounts"),
+
+        // system.audit-logs
+        ("system", 40, "system.audit-logs.view", "View audit logs")
     ];
 }

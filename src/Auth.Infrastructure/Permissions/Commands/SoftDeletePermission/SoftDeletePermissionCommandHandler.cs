@@ -7,7 +7,8 @@ namespace Auth.Infrastructure.Permissions.Commands.SoftDeletePermission;
 
 internal sealed class SoftDeletePermissionCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService) : IRequestHandler<SoftDeletePermissionCommand, bool>
+    ISearchIndexService searchIndexService,
+    IAuditContext auditContext) : IRequestHandler<SoftDeletePermissionCommand, bool>
 {
     public async Task<bool> Handle(SoftDeletePermissionCommand command, CancellationToken cancellationToken)
     {
@@ -18,6 +19,7 @@ internal sealed class SoftDeletePermissionCommandHandler(
         if (entity.IsSystem)
             throw new AuthException(AuthErrorCatalog.SystemPermissionDeleteForbidden);
 
+        auditContext.Details = new Dictionary<string, object?> { ["domain"] = entity.Domain, ["code"] = entity.Code };
         entity.SoftDelete();
         await dbContext.SaveChangesAsync(cancellationToken);
         await searchIndexService.DeletePermissionAsync(command.Id, cancellationToken);

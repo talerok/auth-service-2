@@ -9,4 +9,9 @@ public sealed record CreateIdentitySourceCommand(
     string DisplayName,
     IdentitySourceType Type,
     CreateOidcConfigRequest? OidcConfig = null,
-    CreateLdapConfigRequest? LdapConfig = null) : IRequest<IdentitySourceDetailDto>;
+    CreateLdapConfigRequest? LdapConfig = null) : IRequest<IdentitySourceDetailDto>, IAuditable
+{
+    public AuditEntityType EntityType => AuditEntityType.IdentitySource;
+    public AuditAction Action => AuditAction.Create;
+    public Guid EntityId { get; init; } = Guid.NewGuid();
+}

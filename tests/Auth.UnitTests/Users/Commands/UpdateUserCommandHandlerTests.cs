@@ -75,7 +75,7 @@ public sealed class UpdateUserCommandHandlerTests
     private static UpdateUserCommandHandler CreateHandler(AuthDbContext dbContext)
     {
         var searchIndex = new Mock<ISearchIndexService>();
-        return new UpdateUserCommandHandler(dbContext, searchIndex.Object);
+        return new UpdateUserCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
     }
 
 }

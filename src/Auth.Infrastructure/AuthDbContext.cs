@@ -23,6 +23,7 @@ public DbSet<TwoFactorChallenge> TwoFactorChallenges => Set<TwoFactorChallenge>(
     public DbSet<ServiceAccount> ServiceAccounts => Set<ServiceAccount>();
     public DbSet<ServiceAccountWorkspace> ServiceAccountWorkspaces => Set<ServiceAccountWorkspace>();
     public DbSet<ServiceAccountWorkspaceRole> ServiceAccountWorkspaceRoles => Set<ServiceAccountWorkspaceRole>();
+    public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {

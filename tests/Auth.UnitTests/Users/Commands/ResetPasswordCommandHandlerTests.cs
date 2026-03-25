@@ -21,7 +21,7 @@ public sealed class ResetPasswordCommandHandlerTests
         var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "old_hash", IsActive = true };
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync();
-        var handler = new ResetPasswordCommandHandler(dbContext, hasher.Object);
+        var handler = new ResetPasswordCommandHandler(dbContext, hasher.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new ResetPasswordCommand(user.Id, "tempPass123"),
@@ -38,7 +38,7 @@ public sealed class ResetPasswordCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var hasher = new Mock<IPasswordHasher>();
-        var handler = new ResetPasswordCommandHandler(dbContext, hasher.Object);
+        var handler = new ResetPasswordCommandHandler(dbContext, hasher.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new ResetPasswordCommand(Guid.NewGuid(), "tempPass123"),

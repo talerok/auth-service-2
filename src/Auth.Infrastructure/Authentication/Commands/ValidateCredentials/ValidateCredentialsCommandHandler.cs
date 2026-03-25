@@ -8,23 +8,39 @@ namespace Auth.Infrastructure.Authentication.Commands.ValidateCredentials;
 
 internal sealed class ValidateCredentialsCommandHandler(
     AuthDbContext dbContext,
-    IPasswordHasher passwordHasher) : IRequestHandler<ValidateCredentialsCommand, User>
+    IPasswordHasher passwordHasher,
+    IAuditContext auditContext) : IRequestHandler<ValidateCredentialsCommand, User>
 {
     public async Task<User> Handle(ValidateCredentialsCommand command, CancellationToken cancellationToken)
     {
-        var user = await dbContext.Users
-            .FirstOrDefaultAsync(x => x.Username == command.Username, cancellationToken);
-
-        if (user is null || !user.IsActive || !passwordHasher.Verify(command.Password, user.PasswordHash))
+        try
         {
-            throw new AuthException(AuthErrorCatalog.InvalidCredentials);
-        }
+            var user = await dbContext.Users
+                .FirstOrDefaultAsync(x => x.Username == command.Username, cancellationToken);
 
-        if (!user.IsInternalAuthEnabled)
+            if (user is null || !user.IsActive || !passwordHasher.Verify(command.Password, user.PasswordHash))
+                throw new AuthException(AuthErrorCatalog.InvalidCredentials);
+
+            if (!user.IsInternalAuthEnabled)
+                throw new AuthException(AuthErrorCatalog.InternalAuthDisabled);
+
+            auditContext.EntityId = user.Id;
+            auditContext.Details = new Dictionary<string, object?>
+            {
+                ["username"] = command.Username,
+                ["result"] = "success"
+            };
+
+            return user;
+        }
+        catch (AuthException)
         {
-            throw new AuthException(AuthErrorCatalog.InternalAuthDisabled);
+            auditContext.Details = new Dictionary<string, object?>
+            {
+                ["username"] = command.Username,
+                ["result"] = "failure"
+            };
+            throw;
         }
-
-        return user;
     }
 }

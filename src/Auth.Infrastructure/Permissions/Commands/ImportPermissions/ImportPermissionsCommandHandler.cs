@@ -8,7 +8,8 @@ namespace Auth.Infrastructure.Permissions.Commands.ImportPermissions;
 
 internal sealed class ImportPermissionsCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService) : IRequestHandler<ImportPermissionsCommand, ImportPermissionsResult>
+    ISearchIndexService searchIndexService,
+    IAuditContext auditContext) : IRequestHandler<ImportPermissionsCommand, ImportPermissionsResult>
 {
     public async Task<ImportPermissionsResult> Handle(ImportPermissionsCommand command, CancellationToken cancellationToken)
     {
@@ -32,6 +33,13 @@ internal sealed class ImportPermissionsCommandHandler(
             throw new AuthException(AuthErrorCatalog.SystemPermissionImportForbidden);
 
         var (created, updated, skipped, processed) = ApplyChanges(command, existingLookup);
+
+        auditContext.Details = new Dictionary<string, object?>
+        {
+            ["count"] = command.Items.Count,
+            ["created"] = created,
+            ["updated"] = updated
+        };
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await IndexAsync(processed, existingLookup, cancellationToken);

@@ -13,4 +13,9 @@ public sealed record CreateUserCommand(
     bool IsInternalAuthEnabled = true,
     bool MustChangePassword = false,
     bool TwoFactorEnabled = false,
-    TwoFactorChannel? TwoFactorChannel = null) : IRequest<UserDto>;
+    TwoFactorChannel? TwoFactorChannel = null) : IRequest<UserDto>, IAuditable
+{
+    public AuditEntityType EntityType => AuditEntityType.User;
+    public AuditAction Action => AuditAction.Create;
+    public Guid EntityId { get; init; } = Guid.NewGuid();
+}

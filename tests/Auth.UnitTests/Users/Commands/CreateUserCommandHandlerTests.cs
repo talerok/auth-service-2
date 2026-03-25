@@ -123,7 +123,7 @@ public sealed class CreateUserCommandHandlerTests
     {
         passwordHasher ??= new Mock<IPasswordHasher>();
         var searchIndex = new Mock<ISearchIndexService>();
-        return new CreateUserCommandHandler(dbContext, passwordHasher.Object, searchIndex.Object);
+        return new CreateUserCommandHandler(dbContext, passwordHasher.Object, searchIndex.Object, new Mock<IAuditContext>().Object);
     }
 
 }

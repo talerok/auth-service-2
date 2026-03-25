@@ -26,7 +26,7 @@ public sealed class SoftDeleteWorkspaceCommandHandlerTests
         var scopeManager = new Mock<IOpenIddictScopeManager>();
         scopeManager.Setup(x => x.FindByNameAsync("ws:del-ws", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new object());
-        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object);
+        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeleteWorkspaceCommand(workspace.Id),
@@ -45,7 +45,7 @@ public sealed class SoftDeleteWorkspaceCommandHandlerTests
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
         var scopeManager = new Mock<IOpenIddictScopeManager>();
-        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object);
+        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeleteWorkspaceCommand(Guid.NewGuid()),
@@ -63,7 +63,7 @@ public sealed class SoftDeleteWorkspaceCommandHandlerTests
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var scopeManager = new Mock<IOpenIddictScopeManager>();
-        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object);
+        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object, new Mock<IAuditContext>().Object);
 
         var act = () => handler.Handle(
             new SoftDeleteWorkspaceCommand(workspace.Id),

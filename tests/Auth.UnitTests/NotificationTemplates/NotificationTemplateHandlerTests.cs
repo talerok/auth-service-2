@@ -9,6 +9,7 @@ using Auth.Infrastructure.NotificationTemplates.Queries.GetAllNotificationTempla
 using Auth.Infrastructure.NotificationTemplates.Queries.GetNotificationTemplateByChannel;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.NotificationTemplates;
@@ -132,7 +133,7 @@ public sealed class NotificationTemplateHandlerTests
         var template = new NotificationTemplate { Channel = TwoFactorChannel.Email, Subject = "Old", Body = "Old Body" };
         dbContext.NotificationTemplates.Add(template);
         await dbContext.SaveChangesAsync();
-        var handler = new UpdateNotificationTemplateCommandHandler(dbContext);
+        var handler = new UpdateNotificationTemplateCommandHandler(dbContext, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateNotificationTemplateCommand("Email", "New Subject", "New Body"), CancellationToken.None);
@@ -152,7 +153,7 @@ public sealed class NotificationTemplateHandlerTests
     public async Task Update_WhenInvalidChannel_ReturnsNull()
     {
         await using var dbContext = CreateDbContext();
-        var handler = new UpdateNotificationTemplateCommandHandler(dbContext);
+        var handler = new UpdateNotificationTemplateCommandHandler(dbContext, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateNotificationTemplateCommand("Pigeon", "S", "B"), CancellationToken.None);
@@ -164,7 +165,7 @@ public sealed class NotificationTemplateHandlerTests
     public async Task Update_WhenValidChannelButNotFound_ReturnsNull()
     {
         await using var dbContext = CreateDbContext();
-        var handler = new UpdateNotificationTemplateCommandHandler(dbContext);
+        var handler = new UpdateNotificationTemplateCommandHandler(dbContext, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateNotificationTemplateCommand("Email", "S", "B"), CancellationToken.None);
@@ -180,7 +181,7 @@ public sealed class NotificationTemplateHandlerTests
         dbContext.NotificationTemplates.Add(template);
         await dbContext.SaveChangesAsync();
         var originalUpdatedAt = template.UpdatedAt;
-        var handler = new UpdateNotificationTemplateCommandHandler(dbContext);
+        var handler = new UpdateNotificationTemplateCommandHandler(dbContext, new Mock<IAuditContext>().Object);
 
         await Task.Delay(50);
         var result = await handler.Handle(

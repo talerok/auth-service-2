@@ -5,6 +5,7 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.Users.Commands.SetUserIdentitySourceLinks;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Users.Commands;
@@ -20,7 +21,7 @@ public sealed class SetUserIdentitySourceLinksCommandHandlerTests
         dbContext.Users.Add(user);
         dbContext.IdentitySources.Add(source);
         await dbContext.SaveChangesAsync();
-        var handler = new SetUserIdentitySourceLinksCommandHandler(dbContext);
+        var handler = new SetUserIdentitySourceLinksCommandHandler(dbContext, new Mock<IAuditContext>().Object);
 
         await handler.Handle(new SetUserIdentitySourceLinksCommand(user.Id,
             [new UserIdentitySourceLinkItem(source.Id, "ext-sub-123")]), CancellationToken.None);
@@ -44,7 +45,7 @@ public sealed class SetUserIdentitySourceLinksCommandHandlerTests
             new IdentitySourceLink { UserId = user.Id, IdentitySourceId = source1.Id, ExternalIdentity = "ext1" },
             new IdentitySourceLink { UserId = user.Id, IdentitySourceId = source2.Id, ExternalIdentity = "ext2" });
         await dbContext.SaveChangesAsync();
-        var handler = new SetUserIdentitySourceLinksCommandHandler(dbContext);
+        var handler = new SetUserIdentitySourceLinksCommandHandler(dbContext, new Mock<IAuditContext>().Object);
 
         await handler.Handle(new SetUserIdentitySourceLinksCommand(user.Id,
             [new UserIdentitySourceLinkItem(source1.Id, "ext1")]), CancellationToken.None);
@@ -64,7 +65,7 @@ public sealed class SetUserIdentitySourceLinksCommandHandlerTests
         dbContext.IdentitySources.Add(source);
         dbContext.IdentitySourceLinks.Add(new IdentitySourceLink { UserId = user.Id, IdentitySourceId = source.Id, ExternalIdentity = "old-ext" });
         await dbContext.SaveChangesAsync();
-        var handler = new SetUserIdentitySourceLinksCommandHandler(dbContext);
+        var handler = new SetUserIdentitySourceLinksCommandHandler(dbContext, new Mock<IAuditContext>().Object);
 
         await handler.Handle(new SetUserIdentitySourceLinksCommand(user.Id,
             [new UserIdentitySourceLinkItem(source.Id, "new-ext")]), CancellationToken.None);
@@ -84,7 +85,7 @@ public sealed class SetUserIdentitySourceLinksCommandHandlerTests
         dbContext.IdentitySources.Add(source);
         dbContext.IdentitySourceLinks.Add(new IdentitySourceLink { UserId = user.Id, IdentitySourceId = source.Id, ExternalIdentity = "ext" });
         await dbContext.SaveChangesAsync();
-        var handler = new SetUserIdentitySourceLinksCommandHandler(dbContext);
+        var handler = new SetUserIdentitySourceLinksCommandHandler(dbContext, new Mock<IAuditContext>().Object);
 
         await handler.Handle(new SetUserIdentitySourceLinksCommand(user.Id, []), CancellationToken.None);
 
@@ -103,7 +104,7 @@ public sealed class SetUserIdentitySourceLinksCommandHandlerTests
         dbContext.IdentitySources.Add(source);
         dbContext.IdentitySourceLinks.Add(new IdentitySourceLink { UserId = user2.Id, IdentitySourceId = source.Id, ExternalIdentity = "bob-ext" });
         await dbContext.SaveChangesAsync();
-        var handler = new SetUserIdentitySourceLinksCommandHandler(dbContext);
+        var handler = new SetUserIdentitySourceLinksCommandHandler(dbContext, new Mock<IAuditContext>().Object);
 
         await handler.Handle(new SetUserIdentitySourceLinksCommand(user1.Id,
             [new UserIdentitySourceLinkItem(source.Id, "alice-ext")]), CancellationToken.None);

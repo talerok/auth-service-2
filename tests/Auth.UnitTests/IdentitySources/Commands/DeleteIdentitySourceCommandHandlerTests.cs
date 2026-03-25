@@ -5,6 +5,7 @@ using Auth.Infrastructure;
 using Auth.Infrastructure.IdentitySources.Commands.DeleteIdentitySource;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.IdentitySources.Commands;
@@ -18,7 +19,7 @@ public sealed class DeleteIdentitySourceCommandHandlerTests
         var source = new IdentitySource { Name = "keycloak", Code = "keycloak", DisplayName = "Keycloak", Type = IdentitySourceType.Oidc, IsEnabled = true };
         dbContext.IdentitySources.Add(source);
         await dbContext.SaveChangesAsync();
-        var handler = new DeleteIdentitySourceCommandHandler(dbContext);
+        var handler = new DeleteIdentitySourceCommandHandler(dbContext, new Mock<IAuditContext>().Object);
 
         await handler.Handle(new DeleteIdentitySourceCommand(source.Id), CancellationToken.None);
 
@@ -30,7 +31,7 @@ public sealed class DeleteIdentitySourceCommandHandlerTests
     public async Task Handle_WhenNotFound_ThrowsException()
     {
         await using var dbContext = CreateDbContext();
-        var handler = new DeleteIdentitySourceCommandHandler(dbContext);
+        var handler = new DeleteIdentitySourceCommandHandler(dbContext, new Mock<IAuditContext>().Object);
 
         var act = () => handler.Handle(new DeleteIdentitySourceCommand(Guid.NewGuid()), CancellationToken.None);
 

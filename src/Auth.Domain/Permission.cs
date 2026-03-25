@@ -2,11 +2,11 @@ namespace Auth.Domain;
 
 public sealed class Permission : EntityBase
 {
-    public string Domain { get; init; } = string.Empty;
-    public int Bit { get; init; }
-    public string Code { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public bool IsSystem { get; init; }
+    [Auditable] public string Domain { get; init; } = string.Empty;
+    [Auditable] public int Bit { get; init; }
+    [Auditable] public string Code { get; set; } = string.Empty;
+    [Auditable] public string Description { get; set; } = string.Empty;
+    [Auditable] public bool IsSystem { get; init; }
     public ICollection<RolePermission> RolePermissions { get; private set; } = [];
 
     public void GuardNotSystem()

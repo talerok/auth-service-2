@@ -9,34 +9,52 @@ namespace Auth.Infrastructure.TwoFactor.Commands.ValidateLoginOtp;
 
 internal sealed class ValidateLoginOtpCommandHandler(
     AuthDbContext dbContext,
+    IAuditContext auditContext,
     ILogger<ValidateLoginOtpCommandHandler> logger) : IRequestHandler<ValidateLoginOtpCommand, User>
 {
     public async Task<User> Handle(ValidateLoginOtpCommand command, CancellationToken cancellationToken)
     {
-        TwoFactorValidation.ValidateChannelOrThrow(command.Channel);
-        var challenge = await dbContext.TwoFactorChallenges
-            .FirstOrDefaultAsync(
-                x => x.Id == command.ChallengeId && x.Purpose == TwoFactorChallenge.PurposeLogin,
-                cancellationToken);
-        TwoFactorValidation.ValidateChallengeOrThrow(challenge, command.Channel);
-        TwoFactorValidation.ValidateDeliveryStatusOrThrow(challenge!, TwoFactorChallenge.PurposeLogin);
-        await TwoFactorValidation.VerifyOtpOrThrowAsync(challenge!, command.Otp, dbContext, logger, cancellationToken);
-
-        challenge!.MarkVerified();
-        var user = await dbContext.Users.FirstAsync(x => x.Id == challenge.UserId, cancellationToken);
-        if (!user.TwoFactorEnabled)
+        try
         {
-            throw new AuthException(TwoFactorErrorCatalog.NotRequired);
+            TwoFactorValidation.ValidateChannelOrThrow(command.Channel);
+            var challenge = await dbContext.TwoFactorChallenges
+                .FirstOrDefaultAsync(
+                    x => x.Id == command.ChallengeId && x.Purpose == TwoFactorChallenge.PurposeLogin,
+                    cancellationToken);
+            TwoFactorValidation.ValidateChallengeOrThrow(challenge, command.Channel);
+            TwoFactorValidation.ValidateDeliveryStatusOrThrow(challenge!, TwoFactorChallenge.PurposeLogin);
+            await TwoFactorValidation.VerifyOtpOrThrowAsync(challenge!, command.Otp, dbContext, logger, cancellationToken);
+
+            challenge!.MarkVerified();
+            var user = await dbContext.Users.FirstAsync(x => x.Id == challenge.UserId, cancellationToken);
+            if (!user.TwoFactorEnabled)
+                throw new AuthException(TwoFactorErrorCatalog.NotRequired);
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            auditContext.EntityId = user.Id;
+            auditContext.Details = new Dictionary<string, object?>
+            {
+                ["channel"] = command.Channel.ToString(),
+                ["result"] = "success"
+            };
+
+            logger.LogInformation(
+                "TwoFactorOperation userId={UserId} operation={Operation} result={Result}",
+                user.Id,
+                "LOGIN_VERIFIED",
+                "SUCCESS");
+
+            return user;
         }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        logger.LogInformation(
-            "TwoFactorOperation userId={UserId} operation={Operation} result={Result}",
-            user.Id,
-            "LOGIN_VERIFIED",
-            "SUCCESS");
-
-        return user;
+        catch (AuthException)
+        {
+            auditContext.Details = new Dictionary<string, object?>
+            {
+                ["channel"] = command.Channel.ToString(),
+                ["result"] = "failure"
+            };
+            throw;
+        }
     }
 }

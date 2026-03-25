@@ -6,6 +6,7 @@ using Auth.Infrastructure.IdentitySources.Commands.CreateIdentitySource;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Moq;
 using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.IdentitySources.Commands;
@@ -21,7 +22,7 @@ public sealed class CreateIdentitySourceCommandHandlerTests
     public async Task Handle_WithOidcConfig_CreatesSourceAndConfig()
     {
         await using var dbContext = CreateDbContext();
-        var handler = new CreateIdentitySourceCommandHandler(dbContext, CreateOptions());
+        var handler = new CreateIdentitySourceCommandHandler(dbContext, CreateOptions(), new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new CreateIdentitySourceCommand("keycloak", "keycloak", "Keycloak", IdentitySourceType.Oidc,
@@ -40,7 +41,7 @@ public sealed class CreateIdentitySourceCommandHandlerTests
     public async Task Handle_WithLdapConfig_CreatesSourceAndConfig()
     {
         await using var dbContext = CreateDbContext();
-        var handler = new CreateIdentitySourceCommandHandler(dbContext, CreateOptions());
+        var handler = new CreateIdentitySourceCommandHandler(dbContext, CreateOptions(), new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new CreateIdentitySourceCommand("corporate-ldap", "corporate-ldap", "Corporate LDAP", IdentitySourceType.Ldap,
@@ -57,7 +58,7 @@ public sealed class CreateIdentitySourceCommandHandlerTests
     public async Task Handle_OidcTypeWithoutConfig_ThrowsTypeMismatch()
     {
         await using var dbContext = CreateDbContext();
-        var handler = new CreateIdentitySourceCommandHandler(dbContext, CreateOptions());
+        var handler = new CreateIdentitySourceCommandHandler(dbContext, CreateOptions(), new Mock<IAuditContext>().Object);
 
         var act = () => handler.Handle(
             new CreateIdentitySourceCommand("keycloak", "keycloak", "Keycloak", IdentitySourceType.Oidc),
@@ -71,7 +72,7 @@ public sealed class CreateIdentitySourceCommandHandlerTests
     public async Task Handle_LdapTypeWithoutConfig_ThrowsTypeMismatch()
     {
         await using var dbContext = CreateDbContext();
-        var handler = new CreateIdentitySourceCommandHandler(dbContext, CreateOptions());
+        var handler = new CreateIdentitySourceCommandHandler(dbContext, CreateOptions(), new Mock<IAuditContext>().Object);
 
         var act = () => handler.Handle(
             new CreateIdentitySourceCommand("ldap", "ldap", "LDAP", IdentitySourceType.Ldap),

@@ -7,7 +7,8 @@ namespace Auth.Infrastructure.Users.Commands.SoftDeleteUser;
 
 internal sealed class SoftDeleteUserCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService) : IRequestHandler<SoftDeleteUserCommand, bool>
+    ISearchIndexService searchIndexService,
+    IAuditContext auditContext) : IRequestHandler<SoftDeleteUserCommand, bool>
 {
     public async Task<bool> Handle(SoftDeleteUserCommand command, CancellationToken cancellationToken)
     {
@@ -15,6 +16,7 @@ internal sealed class SoftDeleteUserCommandHandler(
         if (user is null)
             return false;
 
+        auditContext.Details = new Dictionary<string, object?> { ["username"] = user.Username };
         user.SoftDelete();
         await dbContext.SaveChangesAsync(cancellationToken);
         await searchIndexService.DeleteUserAsync(command.Id, cancellationToken);

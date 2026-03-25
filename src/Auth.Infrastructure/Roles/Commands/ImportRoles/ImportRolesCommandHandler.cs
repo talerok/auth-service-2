@@ -8,7 +8,8 @@ namespace Auth.Infrastructure.Roles.Commands.ImportRoles;
 
 internal sealed class ImportRolesCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService) : IRequestHandler<ImportRolesCommand, ImportRolesResult>
+    ISearchIndexService searchIndexService,
+    IAuditContext auditContext) : IRequestHandler<ImportRolesCommand, ImportRolesResult>
 {
     public async Task<ImportRolesResult> Handle(ImportRolesCommand command, CancellationToken cancellationToken)
     {
@@ -23,6 +24,12 @@ internal sealed class ImportRolesCommandHandler(
 
         var (created, updated, skipped, processed) = ApplyChanges(command, existingRoles, permissionsByCode);
 
+        auditContext.Details = new Dictionary<string, object?>
+        {
+            ["count"] = command.Items.Count,
+            ["created"] = created,
+            ["updated"] = updated
+        };
         await dbContext.SaveChangesAsync(cancellationToken);
         await IndexAsync(processed, existingRoles, cancellationToken);
 

@@ -22,7 +22,7 @@ public sealed class PatchRoleCommandHandlerTests
         var searchIndex = new Mock<ISearchIndexService>();
         searchIndex.Setup(x => x.IndexRoleAsync(It.IsAny<RoleDto>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var handler = new PatchRoleCommandHandler(dbContext, searchIndex.Object);
+        var handler = new PatchRoleCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchRoleCommand(role.Id, "Updated", null, null),
@@ -46,7 +46,7 @@ public sealed class PatchRoleCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new PatchRoleCommandHandler(dbContext, searchIndex.Object);
+        var handler = new PatchRoleCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchRoleCommand(Guid.NewGuid(), "Name", null, null),

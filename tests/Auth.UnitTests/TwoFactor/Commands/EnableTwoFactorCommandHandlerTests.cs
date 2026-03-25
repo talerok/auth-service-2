@@ -7,6 +7,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Moq;
 using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.TwoFactor.Commands;
@@ -84,7 +85,7 @@ public sealed class EnableTwoFactorCommandHandlerTests
     }
 
     private static EnableTwoFactorCommandHandler CreateHandler(AuthDbContext dbContext) =>
-        new(dbContext, CreateOptions(), NullLogger<EnableTwoFactorCommandHandler>.Instance);
+        new(dbContext, CreateOptions(), new Mock<IAuditContext>().Object, NullLogger<EnableTwoFactorCommandHandler>.Instance);
 
     private static IOptions<IntegrationOptions> CreateOptions() =>
         Options.Create(new IntegrationOptions { EncryptionKey = "super-secret-key-min-32-characters-long!", TwoFactor = new TwoFactorOptions { StaticOtpForTesting = "123456", DeliveryPollIntervalMilliseconds = 5 }

@@ -14,6 +14,7 @@ public sealed class OpenSearchIndexNames
         Workspaces = $"{prefix}-workspaces";
         Applications = $"{prefix}-applications";
         ServiceAccounts = $"{prefix}-service-accounts";
+        AuditLogs = $"{prefix}-audit-logs";
     }
 
     public string Users { get; }
@@ -22,4 +23,5 @@ public sealed class OpenSearchIndexNames
     public string Workspaces { get; }
     public string Applications { get; }
     public string ServiceAccounts { get; }
+    public string AuditLogs { get; }
 }

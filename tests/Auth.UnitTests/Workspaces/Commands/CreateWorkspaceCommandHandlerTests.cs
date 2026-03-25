@@ -21,7 +21,7 @@ public sealed class CreateWorkspaceCommandHandlerTests
         searchIndex.Setup(x => x.IndexWorkspaceAsync(It.IsAny<WorkspaceDto>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         var scopeManager = new Mock<IOpenIddictScopeManager>();
-        var handler = new CreateWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object);
+        var handler = new CreateWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new CreateWorkspaceCommand("Test Workspace", "test-ws", "A test workspace"),

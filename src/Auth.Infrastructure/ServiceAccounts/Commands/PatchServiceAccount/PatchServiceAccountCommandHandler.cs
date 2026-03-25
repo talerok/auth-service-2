@@ -1,5 +1,6 @@
 using Auth.Application;
 using Auth.Application.ServiceAccounts.Commands.PatchServiceAccount;
+using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
@@ -9,7 +10,8 @@ namespace Auth.Infrastructure.ServiceAccounts.Commands.PatchServiceAccount;
 internal sealed class PatchServiceAccountCommandHandler(
     AuthDbContext dbContext,
     ISearchIndexService searchIndexService,
-    IOpenIddictApplicationManager appManager) : IRequestHandler<PatchServiceAccountCommand, ServiceAccountDto?>
+    IOpenIddictApplicationManager appManager,
+    IAuditContext auditContext) : IRequestHandler<PatchServiceAccountCommand, ServiceAccountDto?>
 {
     public async Task<ServiceAccountDto?> Handle(PatchServiceAccountCommand command, CancellationToken cancellationToken)
     {
@@ -31,6 +33,10 @@ internal sealed class PatchServiceAccountCommandHandler(
 
         if (command.AccessTokenLifetimeMinutes.HasValue)
             serviceAccount.AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes.Value;
+
+        var changes = AuditDiff.CaptureChanges(dbContext.Entry(serviceAccount));
+        if (changes.Count > 0)
+            auditContext.Details = changes;
 
         await dbContext.SaveChangesAsync(cancellationToken);
 

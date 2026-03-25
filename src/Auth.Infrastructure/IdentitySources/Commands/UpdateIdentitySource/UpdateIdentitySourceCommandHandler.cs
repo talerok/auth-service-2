@@ -1,6 +1,7 @@
 using Auth.Application;
 using Auth.Application.IdentitySources.Commands.UpdateIdentitySource;
 using Auth.Domain;
+using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -9,7 +10,8 @@ namespace Auth.Infrastructure.IdentitySources.Commands.UpdateIdentitySource;
 
 internal sealed class UpdateIdentitySourceCommandHandler(
     AuthDbContext dbContext,
-    IOptions<IntegrationOptions> options) : IRequestHandler<UpdateIdentitySourceCommand, IdentitySourceDetailDto>
+    IOptions<IntegrationOptions> options,
+    IAuditContext auditContext) : IRequestHandler<UpdateIdentitySourceCommand, IdentitySourceDetailDto>
 {
     public async Task<IdentitySourceDetailDto> Handle(UpdateIdentitySourceCommand command, CancellationToken cancellationToken)
     {
@@ -78,6 +80,10 @@ internal sealed class UpdateIdentitySourceCommandHandler(
                 };
             }
         }
+
+        var changes = AuditDiff.CaptureChanges(dbContext.Entry(source));
+        if (changes.Count > 0)
+            auditContext.Details = changes;
 
         await dbContext.SaveChangesAsync(cancellationToken);
 

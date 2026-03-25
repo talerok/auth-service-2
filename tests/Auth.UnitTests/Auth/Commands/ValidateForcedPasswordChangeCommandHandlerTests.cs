@@ -25,7 +25,7 @@ public sealed class ValidateForcedPasswordChangeCommandHandlerTests
         dbContext.PasswordChangeChallenges.Add(challenge);
         await dbContext.SaveChangesAsync();
         var handler = new ValidateForcedPasswordChangeCommandHandler(
-            dbContext, hasher.Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
+            dbContext, hasher.Object, new Mock<IAuditContext>().Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
 
         var result = await handler.Handle(
             new ValidateForcedPasswordChangeCommand(challenge.Id, "newPassword"),
@@ -49,7 +49,7 @@ public sealed class ValidateForcedPasswordChangeCommandHandlerTests
         dbContext.PasswordChangeChallenges.Add(challenge);
         await dbContext.SaveChangesAsync();
         var handler = new ValidateForcedPasswordChangeCommandHandler(
-            dbContext, hasher.Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
+            dbContext, hasher.Object, new Mock<IAuditContext>().Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
 
         await handler.Handle(
             new ValidateForcedPasswordChangeCommand(challenge.Id, "newPassword"),
@@ -71,7 +71,7 @@ public sealed class ValidateForcedPasswordChangeCommandHandlerTests
         dbContext.PasswordChangeChallenges.Add(challenge);
         await dbContext.SaveChangesAsync();
         var handler = new ValidateForcedPasswordChangeCommandHandler(
-            dbContext, hasher.Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
+            dbContext, hasher.Object, new Mock<IAuditContext>().Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
 
         await handler.Handle(
             new ValidateForcedPasswordChangeCommand(challenge.Id, "newPassword"),
@@ -100,7 +100,7 @@ public sealed class ValidateForcedPasswordChangeCommandHandlerTests
         await dbContext.SaveChangesAsync();
 
         var handler = new ValidateForcedPasswordChangeCommandHandler(
-            dbContext, hasher.Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
+            dbContext, hasher.Object, new Mock<IAuditContext>().Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
 
         var act = () => handler.Handle(
             new ValidateForcedPasswordChangeCommand(challenge.Id, "newPassword"),
@@ -122,7 +122,7 @@ public sealed class ValidateForcedPasswordChangeCommandHandlerTests
         dbContext.PasswordChangeChallenges.Add(challenge);
         await dbContext.SaveChangesAsync();
         var handler = new ValidateForcedPasswordChangeCommandHandler(
-            dbContext, hasher.Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
+            dbContext, hasher.Object, new Mock<IAuditContext>().Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
 
         var act = () => handler.Handle(
             new ValidateForcedPasswordChangeCommand(challenge.Id, "newPassword"),
@@ -138,7 +138,7 @@ public sealed class ValidateForcedPasswordChangeCommandHandlerTests
         await using var dbContext = CreateDbContext();
         var hasher = new Mock<IPasswordHasher>();
         var handler = new ValidateForcedPasswordChangeCommandHandler(
-            dbContext, hasher.Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
+            dbContext, hasher.Object, new Mock<IAuditContext>().Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
 
         var act = () => handler.Handle(
             new ValidateForcedPasswordChangeCommand(Guid.NewGuid(), "newPassword"),
@@ -159,7 +159,7 @@ public sealed class ValidateForcedPasswordChangeCommandHandlerTests
         dbContext.PasswordChangeChallenges.Add(challenge);
         await dbContext.SaveChangesAsync();
         var handler = new ValidateForcedPasswordChangeCommandHandler(
-            dbContext, hasher.Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
+            dbContext, hasher.Object, new Mock<IAuditContext>().Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
 
         var act = () => handler.Handle(
             new ValidateForcedPasswordChangeCommand(challenge.Id, "newPassword"),
@@ -167,6 +167,50 @@ public sealed class ValidateForcedPasswordChangeCommandHandlerTests
 
         await act.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == AuthErrorCatalog.UserInactive);
+    }
+
+    [Fact]
+    public async Task Handle_InvalidChallenge_SetsFailureAuditDetails()
+    {
+        await using var dbContext = CreateDbContext();
+        var hasher = new Mock<IPasswordHasher>();
+        var auditContext = new Mock<IAuditContext>();
+        auditContext.SetupAllProperties();
+        var handler = new ValidateForcedPasswordChangeCommandHandler(
+            dbContext, hasher.Object, auditContext.Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
+
+        var act = () => handler.Handle(
+            new ValidateForcedPasswordChangeCommand(Guid.NewGuid(), "newPassword"),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<AuthException>();
+        auditContext.Object.Details.Should().NotBeNull();
+        auditContext.Object.Details!["result"].Should().Be("failure");
+    }
+
+    [Fact]
+    public async Task Handle_ValidChallenge_SetsSuccessAuditDetails()
+    {
+        await using var dbContext = CreateDbContext();
+        var hasher = new Mock<IPasswordHasher>();
+        hasher.Setup(x => x.Hash("newPassword")).Returns("hashed_new");
+        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "old_hash", IsActive = true };
+        dbContext.Users.Add(user);
+        var challenge = PasswordChangeChallenge.Create(user.Id, DateTime.UtcNow.AddMinutes(15));
+        dbContext.PasswordChangeChallenges.Add(challenge);
+        await dbContext.SaveChangesAsync();
+        var auditContext = new Mock<IAuditContext>();
+        auditContext.SetupAllProperties();
+        var handler = new ValidateForcedPasswordChangeCommandHandler(
+            dbContext, hasher.Object, auditContext.Object, NullLogger<ValidateForcedPasswordChangeCommandHandler>.Instance);
+
+        await handler.Handle(
+            new ValidateForcedPasswordChangeCommand(challenge.Id, "newPassword"),
+            CancellationToken.None);
+
+        auditContext.Object.Details.Should().NotBeNull();
+        auditContext.Object.Details!["result"].Should().Be("success");
+        auditContext.Object.EntityId.Should().Be(user.Id);
     }
 
 }

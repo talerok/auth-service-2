@@ -106,6 +106,12 @@ public sealed class OpenSearchIndexService(
     public Task BulkIndexServiceAccountsAsync(IReadOnlyCollection<ServiceAccountDto> serviceAccounts, CancellationToken cancellationToken) =>
         BulkIndexAsync(indexNames.ServiceAccounts, serviceAccounts, x => x.Id, cancellationToken);
 
+    public Task IndexAuditLogAsync(AuditLogDto entry, CancellationToken cancellationToken) =>
+        IndexAsync(indexNames.AuditLogs, entry.Id, entry, cancellationToken);
+
+    public Task BulkIndexAuditLogsAsync(IReadOnlyCollection<AuditLogDto> entries, CancellationToken cancellationToken) =>
+        BulkIndexAsync(indexNames.AuditLogs, entries, x => x.Id, cancellationToken);
+
     private async Task DeleteAsync(string indexName, Guid id, CancellationToken cancellationToken)
     {
         await retryExecutor.ExecuteAsync(

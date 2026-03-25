@@ -33,4 +33,7 @@ public sealed class NullSearchIndexService : ISearchIndexService
     public Task IndexServiceAccountAsync(ServiceAccountDto serviceAccount, CancellationToken cancellationToken) => Task.CompletedTask;
     public Task DeleteServiceAccountAsync(Guid id, CancellationToken cancellationToken) => Task.CompletedTask;
     public Task BulkIndexServiceAccountsAsync(IReadOnlyCollection<ServiceAccountDto> serviceAccounts, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task IndexAuditLogAsync(AuditLogDto entry, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task BulkIndexAuditLogsAsync(IReadOnlyCollection<AuditLogDto> entries, CancellationToken cancellationToken) => Task.CompletedTask;
 }

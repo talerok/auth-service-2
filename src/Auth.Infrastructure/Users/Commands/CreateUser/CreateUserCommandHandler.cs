@@ -1,6 +1,7 @@
 using Auth.Application;
 using Auth.Application.Users.Commands.CreateUser;
 using Auth.Domain;
+using Auth.Infrastructure.AuditLogs;
 using MediatR;
 
 namespace Auth.Infrastructure.Users.Commands.CreateUser;
@@ -8,12 +9,14 @@ namespace Auth.Infrastructure.Users.Commands.CreateUser;
 internal sealed class CreateUserCommandHandler(
     AuthDbContext dbContext,
     IPasswordHasher passwordHasher,
-    ISearchIndexService searchIndexService) : IRequestHandler<CreateUserCommand, UserDto>
+    ISearchIndexService searchIndexService,
+    IAuditContext auditContext) : IRequestHandler<CreateUserCommand, UserDto>
 {
     public async Task<UserDto> Handle(CreateUserCommand command, CancellationToken cancellationToken)
     {
         var user = new User
         {
+            Id = command.EntityId,
             Username = command.Username,
             FullName = command.FullName,
             Email = command.Email,
@@ -30,6 +33,7 @@ internal sealed class CreateUserCommandHandler(
             user.EnableTwoFactor(command.TwoFactorChannel ?? TwoFactorChannel.Email);
 
         dbContext.Users.Add(user);
+        auditContext.Details = AuditDiff.CaptureState(dbContext.Entry(user));
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var dto = new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone,

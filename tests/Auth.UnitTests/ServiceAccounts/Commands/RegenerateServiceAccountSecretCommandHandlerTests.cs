@@ -1,3 +1,4 @@
+using Auth.Application;
 using Auth.Application.ServiceAccounts.Commands.RegenerateServiceAccountSecret;
 using Auth.Infrastructure;
 using Auth.Infrastructure.ServiceAccounts.Commands.RegenerateServiceAccountSecret;
@@ -24,7 +25,7 @@ public sealed class RegenerateServiceAccountSecretCommandHandlerTests
             .ReturnsAsync(oidcApp);
         appManager.Setup(x => x.PopulateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), oidcApp, It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
-        var handler = new RegenerateServiceAccountSecretCommandHandler(dbContext, appManager.Object);
+        var handler = new RegenerateServiceAccountSecretCommandHandler(dbContext, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new RegenerateServiceAccountSecretCommand(serviceAccount.Id),
@@ -40,7 +41,7 @@ public sealed class RegenerateServiceAccountSecretCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new RegenerateServiceAccountSecretCommandHandler(dbContext, appManager.Object);
+        var handler = new RegenerateServiceAccountSecretCommandHandler(dbContext, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new RegenerateServiceAccountSecretCommand(Guid.NewGuid()),

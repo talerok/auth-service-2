@@ -19,7 +19,7 @@ public sealed class CreateRoleCommandHandlerTests
         var searchIndex = new Mock<ISearchIndexService>();
         searchIndex.Setup(x => x.IndexRoleAsync(It.IsAny<RoleDto>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var handler = new CreateRoleCommandHandler(dbContext, searchIndex.Object);
+        var handler = new CreateRoleCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new CreateRoleCommand("Admin", "admin", "Administrator role"),

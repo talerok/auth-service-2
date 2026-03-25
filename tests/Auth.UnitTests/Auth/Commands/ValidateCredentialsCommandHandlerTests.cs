@@ -21,7 +21,8 @@ public sealed class ValidateCredentialsCommandHandlerTests
         var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hashed", IsActive = true, IsInternalAuthEnabled = true };
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync();
-        var handler = new ValidateCredentialsCommandHandler(dbContext, hasher.Object);
+        var auditContext = new Mock<IAuditContext>();
+        var handler = new ValidateCredentialsCommandHandler(dbContext, hasher.Object, auditContext.Object);
 
         var result = await handler.Handle(
             new ValidateCredentialsCommand("alice", "correctPassword"),
@@ -40,7 +41,8 @@ public sealed class ValidateCredentialsCommandHandlerTests
         var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hashed", IsActive = true, IsInternalAuthEnabled = false };
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync();
-        var handler = new ValidateCredentialsCommandHandler(dbContext, hasher.Object);
+        var auditContext = new Mock<IAuditContext>();
+        var handler = new ValidateCredentialsCommandHandler(dbContext, hasher.Object, auditContext.Object);
 
         var act = () => handler.Handle(
             new ValidateCredentialsCommand("alice", "correctPassword"),
@@ -59,7 +61,8 @@ public sealed class ValidateCredentialsCommandHandlerTests
         var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hashed", IsActive = true };
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync();
-        var handler = new ValidateCredentialsCommandHandler(dbContext, hasher.Object);
+        var auditContext = new Mock<IAuditContext>();
+        var handler = new ValidateCredentialsCommandHandler(dbContext, hasher.Object, auditContext.Object);
 
         var act = () => handler.Handle(
             new ValidateCredentialsCommand("alice", "wrongPassword"),
@@ -77,7 +80,8 @@ public sealed class ValidateCredentialsCommandHandlerTests
         var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hashed", IsActive = false };
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync();
-        var handler = new ValidateCredentialsCommandHandler(dbContext, hasher.Object);
+        var auditContext = new Mock<IAuditContext>();
+        var handler = new ValidateCredentialsCommandHandler(dbContext, hasher.Object, auditContext.Object);
 
         var act = () => handler.Handle(
             new ValidateCredentialsCommand("alice", "anyPassword"),
@@ -92,7 +96,8 @@ public sealed class ValidateCredentialsCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var hasher = new Mock<IPasswordHasher>();
-        var handler = new ValidateCredentialsCommandHandler(dbContext, hasher.Object);
+        var auditContext = new Mock<IAuditContext>();
+        var handler = new ValidateCredentialsCommandHandler(dbContext, hasher.Object, auditContext.Object);
 
         var act = () => handler.Handle(
             new ValidateCredentialsCommand("nonexistent", "anyPassword"),
@@ -100,6 +105,48 @@ public sealed class ValidateCredentialsCommandHandlerTests
 
         await act.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == AuthErrorCatalog.InvalidCredentials);
+    }
+
+    [Fact]
+    public async Task Handle_InvalidCredentials_SetsFailureAuditDetails()
+    {
+        await using var dbContext = CreateDbContext();
+        var hasher = new Mock<IPasswordHasher>();
+        var auditContext = new Mock<IAuditContext>();
+        auditContext.SetupAllProperties();
+        var handler = new ValidateCredentialsCommandHandler(dbContext, hasher.Object, auditContext.Object);
+
+        var act = () => handler.Handle(
+            new ValidateCredentialsCommand("nonexistent", "anyPassword"),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<AuthException>();
+        auditContext.Object.Details.Should().NotBeNull();
+        auditContext.Object.Details!["username"].Should().Be("nonexistent");
+        auditContext.Object.Details!["result"].Should().Be("failure");
+    }
+
+    [Fact]
+    public async Task Handle_ValidCredentials_SetsSuccessAuditDetails()
+    {
+        await using var dbContext = CreateDbContext();
+        var hasher = new Mock<IPasswordHasher>();
+        hasher.Setup(x => x.Verify("correctPassword", "hashed")).Returns(true);
+        var user = new User { Username = "alice", Email = "alice@example.com", PasswordHash = "hashed", IsActive = true, IsInternalAuthEnabled = true };
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
+        var auditContext = new Mock<IAuditContext>();
+        auditContext.SetupAllProperties();
+        var handler = new ValidateCredentialsCommandHandler(dbContext, hasher.Object, auditContext.Object);
+
+        await handler.Handle(
+            new ValidateCredentialsCommand("alice", "correctPassword"),
+            CancellationToken.None);
+
+        auditContext.Object.Details.Should().NotBeNull();
+        auditContext.Object.Details!["username"].Should().Be("alice");
+        auditContext.Object.Details!["result"].Should().Be("success");
+        auditContext.Object.EntityId.Should().Be(user.Id);
     }
 
 }

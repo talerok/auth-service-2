@@ -25,6 +25,7 @@ public static class ServiceCollectionExtensions
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ServiceCollectionExtensions).Assembly));
         services.AddValidatorsFromAssembly(typeof(AuthException).Assembly);
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuditLogs.AuditBehavior<,>));
 
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<IOidcTokenValidator, OidcTokenValidator>();
@@ -32,6 +33,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPermissionBitCache, PermissionBitCache>();
         services.AddMemoryCache();
         services.AddSingleton<ICorsOriginService, CorsOriginService>();
+        services.AddHttpContextAccessor();
+        services.AddScoped<IAuditService, AuditLogs.AuditService>();
+        services.AddScoped<IAuditContext, AuditLogs.AuditContext>();
         services.AddScoped<ISearchIndexService, NullSearchIndexService>();
 
         if (integration.Smtp.Enabled)

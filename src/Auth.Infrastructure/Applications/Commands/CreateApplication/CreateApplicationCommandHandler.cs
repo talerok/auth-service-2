@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Auth.Application;
 using Auth.Application.Applications.Commands.CreateApplication;
+using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -12,7 +13,8 @@ internal sealed class CreateApplicationCommandHandler(
     AuthDbContext dbContext,
     ISearchIndexService searchIndexService,
     ICorsOriginService corsOriginService,
-    IOpenIddictApplicationManager appManager) : IRequestHandler<CreateApplicationCommand, CreateApplicationResponse>
+    IOpenIddictApplicationManager appManager,
+    IAuditContext auditContext) : IRequestHandler<CreateApplicationCommand, CreateApplicationResponse>
 {
     private static readonly List<string> DefaultScopes = ["email", "profile"];
     private static readonly List<string> DefaultGrantTypes = ["authorization_code", "refresh_token"];
@@ -27,6 +29,7 @@ internal sealed class CreateApplicationCommandHandler(
 
         var application = new Domain.Application
         {
+            Id = command.EntityId,
             Name = command.Name,
             Description = command.Description,
             ClientId = clientId,
@@ -46,6 +49,7 @@ internal sealed class CreateApplicationCommandHandler(
         application.SetAudiences(command.Audiences ?? []);
 
         dbContext.Applications.Add(application);
+        auditContext.Details = AuditDiff.CaptureState(dbContext.Entry(application));
         await dbContext.SaveChangesAsync(cancellationToken);
         corsOriginService.InvalidateCache();
 

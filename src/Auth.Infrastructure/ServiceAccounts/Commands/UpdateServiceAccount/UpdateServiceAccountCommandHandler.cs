@@ -1,5 +1,6 @@
 using Auth.Application;
 using Auth.Application.ServiceAccounts.Commands.UpdateServiceAccount;
+using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
@@ -10,7 +11,8 @@ namespace Auth.Infrastructure.ServiceAccounts.Commands.UpdateServiceAccount;
 internal sealed class UpdateServiceAccountCommandHandler(
     AuthDbContext dbContext,
     ISearchIndexService searchIndexService,
-    IOpenIddictApplicationManager appManager) : IRequestHandler<UpdateServiceAccountCommand, ServiceAccountDto?>
+    IOpenIddictApplicationManager appManager,
+    IAuditContext auditContext) : IRequestHandler<UpdateServiceAccountCommand, ServiceAccountDto?>
 {
     public async Task<ServiceAccountDto?> Handle(UpdateServiceAccountCommand command, CancellationToken cancellationToken)
     {
@@ -24,6 +26,11 @@ internal sealed class UpdateServiceAccountCommandHandler(
         serviceAccount.AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes;
         if (command.Audiences is not null)
             serviceAccount.SetAudiences(command.Audiences.ToList());
+
+        var changes = AuditDiff.CaptureChanges(dbContext.Entry(serviceAccount));
+        if (changes.Count > 0)
+            auditContext.Details = changes;
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var oidcApp = await appManager.FindByClientIdAsync(serviceAccount.ClientId, cancellationToken);

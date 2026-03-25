@@ -23,7 +23,7 @@ public sealed class UpdateApplicationCommandHandlerTests
         var searchIndex = new Mock<ISearchIndexService>();
         var corsOriginService = new Mock<ICorsOriginService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
+        var handler = new UpdateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateApplicationCommand(application.Id, "New", "New desc", false,
@@ -43,7 +43,7 @@ public sealed class UpdateApplicationCommandHandlerTests
         var searchIndex = new Mock<ISearchIndexService>();
         var corsOriginService = new Mock<ICorsOriginService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
+        var handler = new UpdateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateApplicationCommand(Guid.NewGuid(), "Name", "Desc", true,
@@ -63,7 +63,7 @@ public sealed class UpdateApplicationCommandHandlerTests
         var searchIndex = new Mock<ISearchIndexService>();
         var corsOriginService = new Mock<ICorsOriginService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
+        var handler = new UpdateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateApplicationCommand(application.Id, "OAuth App", "updated", true,
@@ -104,7 +104,7 @@ public sealed class UpdateApplicationCommandHandlerTests
             .Returns(ValueTask.CompletedTask);
 
         var corsOriginService = new Mock<ICorsOriginService>();
-        var handler = new UpdateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object);
+        var handler = new UpdateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new UpdateApplicationCommand(application.Id, "OAuth App", "desc", true,

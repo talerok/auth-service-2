@@ -1,6 +1,7 @@
 using Auth.Application;
 using Auth.Application.Users.Commands.PatchUser;
 using Auth.Domain;
+using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +9,8 @@ namespace Auth.Infrastructure.Users.Commands.PatchUser;
 
 internal sealed class PatchUserCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService) : IRequestHandler<PatchUserCommand, UserDto?>
+    ISearchIndexService searchIndexService,
+    IAuditContext auditContext) : IRequestHandler<PatchUserCommand, UserDto?>
 {
     public async Task<UserDto?> Handle(PatchUserCommand command, CancellationToken cancellationToken)
     {
@@ -43,6 +45,10 @@ internal sealed class PatchUserCommandHandler(
             else
                 user.DisableTwoFactor();
         }
+
+        var changes = AuditDiff.CaptureChanges(dbContext.Entry(user));
+        if (changes.Count > 0)
+            auditContext.Details = changes;
 
         await dbContext.SaveChangesAsync(cancellationToken);
 

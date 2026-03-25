@@ -9,7 +9,8 @@ namespace Auth.Infrastructure.ServiceAccounts.Commands.SoftDeleteServiceAccount;
 internal sealed class SoftDeleteServiceAccountCommandHandler(
     AuthDbContext dbContext,
     ISearchIndexService searchIndexService,
-    IOpenIddictApplicationManager appManager) : IRequestHandler<SoftDeleteServiceAccountCommand, bool>
+    IOpenIddictApplicationManager appManager,
+    IAuditContext auditContext) : IRequestHandler<SoftDeleteServiceAccountCommand, bool>
 {
     public async Task<bool> Handle(SoftDeleteServiceAccountCommand command, CancellationToken cancellationToken)
     {
@@ -17,6 +18,7 @@ internal sealed class SoftDeleteServiceAccountCommandHandler(
         if (serviceAccount is null)
             return false;
 
+        auditContext.Details = new Dictionary<string, object?> { ["name"] = serviceAccount.Name, ["clientId"] = serviceAccount.ClientId };
         serviceAccount.SoftDelete();
         await dbContext.SaveChangesAsync(cancellationToken);
 

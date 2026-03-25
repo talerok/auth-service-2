@@ -12,4 +12,9 @@ public sealed record UpdateUserCommand(
     bool IsActive,
     bool IsInternalAuthEnabled = true,
     bool TwoFactorEnabled = false,
-    TwoFactorChannel? TwoFactorChannel = null) : IRequest<UserDto?>;
+    TwoFactorChannel? TwoFactorChannel = null) : IRequest<UserDto?>, IAuditable
+{
+    public AuditEntityType EntityType => AuditEntityType.User;
+    public AuditAction Action => AuditAction.Update;
+    public Guid EntityId => Id;
+}

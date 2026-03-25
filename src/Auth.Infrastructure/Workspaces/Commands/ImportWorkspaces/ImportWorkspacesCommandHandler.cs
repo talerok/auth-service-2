@@ -10,7 +10,8 @@ namespace Auth.Infrastructure.Workspaces.Commands.ImportWorkspaces;
 internal sealed class ImportWorkspacesCommandHandler(
     AuthDbContext dbContext,
     ISearchIndexService searchIndexService,
-    IOpenIddictScopeManager scopeManager) : IRequestHandler<ImportWorkspacesCommand, ImportWorkspacesResult>
+    IOpenIddictScopeManager scopeManager,
+    IAuditContext auditContext) : IRequestHandler<ImportWorkspacesCommand, ImportWorkspacesResult>
 {
     public async Task<ImportWorkspacesResult> Handle(ImportWorkspacesCommand command, CancellationToken cancellationToken)
     {
@@ -25,6 +26,13 @@ internal sealed class ImportWorkspacesCommandHandler(
             throw new AuthException(AuthErrorCatalog.SystemWorkspaceImportForbidden);
 
         var (created, updated, skipped, processed) = ApplyChanges(command, existing);
+
+        auditContext.Details = new Dictionary<string, object?>
+        {
+            ["count"] = command.Items.Count,
+            ["created"] = created,
+            ["updated"] = updated
+        };
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await SyncWorkspaceScopesAsync(processed, cancellationToken);

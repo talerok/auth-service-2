@@ -12,4 +12,9 @@ public sealed record PatchUserCommand(
     bool? IsActive,
     bool? IsInternalAuthEnabled = null,
     bool? TwoFactorEnabled = null,
-    TwoFactorChannel? TwoFactorChannel = null) : IRequest<UserDto?>;
+    TwoFactorChannel? TwoFactorChannel = null) : IRequest<UserDto?>, IAuditable
+{
+    public AuditEntityType EntityType => AuditEntityType.User;
+    public AuditAction Action => AuditAction.Patch;
+    public Guid EntityId => Id;
+}

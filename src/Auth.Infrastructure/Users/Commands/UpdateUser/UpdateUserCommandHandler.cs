@@ -1,6 +1,7 @@
 using Auth.Application;
 using Auth.Application.Users.Commands.UpdateUser;
 using Auth.Domain;
+using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +9,8 @@ namespace Auth.Infrastructure.Users.Commands.UpdateUser;
 
 internal sealed class UpdateUserCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService) : IRequestHandler<UpdateUserCommand, UserDto?>
+    ISearchIndexService searchIndexService,
+    IAuditContext auditContext) : IRequestHandler<UpdateUserCommand, UserDto?>
 {
     public async Task<UserDto?> Handle(UpdateUserCommand command, CancellationToken cancellationToken)
     {
@@ -27,6 +29,10 @@ internal sealed class UpdateUserCommandHandler(
             user.EnableTwoFactor(command.TwoFactorChannel ?? TwoFactorChannel.Email);
         else
             user.DisableTwoFactor();
+
+        var changes = AuditDiff.CaptureChanges(dbContext.Entry(user));
+        if (changes.Count > 0)
+            auditContext.Details = changes;
 
         await dbContext.SaveChangesAsync(cancellationToken);
 

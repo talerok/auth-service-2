@@ -21,7 +21,7 @@ public sealed class PatchServiceAccountCommandHandlerTests
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchServiceAccountCommand(serviceAccount.Id, "Patched", null, null),
@@ -39,7 +39,7 @@ public sealed class PatchServiceAccountCommandHandlerTests
         await using var dbContext = CreateDbContext();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchServiceAccountCommand(Guid.NewGuid(), "Name", null, null),
@@ -61,7 +61,7 @@ public sealed class PatchServiceAccountCommandHandlerTests
             .ReturnsAsync(new object());
         appManager.Setup(x => x.PopulateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
-        var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new PatchServiceAccountCommand(serviceAccount.Id, "New Name", null, null),
@@ -79,7 +79,7 @@ public sealed class PatchServiceAccountCommandHandlerTests
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new PatchServiceAccountCommand(serviceAccount.Id, null, "new desc", null),
@@ -97,7 +97,7 @@ public sealed class PatchServiceAccountCommandHandlerTests
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchServiceAccountCommand(serviceAccount.Id, null, null, false),
@@ -116,7 +116,7 @@ public sealed class PatchServiceAccountCommandHandlerTests
         await dbContext.SaveChangesAsync();
         var searchIndex = new Mock<ISearchIndexService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object);
+        var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new PatchServiceAccountCommand(serviceAccount.Id, null, "new desc", null),
