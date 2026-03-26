@@ -42,7 +42,7 @@ internal static class OidcPrincipalFactory
         ApplyWorkspaceClaims(identity, accessibleMasks);
 
         identity.SetClaim(Claims.AuthenticationTime,
-            DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+            DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 
         if (authMethods is { Count: > 0 })
         {
