@@ -13,7 +13,8 @@ internal sealed class GetUserByIdQueryHandler(
         return await dbContext.Users.AsNoTracking()
             .Where(x => x.Id == query.Id)
             .Select(x => new UserDto(x.Id, x.Username, x.FullName, x.Email, x.Phone,
-                x.IsActive, x.IsInternalAuthEnabled, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel))
+                x.IsActive, x.IsInternalAuthEnabled, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel,
+                x.Locale, x.EmailVerified, x.PhoneVerified))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

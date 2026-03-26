@@ -30,6 +30,10 @@ internal sealed class UpdateUserCommandHandler(
         else
             user.DisableTwoFactor();
 
+        user.Locale = command.Locale;
+        user.EmailVerified = command.EmailVerified;
+        user.PhoneVerified = command.PhoneVerified;
+
         var changes = AuditDiff.CaptureChanges(dbContext.Entry(user));
         if (changes.Count > 0)
             auditContext.Details = changes;
@@ -37,7 +41,8 @@ internal sealed class UpdateUserCommandHandler(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var dto = new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone,
-            user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel);
+            user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel,
+            user.Locale, user.EmailVerified, user.PhoneVerified);
 
         await searchIndexService.IndexUserAsync(dto, cancellationToken);
         return dto;

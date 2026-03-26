@@ -12,6 +12,9 @@ public sealed class User : EntityBase
     [Auditable] public bool MustChangePassword { get; private set; }
     [Auditable] public bool TwoFactorEnabled { get; private set; }
     [Auditable] public TwoFactorChannel? TwoFactorChannel { get; private set; }
+    [Auditable] public string Locale { get; set; } = "en-US";
+    [Auditable] public bool EmailVerified { get; set; }
+    [Auditable] public bool PhoneVerified { get; set; }
     public ICollection<UserWorkspace> UserWorkspaces { get; private set; } = [];
     public ICollection<TwoFactorChallenge> TwoFactorChallenges { get; private set; } = [];
 
@@ -44,4 +47,7 @@ public sealed class User : EntityBase
         TwoFactorEnabled = false;
         TwoFactorChannel = null;
     }
+
+    public void VerifyEmail() => EmailVerified = true;
+    public void VerifyPhone() => PhoneVerified = true;
 }

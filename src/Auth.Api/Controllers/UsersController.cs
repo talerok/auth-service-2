@@ -14,6 +14,11 @@ using Auth.Application.Users.Queries.GetUserWorkspaces;
 using Auth.Application.Users.Commands.ImportUsers;
 using Auth.Application.Users.Queries.ExportUsers;
 using Auth.Application.Users.Queries.SearchUsers;
+using Auth.Application.Verification;
+using Auth.Application.Verification.Commands.ConfirmEmailVerification;
+using Auth.Application.Verification.Commands.ConfirmPhoneVerification;
+using Auth.Application.Verification.Commands.SendEmailVerification;
+using Auth.Application.Verification.Commands.SendPhoneVerification;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -46,7 +51,8 @@ public sealed class UsersController(ISender sender) : ControllerBase
         sender.Send(new CreateUserCommand(
             request.Username, request.FullName, request.Email, request.Password,
             request.Phone, request.IsActive, request.IsInternalAuthEnabled, request.MustChangePassword,
-            request.TwoFactorEnabled, request.TwoFactorChannel), cancellationToken);
+            request.TwoFactorEnabled, request.TwoFactorChannel, request.Locale, request.EmailVerified,
+            request.PhoneVerified), cancellationToken);
 
     [HttpPut("{id:guid}")]
     [HasPermissionIn("system", "system", "system.users.update")]
@@ -55,7 +61,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
         var updated = await sender.Send(new UpdateUserCommand(
             id, request.Username, request.FullName, request.Email,
             request.Phone, request.IsActive, request.IsInternalAuthEnabled, request.TwoFactorEnabled,
-            request.TwoFactorChannel), cancellationToken);
+            request.TwoFactorChannel, request.Locale, request.EmailVerified, request.PhoneVerified), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -66,7 +72,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
         var updated = await sender.Send(new PatchUserCommand(
             id, request.Username, request.FullName, request.Email,
             request.Phone, request.IsActive, request.IsInternalAuthEnabled, request.TwoFactorEnabled,
-            request.TwoFactorChannel), cancellationToken);
+            request.TwoFactorChannel, request.Locale, request.EmailVerified, request.PhoneVerified), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -115,6 +121,32 @@ public sealed class UsersController(ISender sender) : ControllerBase
     public async Task<IActionResult> SetIdentitySourceLinks(Guid id, [FromBody] SetUserIdentitySourceLinksRequest request, CancellationToken cancellationToken)
     {
         await sender.Send(new SetUserIdentitySourceLinksCommand(id, request.Links), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/verify-email/send")]
+    [HasPermissionIn("system", "system", "system.users.update")]
+    public async Task<ActionResult<SendVerificationResponse>> SendEmailVerification(Guid id, CancellationToken cancellationToken) =>
+        Ok(await sender.Send(new SendEmailVerificationCommand(id), cancellationToken));
+
+    [HttpPost("{id:guid}/verify-email/confirm")]
+    [HasPermissionIn("system", "system", "system.users.update")]
+    public async Task<IActionResult> ConfirmEmailVerification(Guid id, [FromBody] ConfirmVerificationRequest request, CancellationToken cancellationToken)
+    {
+        await sender.Send(new ConfirmEmailVerificationCommand(id, request.ChallengeId, request.Otp), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/verify-phone/send")]
+    [HasPermissionIn("system", "system", "system.users.update")]
+    public async Task<ActionResult<SendVerificationResponse>> SendPhoneVerification(Guid id, CancellationToken cancellationToken) =>
+        Ok(await sender.Send(new SendPhoneVerificationCommand(id), cancellationToken));
+
+    [HttpPost("{id:guid}/verify-phone/confirm")]
+    [HasPermissionIn("system", "system", "system.users.update")]
+    public async Task<IActionResult> ConfirmPhoneVerification(Guid id, [FromBody] ConfirmVerificationRequest request, CancellationToken cancellationToken)
+    {
+        await sender.Send(new ConfirmPhoneVerificationCommand(id, request.ChallengeId, request.Otp), cancellationToken);
         return NoContent();
     }
 

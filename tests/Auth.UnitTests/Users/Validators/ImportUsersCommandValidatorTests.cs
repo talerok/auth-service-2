@@ -13,7 +13,7 @@ public sealed class ImportUsersCommandValidatorTests
     {
         var command = new ImportUsersCommand(
         [
-            new ImportUserItem("john", "John", "john@example.com", null, true, true, false, false, null, null, null)
+            new ImportUserItem("john", "John", "john@example.com", null, true, true, false, false, null)
         ]);
 
         var result = await _validator.ValidateAsync(command);

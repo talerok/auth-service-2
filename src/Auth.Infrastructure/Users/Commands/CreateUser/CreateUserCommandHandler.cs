@@ -23,7 +23,10 @@ internal sealed class CreateUserCommandHandler(
             Phone = command.Phone,
             PasswordHash = passwordHasher.Hash(command.Password),
             IsActive = command.IsActive,
-            IsInternalAuthEnabled = command.IsInternalAuthEnabled
+            IsInternalAuthEnabled = command.IsInternalAuthEnabled,
+            Locale = command.Locale,
+            EmailVerified = command.EmailVerified,
+            PhoneVerified = command.PhoneVerified
         };
 
         if (command.MustChangePassword)
@@ -37,7 +40,8 @@ internal sealed class CreateUserCommandHandler(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var dto = new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone,
-            user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel);
+            user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel,
+            user.Locale, user.EmailVerified, user.PhoneVerified);
 
         await searchIndexService.IndexUserAsync(dto, cancellationToken);
         return dto;

@@ -20,7 +20,7 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("john", "John Doe", "john@example.com", null, true, true, false, false, null, null, null)
+            new("john", "John Doe", "john@example.com", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -53,7 +53,7 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("john", "John Updated", "john@example.com", "+123", true, true, false, false, null, null, null)
+            new("john", "John Updated", "john@example.com", "+123", true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -82,8 +82,8 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("existing", "Existing Updated", "existing@example.com", null, true, true, false, false, null, null, null),
-            new("newuser", "New User", "new@example.com", null, true, true, false, false, null, null, null)
+            new("existing", "Existing Updated", "existing@example.com", null, true, true, false, false, null),
+            new("newuser", "New User", "new@example.com", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -107,8 +107,8 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("existing", "Updated", "existing@example.com", null, true, true, false, false, null, null, null),
-            new("newuser", "New", "new@example.com", null, true, true, false, false, null, null, null)
+            new("existing", "Updated", "existing@example.com", null, true, true, false, false, null),
+            new("newuser", "New", "new@example.com", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items, Add: false), CancellationToken.None);
 
@@ -131,8 +131,8 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("existing", "Updated", "existing@example.com", null, true, true, false, false, null, null, null),
-            new("newuser", "New", "new@example.com", null, true, true, false, false, null, null, null)
+            new("existing", "Updated", "existing@example.com", null, true, true, false, false, null),
+            new("newuser", "New", "new@example.com", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items, Edit: false), CancellationToken.None);
 
@@ -156,8 +156,8 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("existing", "Updated", "existing@example.com", null, true, true, false, false, null, null, null),
-            new("newuser", "New", "new@example.com", null, true, true, false, false, null, null, null)
+            new("existing", "Updated", "existing@example.com", null, true, true, false, false, null),
+            new("newuser", "New", "new@example.com", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items, Add: false, Edit: false), CancellationToken.None);
 
@@ -180,7 +180,7 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("deleted", "Restored", "deleted@example.com", null, true, true, false, false, null, null, null)
+            new("deleted", "Restored", "deleted@example.com", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -198,7 +198,7 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("john", "John", "not-an-email", null, true, true, false, false, null, null, null)
+            new("john", "John", "not-an-email", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -214,7 +214,7 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("", "John", "john@example.com", null, true, true, false, false, null, null, null)
+            new("", "John", "john@example.com", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -230,7 +230,7 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("john", "", "john@example.com", null, true, true, false, false, null, null, null)
+            new("john", "", "john@example.com", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -246,8 +246,8 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("john", "John 1", "john1@example.com", null, true, true, false, false, null, null, null),
-            new("john", "John 2", "john2@example.com", null, true, true, false, false, null, null, null)
+            new("john", "John 1", "john1@example.com", null, true, true, false, false, null),
+            new("john", "John 2", "john2@example.com", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -263,8 +263,8 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("john1", "John 1", "same@example.com", null, true, true, false, false, null, null, null),
-            new("john2", "John 2", "same@example.com", null, true, true, false, false, null, null, null)
+            new("john1", "John 1", "same@example.com", null, true, true, false, false, null),
+            new("john2", "John 2", "same@example.com", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -286,7 +286,7 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("bob", "Bob", "taken@example.com", null, true, true, false, false, null, null, null)
+            new("bob", "Bob", "taken@example.com", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -303,7 +303,7 @@ public sealed class ImportUsersCommandHandlerTests
         var items = new List<ImportUserItem>
         {
             new("john", "John", "john@example.com", null, true, true, false, false, null,
-                [new ImportUserWorkspaceItem("nonexistent", ["admin"])], null)
+                Workspaces: [new ImportUserWorkspaceItem("nonexistent", ["admin"])])
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -322,7 +322,7 @@ public sealed class ImportUsersCommandHandlerTests
         var items = new List<ImportUserItem>
         {
             new("john", "John", "john@example.com", null, true, true, false, false, null,
-                [new ImportUserWorkspaceItem("dev", ["nonexistent-role"])], null)
+                Workspaces: [new ImportUserWorkspaceItem("dev", ["nonexistent-role"])])
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -339,7 +339,7 @@ public sealed class ImportUsersCommandHandlerTests
         var items = new List<ImportUserItem>
         {
             new("john", "John", "john@example.com", null, true, true, false, false, null,
-                null, [new ImportUserIdentitySourceItem("nonexistent-source", "ext-id")])
+                IdentitySources: [new ImportUserIdentitySourceItem("nonexistent-source", "ext-id")])
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -361,7 +361,7 @@ public sealed class ImportUsersCommandHandlerTests
         var items = new List<ImportUserItem>
         {
             new("john", "John", "john@example.com", null, true, true, false, false, null,
-                [new ImportUserWorkspaceItem("dev", ["admin"])], null)
+                Workspaces: [new ImportUserWorkspaceItem("dev", ["admin"])])
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -389,7 +389,7 @@ public sealed class ImportUsersCommandHandlerTests
         var items = new List<ImportUserItem>
         {
             new("john", "John", "john@example.com", null, true, true, false, false, null,
-                null, [new ImportUserIdentitySourceItem("corp-ldap", "uid=john,dc=corp")])
+                IdentitySources: [new ImportUserIdentitySourceItem("corp-ldap", "uid=john,dc=corp")])
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -419,7 +419,7 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("existing", "Existing Updated", "existing@example.com", null, true, true, false, false, null, null, null)
+            new("existing", "Existing Updated", "existing@example.com", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items, BlockMissing: true), CancellationToken.None);
 
@@ -444,8 +444,8 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("existing", "Updated", "existing@example.com", null, true, true, false, false, null, null, null),
-            new("newuser", "New", "new@example.com", null, true, true, false, false, null, null, null)
+            new("existing", "Updated", "existing@example.com", null, true, true, false, false, null),
+            new("newuser", "New", "new@example.com", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items, BlockMissing: true), CancellationToken.None);
 
@@ -481,7 +481,7 @@ public sealed class ImportUsersCommandHandlerTests
         var items = new List<ImportUserItem>
         {
             new("john", "John", "john@example.com", null, true, true, false, false, null,
-                [new ImportUserWorkspaceItem("new", ["admin"])], null)
+                Workspaces: [new ImportUserWorkspaceItem("new", ["admin"])])
         };
         await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -498,7 +498,7 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("john", "John", "john@example.com", null, true, true, false, true, TwoFactorChannel.Email, null, null)
+            new("john", "John", "john@example.com", null, true, true, false, true, TwoFactorChannel.Email)
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 
@@ -516,8 +516,8 @@ public sealed class ImportUsersCommandHandlerTests
 
         var items = new List<ImportUserItem>
         {
-            new("valid", "Valid User", "valid@example.com", null, true, true, false, false, null, null, null),
-            new("invalid", "Invalid", "not-email", null, true, true, false, false, null, null, null)
+            new("valid", "Valid User", "valid@example.com", null, true, true, false, false, null),
+            new("invalid", "Invalid", "not-email", null, true, true, false, false, null)
         };
         var result = await handler.Handle(new ImportUsersCommand(items), CancellationToken.None);
 

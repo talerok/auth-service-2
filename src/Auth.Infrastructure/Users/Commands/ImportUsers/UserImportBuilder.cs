@@ -20,7 +20,10 @@ internal sealed class UserImportBuilder(AuthDbContext dbContext, IPasswordHasher
             Phone = item.Phone,
             PasswordHash = passwordHasher.Hash(tempPassword),
             IsActive = item.IsActive,
-            IsInternalAuthEnabled = item.IsInternalAuthEnabled
+            IsInternalAuthEnabled = item.IsInternalAuthEnabled,
+            Locale = item.Locale,
+            EmailVerified = item.EmailVerified,
+            PhoneVerified = item.PhoneVerified
         };
 
         user.MarkMustChangePassword();
@@ -52,6 +55,9 @@ internal sealed class UserImportBuilder(AuthDbContext dbContext, IPasswordHasher
         user.Phone = item.Phone;
         if (item.IsActive) user.Activate(); else user.Deactivate();
         user.IsInternalAuthEnabled = item.IsInternalAuthEnabled;
+        user.Locale = item.Locale;
+        user.EmailVerified = item.EmailVerified;
+        user.PhoneVerified = item.PhoneVerified;
         user.Restore();
 
         if (item.MustChangePassword)

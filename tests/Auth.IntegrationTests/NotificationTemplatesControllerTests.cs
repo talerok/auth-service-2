@@ -35,37 +35,48 @@ public sealed class NotificationTemplatesControllerTests(IntegrationTestFixture 
         templates.Should().NotBeEmpty();
     }
 
-    // --- GetByChannel ---
+    // --- GetById ---
 
     [Fact]
-    public async Task GetByChannel_Email_Returns200()
+    public async Task GetById_ExistingTemplate_Returns200()
     {
-        var response = await Client.GetAsync("/api/notification-templates/Email");
+        var allResponse = await Client.GetAsync("/api/notification-templates");
+        var templates = await allResponse.Content
+            .ReadFromJsonAsync<IReadOnlyCollection<NotificationTemplateDto>>(IntegrationTestFixture.JsonOptions);
+        var first = templates!.First();
+
+        var response = await Client.GetAsync($"/api/notification-templates/{first.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var template = await response.Content
             .ReadFromJsonAsync<NotificationTemplateDto>(IntegrationTestFixture.JsonOptions);
         template.Should().NotBeNull();
-        template!.Channel.Should().NotBeNullOrWhiteSpace();
+        template!.Type.Should().NotBeNullOrWhiteSpace();
+        template.Locale.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
-    public async Task GetByChannel_NonexistentChannel_Returns404()
+    public async Task GetById_NonexistentId_Returns404()
     {
-        var response = await Client.GetAsync("/api/notification-templates/Unknown");
+        var response = await Client.GetAsync($"/api/notification-templates/{Guid.NewGuid()}");
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     // --- Update ---
 
     [Fact]
-    public async Task Update_EmailTemplate_ReturnsUpdated()
+    public async Task Update_ExistingTemplate_ReturnsUpdated()
     {
+        var allResponse = await Client.GetAsync("/api/notification-templates");
+        var templates = await allResponse.Content
+            .ReadFromJsonAsync<IReadOnlyCollection<NotificationTemplateDto>>(IntegrationTestFixture.JsonOptions);
+        var first = templates!.First();
+
         var request = new UpdateNotificationTemplateRequest(
-            "Updated Subject", "<html><body>Updated OTP: {{otp}}</body></html>");
+            first.Type, first.Locale, "Updated Subject", "<html><body>Updated OTP: {{otp}}</body></html>");
 
         var response = await Client.PutAsJsonAsync(
-            "/api/notification-templates/Email", request, IntegrationTestFixture.JsonOptions);
+            $"/api/notification-templates/{first.Id}", request, IntegrationTestFixture.JsonOptions);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await response.Content

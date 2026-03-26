@@ -9,33 +9,32 @@ namespace Auth.Infrastructure.NotificationTemplates.Commands.UpdateNotificationT
 
 internal sealed class UpdateNotificationTemplateCommandHandler(
     AuthDbContext dbContext,
+    ISearchIndexService searchIndexService,
     IAuditContext auditContext) : IRequestHandler<UpdateNotificationTemplateCommand, NotificationTemplateDto?>
 {
     public async Task<NotificationTemplateDto?> Handle(UpdateNotificationTemplateCommand command, CancellationToken cancellationToken)
     {
-        if (!Enum.TryParse<TwoFactorChannel>(command.Channel, true, out var parsed))
-            return null;
-
         var entity = await dbContext.NotificationTemplates
-            .FirstOrDefaultAsync(x => x.Channel == parsed, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Id == command.Id, cancellationToken);
 
         if (entity is null)
             return null;
 
+        var type = Enum.Parse<NotificationTemplateType>(command.Type, true);
+
+        entity.Type = type;
+        entity.Locale = command.Locale;
         entity.Subject = command.Subject;
         entity.Body = command.Body;
 
-        auditContext.EntityId = entity.Id;
         var changes = AuditDiff.CaptureChanges(dbContext.Entry(entity));
         if (changes.Count > 0)
             auditContext.Details = changes;
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return new NotificationTemplateDto(
-            entity.Id,
-            entity.Channel.ToString().ToLowerInvariant(),
-            entity.Subject,
-            entity.Body);
+        var dto = new NotificationTemplateDto(entity.Id, entity.Type.ToString(), entity.Locale, entity.Subject, entity.Body);
+        await searchIndexService.IndexNotificationTemplateAsync(dto, cancellationToken);
+        return dto;
     }
 }

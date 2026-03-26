@@ -25,12 +25,19 @@ internal static class OidcPrincipalFactory
         identity.SetClaim(Claims.Subject, user.Id.ToString());
         identity.SetClaim(Claims.Name, user.FullName);
         identity.SetClaim(Claims.PreferredUsername, user.Username);
+        identity.SetClaim(Claims.Locale, user.Locale);
 
         if (scopeList.Contains(Scopes.Email))
+        {
             identity.SetClaim(Claims.Email, user.Email);
+            identity.SetClaim(Claims.EmailVerified, user.EmailVerified.ToString().ToLowerInvariant());
+        }
 
         if (scopeList.Contains(Scopes.Phone) && !string.IsNullOrWhiteSpace(user.Phone))
+        {
             identity.SetClaim(Claims.PhoneNumber, user.Phone);
+            identity.SetClaim(Claims.PhoneNumberVerified, user.PhoneVerified.ToString().ToLowerInvariant());
+        }
 
         var isWildcard = OidcConstants.IsWildcardWorkspaceScope(scopeList);
         var workspaceCodes = OidcConstants.ExtractWorkspaceCodes(scopeList);
@@ -59,8 +66,11 @@ internal static class OidcPrincipalFactory
             Claims.Subject => [Destinations.AccessToken, Destinations.IdentityToken],
             Claims.Name => [Destinations.AccessToken, Destinations.IdentityToken],
             Claims.PreferredUsername => [Destinations.IdentityToken],
+            Claims.Locale => [Destinations.IdentityToken],
             Claims.Email => [Destinations.IdentityToken],
+            Claims.EmailVerified => [Destinations.IdentityToken],
             Claims.PhoneNumber => [Destinations.IdentityToken],
+            Claims.PhoneNumberVerified => [Destinations.IdentityToken],
             Claims.AuthenticationMethodReference => [Destinations.IdentityToken],
             Claims.AuthenticationTime => [Destinations.IdentityToken],
             _ when claim.Type.StartsWith(OidcConstants.WorkspaceScopePrefix, StringComparison.Ordinal)

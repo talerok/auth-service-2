@@ -10,15 +10,16 @@ public sealed class NotificationTemplateConfiguration : IEntityTypeConfiguration
     {
         builder.ToTable("notification_templates");
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Channel)
+        builder.Property(x => x.Type)
             .IsRequired()
             .HasConversion(
                 value => value.ToString().ToLowerInvariant(),
-                value => Enum.Parse<TwoFactorChannel>(value, true))
-            .HasMaxLength(16);
+                value => Enum.Parse<NotificationTemplateType>(value, true))
+            .HasMaxLength(32);
+        builder.Property(x => x.Locale).IsRequired().HasMaxLength(16).HasDefaultValue("en-US");
         builder.Property(x => x.Subject).HasMaxLength(500);
         builder.Property(x => x.Body).HasColumnType("text");
         builder.HasQueryFilter(x => x.DeletedAt == null);
-        builder.HasIndex(x => x.Channel).IsUnique().HasFilter("\"DeletedAt\" IS NULL");
+        builder.HasIndex(x => new { x.Type, x.Locale }).IsUnique().HasFilter("\"DeletedAt\" IS NULL");
     }
 }

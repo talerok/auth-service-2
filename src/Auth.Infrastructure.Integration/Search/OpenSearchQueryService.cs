@@ -30,6 +30,9 @@ public sealed class OpenSearchQueryService(
     public Task<Auth.Application.SearchResponse<AuditLogDto>> SearchAuditLogsAsync(AppSearchRequest request, CancellationToken cancellationToken) =>
         SearchAsync<AuditLogDto>(indexNames.AuditLogs, request, cancellationToken);
 
+    public Task<Auth.Application.SearchResponse<NotificationTemplateDto>> SearchNotificationTemplatesAsync(AppSearchRequest request, CancellationToken cancellationToken) =>
+        SearchAsync<NotificationTemplateDto>(indexNames.NotificationTemplates, request, cancellationToken);
+
     private async Task<Auth.Application.SearchResponse<TDocument>> SearchAsync<TDocument>(string indexName, AppSearchRequest request, CancellationToken cancellationToken)
         where TDocument : class
     {

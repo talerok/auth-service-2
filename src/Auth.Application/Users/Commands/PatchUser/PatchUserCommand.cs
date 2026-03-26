@@ -12,7 +12,10 @@ public sealed record PatchUserCommand(
     bool? IsActive,
     bool? IsInternalAuthEnabled = null,
     bool? TwoFactorEnabled = null,
-    TwoFactorChannel? TwoFactorChannel = null) : IRequest<UserDto?>, IAuditable
+    TwoFactorChannel? TwoFactorChannel = null,
+    string? Locale = null,
+    bool? EmailVerified = null,
+    bool? PhoneVerified = null) : IRequest<UserDto?>, IAuditable
 {
     public AuditEntityType EntityType => AuditEntityType.User;
     public AuditAction Action => AuditAction.Patch;

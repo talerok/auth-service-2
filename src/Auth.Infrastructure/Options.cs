@@ -12,6 +12,7 @@ public sealed class IntegrationOptions
     public PasswordChangeOptions PasswordChange { get; set; } = new();
     public SmtpOptions Smtp { get; set; } = new();
     public SmsGatewayOptions SmsGateway { get; set; } = new();
+    public VerificationOptions Verification { get; set; } = new();
     public CorsOptions Cors { get; set; } = new();
     public OidcOptions Oidc { get; set; } = new();
     public PasswordRequirementsOptions PasswordRequirements { get; set; } = new();
@@ -77,6 +78,12 @@ public sealed class SmsGatewayOptions
     public string BaseUrl { get; set; } = string.Empty;
     public string ApiKey { get; set; } = string.Empty;
     public int TimeoutSeconds { get; set; } = 5;
+}
+
+public sealed class VerificationOptions
+{
+    public string EmailBaseUrl { get; set; } = string.Empty;
+    public string PhoneBaseUrl { get; set; } = string.Empty;
 }
 
 public sealed class OidcOptions

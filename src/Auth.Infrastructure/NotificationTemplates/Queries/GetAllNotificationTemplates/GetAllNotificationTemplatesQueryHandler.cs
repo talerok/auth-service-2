@@ -12,7 +12,8 @@ internal sealed class GetAllNotificationTemplatesQueryHandler(
         await dbContext.NotificationTemplates.AsNoTracking()
             .Select(x => new NotificationTemplateDto(
                 x.Id,
-                x.Channel.ToString().ToLowerInvariant(),
+                x.Type.ToString(),
+                x.Locale,
                 x.Subject,
                 x.Body))
             .ToListAsync(cancellationToken);

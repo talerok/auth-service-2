@@ -15,6 +15,7 @@ public sealed class TwoFactorDeliveryBackgroundService(
     ILogger<TwoFactorDeliveryBackgroundService> logger) : BackgroundService
 {
     private readonly TwoFactorOptions _twoFactor = options.Value.TwoFactor;
+    private readonly VerificationOptions _verification = options.Value.Verification;
     private readonly string _twoFactorKeyMaterial = options.Value.EncryptionKey;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -51,19 +52,31 @@ public sealed class TwoFactorDeliveryBackgroundService(
 
         var templates = await dbContext.NotificationTemplates
             .AsNoTracking()
-            .ToDictionaryAsync(x => x.Channel, cancellationToken);
+            .ToListAsync(cancellationToken);
 
         foreach (var challenge in pending)
         {
             if (challenge.Channel == TwoFactorChannel.Sms && string.IsNullOrWhiteSpace(challenge.User?.Phone))
             {
                 challenge.MarkDeliveryFailed();
-                logger.LogWarning("SMS 2FA delivery skipped — user has no phone for challenge {ChallengeId}", challenge.Id);
+                logger.LogWarning("SMS delivery skipped — user has no phone for challenge {ChallengeId}", challenge.Id);
                 continue;
             }
 
             var otp = TwoFactorOtpSecurity.DecryptOtp(challenge.OtpEncrypted, _twoFactorKeyMaterial);
-            var result = await DeliverWithRetryAsync(challenge, otp, challenge.User!.Email, challenge.User.Phone, templates, cancellationToken);
+            var locale = challenge.User?.Locale ?? "en-US";
+            var templateType = ResolveTemplateType(challenge.Purpose, challenge.Channel);
+            var template = ResolveTemplate(templates, templateType, locale);
+
+            if (template is null)
+            {
+                logger.LogWarning("Template {Type}/{Locale} not found for challenge {ChallengeId}", templateType, locale, challenge.Id);
+                challenge.MarkDeliveryFailed();
+                continue;
+            }
+
+            var link = BuildVerificationLink(challenge.Purpose, challenge.Id, otp);
+            var result = await DeliverWithRetryAsync(challenge, otp, link, challenge.User!.Email, challenge.User.Phone, template, cancellationToken);
 
             switch (result)
             {
@@ -82,9 +95,40 @@ public sealed class TwoFactorDeliveryBackgroundService(
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    private static NotificationTemplateType ResolveTemplateType(string purpose, TwoFactorChannel channel) =>
+        purpose switch
+        {
+            TwoFactorChallenge.PurposeEmailVerification => NotificationTemplateType.EmailVerification,
+            TwoFactorChallenge.PurposePhoneVerification => NotificationTemplateType.PhoneVerification,
+            _ => channel == TwoFactorChannel.Sms
+                ? NotificationTemplateType.TwoFactorSms
+                : NotificationTemplateType.TwoFactorEmail
+        };
+
+    private static NotificationTemplate? ResolveTemplate(
+        List<NotificationTemplate> templates, NotificationTemplateType type, string locale) =>
+        templates.FirstOrDefault(t => t.Type == type && t.Locale.Equals(locale, StringComparison.OrdinalIgnoreCase))
+        ?? templates.FirstOrDefault(t => t.Type == type && t.Locale.Equals("en-US", StringComparison.OrdinalIgnoreCase));
+
+    private string BuildVerificationLink(string purpose, Guid challengeId, string otp)
+    {
+        var baseUrl = purpose switch
+        {
+            TwoFactorChallenge.PurposeEmailVerification => _verification.EmailBaseUrl,
+            TwoFactorChallenge.PurposePhoneVerification => _verification.PhoneBaseUrl,
+            _ => null
+        };
+
+        if (string.IsNullOrWhiteSpace(baseUrl))
+            return string.Empty;
+
+        var separator = baseUrl.Contains('?') ? "&" : "?";
+        return $"{baseUrl}{separator}challengeId={challengeId}&code={Uri.EscapeDataString(otp)}";
+    }
+
     private async Task<TwoFactorDeliveryResult> DeliverWithRetryAsync(
-        TwoFactorChallenge challenge, string otp, string email, string? phone,
-        Dictionary<TwoFactorChannel, NotificationTemplate> templates,
+        TwoFactorChallenge challenge, string otp, string link, string email, string? phone,
+        NotificationTemplate template,
         CancellationToken cancellationToken)
     {
         var result = TwoFactorDeliveryResult.ProviderUnavailable;
@@ -98,8 +142,8 @@ public sealed class TwoFactorDeliveryBackgroundService(
             {
                 result = challenge.Channel switch
                 {
-                    TwoFactorChannel.Sms => await SendSmsAsync(challenge.Id, phone!, otp, templates, timeout.Token),
-                    _ => await SendEmailAsync(challenge.Id, email, otp, templates, timeout.Token)
+                    TwoFactorChannel.Sms => await SendSmsAsync(challenge.Id, phone!, otp, link, template, timeout.Token),
+                    _ => await SendEmailAsync(challenge.Id, email, otp, link, template, timeout.Token)
                 };
 
                 if (result != TwoFactorDeliveryResult.ProviderUnavailable)
@@ -111,7 +155,7 @@ public sealed class TwoFactorDeliveryBackgroundService(
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "2FA delivery provider unavailable for challenge {ChallengeId}", challenge.Id);
+                logger.LogWarning(ex, "Delivery provider unavailable for challenge {ChallengeId}", challenge.Id);
                 result = TwoFactorDeliveryResult.ProviderUnavailable;
             }
 
@@ -123,39 +167,28 @@ public sealed class TwoFactorDeliveryBackgroundService(
     }
 
     private async Task<TwoFactorDeliveryResult> SendEmailAsync(
-        Guid challengeId, string email, string otp,
-        Dictionary<TwoFactorChannel, NotificationTemplate> templates,
+        Guid challengeId, string email, string otp, string link,
+        NotificationTemplate template,
         CancellationToken cancellationToken)
     {
-        if (!templates.TryGetValue(TwoFactorChannel.Email, out var template))
-        {
-            logger.LogWarning("Email notification template not found for challenge {ChallengeId}", challengeId);
-            return TwoFactorDeliveryResult.DeliveryFailed;
-        }
-
-        var subject = RenderTemplate(template.Subject, otp, email, null);
-        var body = RenderTemplate(template.Body, otp, email, null);
+        var subject = RenderTemplate(template.Subject, otp, email, null, link);
+        var body = RenderTemplate(template.Body, otp, email, null, link);
         return await emailGateway.SendAsync(challengeId, email, subject, body, cancellationToken);
     }
 
     private async Task<TwoFactorDeliveryResult> SendSmsAsync(
-        Guid challengeId, string phone, string otp,
-        Dictionary<TwoFactorChannel, NotificationTemplate> templates,
+        Guid challengeId, string phone, string otp, string link,
+        NotificationTemplate template,
         CancellationToken cancellationToken)
     {
-        if (!templates.TryGetValue(TwoFactorChannel.Sms, out var template))
-        {
-            logger.LogWarning("SMS notification template not found for challenge {ChallengeId}", challengeId);
-            return TwoFactorDeliveryResult.DeliveryFailed;
-        }
-
-        var message = RenderTemplate(template.Body, otp, null, phone);
+        var message = RenderTemplate(template.Body, otp, null, phone, link);
         return await smsGateway.SendAsync(challengeId, phone, message, cancellationToken);
     }
 
-    private static string RenderTemplate(string template, string otp, string? email, string? phone) =>
+    private static string RenderTemplate(string template, string otp, string? email, string? phone, string? link) =>
         template
             .Replace("{{otp}}", otp)
             .Replace("{{email}}", email ?? "")
-            .Replace("{{phone}}", phone ?? "");
+            .Replace("{{phone}}", phone ?? "")
+            .Replace("{{link}}", link ?? "");
 }

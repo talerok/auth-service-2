@@ -6,8 +6,10 @@ public sealed class UpdateNotificationTemplateCommandValidator : AbstractValidat
 {
     public UpdateNotificationTemplateCommandValidator()
     {
-        RuleFor(x => x.Channel).NotEmpty();
-        RuleFor(x => x.Subject).NotEmpty().MaximumLength(500);
+        RuleFor(x => x.Id).NotEmpty();
+        RuleFor(x => x.Type).NotEmpty().MaximumLength(32);
+        RuleFor(x => x.Locale).NotEmpty().MaximumLength(16);
+        RuleFor(x => x.Subject).MaximumLength(500);
         RuleFor(x => x.Body).NotEmpty();
     }
 }

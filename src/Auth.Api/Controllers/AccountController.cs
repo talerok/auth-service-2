@@ -3,6 +3,11 @@ using Auth.Application.Auth.Commands.ValidateForcedPasswordChange;
 using Auth.Application.TwoFactor.Commands.ConfirmTwoFactorActivation;
 using Auth.Application.TwoFactor.Commands.DisableTwoFactor;
 using Auth.Application.TwoFactor.Commands.EnableTwoFactor;
+using Auth.Application.Verification;
+using Auth.Application.Verification.Commands.ConfirmEmailVerification;
+using Auth.Application.Verification.Commands.ConfirmPhoneVerification;
+using Auth.Application.Verification.Commands.SendEmailVerification;
+using Auth.Application.Verification.Commands.SendPhoneVerification;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -55,6 +60,36 @@ public sealed class AccountController(ISender sender, IOptions<PasswordRequireme
         CancellationToken cancellationToken)
     {
         await sender.Send(new ValidateForcedPasswordChangeCommand(request.ChallengeId, request.NewPassword), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("verify-email/send")]
+    [Authorize]
+    public async Task<ActionResult<SendVerificationResponse>> SendEmailVerification(CancellationToken cancellationToken) =>
+        Ok(await sender.Send(new SendEmailVerificationCommand(GetUserId()), cancellationToken));
+
+    [HttpPost("verify-email/confirm")]
+    [Authorize]
+    public async Task<IActionResult> ConfirmEmailVerification(
+        [FromBody] ConfirmVerificationRequest request,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(new ConfirmEmailVerificationCommand(GetUserId(), request.ChallengeId, request.Otp), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("verify-phone/send")]
+    [Authorize]
+    public async Task<ActionResult<SendVerificationResponse>> SendPhoneVerification(CancellationToken cancellationToken) =>
+        Ok(await sender.Send(new SendPhoneVerificationCommand(GetUserId()), cancellationToken));
+
+    [HttpPost("verify-phone/confirm")]
+    [Authorize]
+    public async Task<IActionResult> ConfirmPhoneVerification(
+        [FromBody] ConfirmVerificationRequest request,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(new ConfirmPhoneVerificationCommand(GetUserId(), request.ChallengeId, request.Otp), cancellationToken);
         return NoContent();
     }
 

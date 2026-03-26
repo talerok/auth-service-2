@@ -4,6 +4,8 @@ public sealed class TwoFactorChallenge
 {
     public const string PurposeActivation = "ACTIVATION";
     public const string PurposeLogin = "LOGIN";
+    public const string PurposeEmailVerification = "EMAIL_VERIFICATION";
+    public const string PurposePhoneVerification = "PHONE_VERIFICATION";
     public const string DeliveryPending = "PENDING";
     public const string DeliveryDelivered = "DELIVERED";
     public const string DeliveryFailed = "DELIVERY_FAILED";

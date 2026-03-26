@@ -6,5 +6,7 @@ public enum AuditAction
     ResetPassword, SetWorkspaces, SetIdentitySourceLinks,
     SetPermissions, RegenerateSecret, Import,
     Login, MfaVerify, EnableTwoFactor,
-    ConfirmTwoFactorActivation, DisableTwoFactor, PasswordChange
+    ConfirmTwoFactorActivation, DisableTwoFactor, PasswordChange,
+    SendEmailVerification, ConfirmEmailVerification,
+    SendPhoneVerification, ConfirmPhoneVerification
 }

@@ -42,6 +42,28 @@ namespace Auth.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "audit_log_entries",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ActorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ActorName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    ActorType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    EntityType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    EntityId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Action = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Details = table.Column<string>(type: "jsonb", nullable: true),
+                    IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
+                    UserAgent = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    CorrelationId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_audit_log_entries", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "identity_sources",
                 columns: table => new
                 {
@@ -65,7 +87,8 @@ namespace Auth.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Channel = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
+                    Type = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    Locale = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false, defaultValue: "en-US"),
                     Subject = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     Body = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -193,6 +216,9 @@ namespace Auth.Infrastructure.Migrations
                     MustChangePassword = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     TwoFactorEnabled = table.Column<bool>(type: "boolean", nullable: false),
                     TwoFactorChannel = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: true),
+                    Locale = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false, defaultValue: "en-US"),
+                    EmailVerified = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    PhoneVerified = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
@@ -542,6 +568,22 @@ namespace Auth.Infrastructure.Migrations
                 filter: "\"DeletedAt\" IS NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_audit_log_entries_ActorId",
+                table: "audit_log_entries",
+                column: "ActorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_audit_log_entries_EntityType_EntityId",
+                table: "audit_log_entries",
+                columns: new[] { "EntityType", "EntityId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_audit_log_entries_Timestamp",
+                table: "audit_log_entries",
+                column: "Timestamp",
+                descending: new bool[0]);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_identity_source_ldap_configs_IdentitySourceId",
                 table: "identity_source_ldap_configs",
                 column: "IdentitySourceId",
@@ -579,9 +621,9 @@ namespace Auth.Infrastructure.Migrations
                 filter: "\"DeletedAt\" IS NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_notification_templates_Channel",
+                name: "IX_notification_templates_Type_Locale",
                 table: "notification_templates",
-                column: "Channel",
+                columns: new[] { "Type", "Locale" },
                 unique: true,
                 filter: "\"DeletedAt\" IS NULL");
 
@@ -763,6 +805,9 @@ namespace Auth.Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "applications");
+
+            migrationBuilder.DropTable(
+                name: "audit_log_entries");
 
             migrationBuilder.DropTable(
                 name: "identity_source_ldap_configs");

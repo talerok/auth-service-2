@@ -9,6 +9,7 @@ public interface ISearchService
     Task<SearchResponse<ApplicationDto>> SearchApplicationsAsync(SearchRequest request, CancellationToken cancellationToken);
     Task<SearchResponse<ServiceAccountDto>> SearchServiceAccountsAsync(SearchRequest request, CancellationToken cancellationToken);
     Task<SearchResponse<AuditLogDto>> SearchAuditLogsAsync(SearchRequest request, CancellationToken cancellationToken);
+    Task<SearchResponse<NotificationTemplateDto>> SearchNotificationTemplatesAsync(SearchRequest request, CancellationToken cancellationToken);
 }
 
 public interface ISearchIndexService
@@ -40,6 +41,10 @@ public interface ISearchIndexService
 
     Task IndexAuditLogAsync(AuditLogDto entry, CancellationToken cancellationToken);
     Task BulkIndexAuditLogsAsync(IReadOnlyCollection<AuditLogDto> entries, CancellationToken cancellationToken);
+
+    Task IndexNotificationTemplateAsync(NotificationTemplateDto template, CancellationToken cancellationToken);
+    Task DeleteNotificationTemplateAsync(Guid id, CancellationToken cancellationToken);
+    Task BulkIndexNotificationTemplatesAsync(IReadOnlyCollection<NotificationTemplateDto> templates, CancellationToken cancellationToken);
 }
 
 public interface ISearchMaintenanceService
@@ -53,4 +58,5 @@ public interface ISearchMaintenanceService
     Task ReindexApplicationsAsync(CancellationToken cancellationToken);
     Task ReindexServiceAccountsAsync(CancellationToken cancellationToken);
     Task ReindexAuditLogsAsync(CancellationToken cancellationToken);
+    Task ReindexNotificationTemplatesAsync(CancellationToken cancellationToken);
 }

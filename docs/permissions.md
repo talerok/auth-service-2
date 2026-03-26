@@ -37,19 +37,22 @@
 | 24  | `system.workspaces.export`             | Export workspaces             |
 | 25  | `system.search.reindex`                | Reindex search                |
 | 26  | `system.notification-templates.view`   | View notification templates   |
-| 27  | `system.notification-templates.update` | Update notification templates |
-| 28  | `system.identity-sources.view`         | View identity sources         |
-| 29  | `system.identity-sources.create`       | Create identity source        |
-| 30  | `system.identity-sources.update`       | Update identity source        |
-| 31  | `system.identity-sources.delete`       | Delete identity source        |
-| 32  | `system.applications.view`             | View applications             |
-| 33  | `system.applications.create`           | Create applications           |
-| 34  | `system.applications.update`           | Update applications           |
-| 35  | `system.applications.delete`           | Delete applications           |
-| 36  | `system.service-accounts.view`         | View service accounts         |
-| 37  | `system.service-accounts.create`       | Create service accounts       |
-| 38  | `system.service-accounts.update`       | Update service accounts       |
-| 39  | `system.service-accounts.delete`       | Delete service accounts       |
+| 27  | `system.notification-templates.create` | Create notification templates |
+| 28  | `system.notification-templates.update` | Update notification templates |
+| 29  | `system.notification-templates.delete` | Delete notification templates |
+| 30  | `system.identity-sources.view`         | View identity sources         |
+| 31  | `system.identity-sources.create`       | Create identity source        |
+| 32  | `system.identity-sources.update`       | Update identity source        |
+| 33  | `system.identity-sources.delete`       | Delete identity source        |
+| 34  | `system.applications.view`             | View applications             |
+| 35  | `system.applications.create`           | Create applications           |
+| 36  | `system.applications.update`           | Update applications           |
+| 37  | `system.applications.delete`           | Delete applications           |
+| 38  | `system.service-accounts.view`         | View service accounts         |
+| 39  | `system.service-accounts.create`       | Create service accounts       |
+| 40  | `system.service-accounts.update`       | Update service accounts       |
+| 41  | `system.service-accounts.delete`       | Delete service accounts       |
+| 42  | `system.audit-logs.view`               | View audit logs               |
 
 ## Упаковка в байты
 

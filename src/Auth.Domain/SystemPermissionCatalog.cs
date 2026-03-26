@@ -42,27 +42,29 @@ public static class SystemPermissionCatalog
 
         // system.notification-templates
         ("system", 26, "system.notification-templates.view", "View notification templates"),
-        ("system", 27, "system.notification-templates.update", "Update notification templates"),
+        ("system", 27, "system.notification-templates.create", "Create notification templates"),
+        ("system", 28, "system.notification-templates.update", "Update notification templates"),
+        ("system", 29, "system.notification-templates.delete", "Delete notification templates"),
 
         // system.identity-sources
-        ("system", 28, "system.identity-sources.view", "View identity sources"),
-        ("system", 29, "system.identity-sources.create", "Create identity sources"),
-        ("system", 30, "system.identity-sources.update", "Update identity sources"),
-        ("system", 31, "system.identity-sources.delete", "Delete identity sources"),
+        ("system", 30, "system.identity-sources.view", "View identity sources"),
+        ("system", 31, "system.identity-sources.create", "Create identity sources"),
+        ("system", 32, "system.identity-sources.update", "Update identity sources"),
+        ("system", 33, "system.identity-sources.delete", "Delete identity sources"),
 
         // system.applications
-        ("system", 32, "system.applications.view", "View applications"),
-        ("system", 33, "system.applications.create", "Create applications"),
-        ("system", 34, "system.applications.update", "Update applications"),
-        ("system", 35, "system.applications.delete", "Delete applications"),
+        ("system", 34, "system.applications.view", "View applications"),
+        ("system", 35, "system.applications.create", "Create applications"),
+        ("system", 36, "system.applications.update", "Update applications"),
+        ("system", 37, "system.applications.delete", "Delete applications"),
 
         // system.service-accounts
-        ("system", 36, "system.service-accounts.view", "View service accounts"),
-        ("system", 37, "system.service-accounts.create", "Create service accounts"),
-        ("system", 38, "system.service-accounts.update", "Update service accounts"),
-        ("system", 39, "system.service-accounts.delete", "Delete service accounts"),
+        ("system", 38, "system.service-accounts.view", "View service accounts"),
+        ("system", 39, "system.service-accounts.create", "Create service accounts"),
+        ("system", 40, "system.service-accounts.update", "Update service accounts"),
+        ("system", 41, "system.service-accounts.delete", "Delete service accounts"),
 
         // system.audit-logs
-        ("system", 40, "system.audit-logs.view", "View audit logs")
+        ("system", 42, "system.audit-logs.view", "View audit logs")
     ];
 }

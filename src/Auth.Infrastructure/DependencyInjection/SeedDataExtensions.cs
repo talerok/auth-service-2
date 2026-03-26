@@ -113,37 +113,76 @@ public static class SeedDataExtensions
 
     private static async Task SeedNotificationTemplatesAsync(AuthDbContext db, CancellationToken cancellationToken)
     {
-        var hasAny = await db.NotificationTemplates.AnyAsync(cancellationToken);
-        if (hasAny)
+        var existingTypes = await db.NotificationTemplates
+            .Where(x => x.Locale == "en-US")
+            .Select(x => x.Type)
+            .ToListAsync(cancellationToken);
+        var existingTypeSet = existingTypes.ToHashSet();
+
+        var templates = GetDefaultTemplates()
+            .Where(t => !existingTypeSet.Contains(t.Type))
+            .ToList();
+
+        if (templates.Count == 0)
             return;
 
-        db.NotificationTemplates.AddRange(
-            new NotificationTemplate
-            {
-                Channel = TwoFactorChannel.Email,
-                Subject = "Your verification code",
-                Body = """
-                    <html>
-                    <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
-                      <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 32px;">
-                        <h2 style="color: #333;">Your verification code</h2>
-                        <p style="color: #555;">Use the code below to complete your sign-in.</p>
-                        <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #111; margin: 24px 0;">{{otp}}</div>
-                        <p style="color: #888; font-size: 13px;">This code expires in a few minutes. Do not share it with anyone.</p>
-                        <p style="color: #ccc; font-size: 11px;">Reference: {{email}}</p>
-                      </div>
-                    </body>
-                    </html>
-                    """
-            },
-            new NotificationTemplate
-            {
-                Channel = TwoFactorChannel.Sms,
-                Body = "Your code: {{otp}}"
-            });
-
+        db.NotificationTemplates.AddRange(templates);
         await db.SaveChangesAsync(cancellationToken);
     }
+
+    private static List<NotificationTemplate> GetDefaultTemplates() =>
+    [
+        new NotificationTemplate
+        {
+            Type = NotificationTemplateType.TwoFactorEmail,
+            Locale = "en-US",
+            Subject = "Your verification code",
+            Body = """
+                <html>
+                <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+                  <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 32px;">
+                    <h2 style="color: #333;">Your verification code</h2>
+                    <p style="color: #555;">Use the code below to complete your sign-in.</p>
+                    <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #111; margin: 24px 0;">{{otp}}</div>
+                    <p style="color: #888; font-size: 13px;">This code expires in a few minutes. Do not share it with anyone.</p>
+                    <p style="color: #ccc; font-size: 11px;">Reference: {{email}}</p>
+                  </div>
+                </body>
+                </html>
+                """
+        },
+        new NotificationTemplate
+        {
+            Type = NotificationTemplateType.TwoFactorSms,
+            Locale = "en-US",
+            Body = "Your code: {{otp}}"
+        },
+        new NotificationTemplate
+        {
+            Type = NotificationTemplateType.EmailVerification,
+            Locale = "en-US",
+            Subject = "Verify your email address",
+            Body = """
+                <html>
+                <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+                  <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 32px;">
+                    <h2 style="color: #333;">Verify your email</h2>
+                    <p style="color: #555;">Click the link below or use the code to verify your email address.</p>
+                    <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #111; margin: 24px 0;">{{otp}}</div>
+                    <p><a href="{{link}}" style="color: #1a73e8;">Verify email</a></p>
+                    <p style="color: #888; font-size: 13px;">This code expires in a few minutes. Do not share it with anyone.</p>
+                  </div>
+                </body>
+                </html>
+                """
+        },
+        new NotificationTemplate
+        {
+            Type = NotificationTemplateType.PhoneVerification,
+            Locale = "en-US",
+            Body = "Your verification code: {{otp}}"
+        }
+    ];
 
     private static async Task SeedApplicationsAsync(AuthDbContext db, CancellationToken cancellationToken)
     {

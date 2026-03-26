@@ -22,4 +22,7 @@ internal sealed class StubSearchService : ISearchService
 
     public Task<SearchResponse<AuditLogDto>> SearchAuditLogsAsync(SearchRequest request, CancellationToken cancellationToken)
         => Task.FromResult(new SearchResponse<AuditLogDto>([], request.Page, request.PageSize, 0));
+
+    public Task<SearchResponse<NotificationTemplateDto>> SearchNotificationTemplatesAsync(SearchRequest request, CancellationToken cancellationToken)
+        => Task.FromResult(new SearchResponse<NotificationTemplateDto>([], request.Page, request.PageSize, 0));
 }

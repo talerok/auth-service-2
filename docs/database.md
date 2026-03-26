@@ -20,6 +20,8 @@
 - `identity_source_oidc_configs`
 - `identity_source_ldap_configs`
 - `identity_source_links`
+- `notification_templates`
+- `audit_log_entries`
 
 Принципы:
 
@@ -33,13 +35,18 @@
 | -------------------------- | ------------ | -------- | ---------------------------------------------------- |
 | `id`                       | uuid         | NO       | PK                                                   |
 | `username`                 | varchar(100) | NO       | Уникальное имя пользователя (partial index)          |
+| `full_name`                | varchar(200) | NO       | Полное имя пользователя                              |
 | `email`                    | varchar(255) | NO       | Email пользователя (partial index)                   |
+| `phone`                    | varchar(20)  | YES      | Номер телефона                                       |
 | `password_hash`            | varchar(200) | NO       | Хэш пароля                                           |
 | `is_active`                | boolean      | NO       | Признак активности аккаунта                          |
 | `is_internal_auth_enabled` | boolean      | NO       | Разрешена ли аутентификация по паролю (DEFAULT true)  |
 | `must_change_password`     | boolean      | NO       | Флаг обязательной смены пароля (DEFAULT false)        |
 | `two_factor_enabled`       | boolean      | NO       | Включена ли двухфакторная аутентификация              |
 | `two_factor_channel`       | varchar(16)  | YES      | Канал 2FA (например, Email, SMS)                     |
+| `locale`                   | varchar(16)  | NO       | Язык пользователя BCP 47 (DEFAULT 'en-US')           |
+| `email_verified`           | boolean      | NO       | Подтверждён ли email (DEFAULT false)                 |
+| `phone_verified`           | boolean      | NO       | Подтверждён ли телефон (DEFAULT false)               |
 | `created_at`               | timestamptz  | NO       |                                                      |
 | `updated_at`               | timestamptz  | NO       |                                                      |
 | `deleted_at`               | timestamptz  | YES      | Soft delete                                          |
@@ -55,6 +62,7 @@
 | ------------- | ------------ | -------- | ---------------------------------------------- |
 | `id`          | uuid         | NO       | PK                                             |
 | `name`        | varchar(120) | NO       | Уникальное название воркспейса (partial index) |
+| `code`        | varchar(64)  | NO       | Уникальный код воркспейса (partial index)      |
 | `description` | varchar(500) | NO       | Описание воркспейса                            |
 | `is_system`   | boolean      | NO       | Признак системного воркспейса                  |
 | `created_at`  | timestamptz  | NO       |                                                |
@@ -64,6 +72,7 @@
 Индексы:
 
 - `IX_workspaces_Name` UNIQUE WHERE `"DeletedAt" IS NULL`
+- `IX_workspaces_Code` UNIQUE WHERE `"DeletedAt" IS NULL`
 
 ### Таблица `roles`
 
@@ -80,7 +89,6 @@
 Индексы:
 
 - `IX_roles_Name` UNIQUE WHERE `"DeletedAt" IS NULL`
-- `IX_roles_Code` UNIQUE WHERE `"DeletedAt" IS NULL`
 - `IX_roles_Code` UNIQUE WHERE `"DeletedAt" IS NULL`
 
 ### Таблица `permissions`
@@ -198,21 +206,27 @@
 
 OAuth2-приложения (authorization code flow). Могут быть public или confidential.
 
-| Колонка                      | Тип          | Nullable | Описание                                            |
-| ---------------------------- | ------------ | -------- | --------------------------------------------------- |
-| `id`                         | uuid         | NO       | PK                                                  |
-| `name`                       | varchar(120) | NO       | Уникальное название приложения (partial index)      |
-| `description`                | varchar(500) | YES      | Описание приложения                                 |
-| `client_id`                  | varchar(200) | NO       | Уникальный OAuth ClientId (partial index)           |
-| `is_active`                  | boolean      | NO       | Признак активности (DEFAULT true)                   |
-| `is_confidential`            | boolean      | NO       | Confidential client (DEFAULT true)                  |
-| `logo_url`                   | varchar(2000)| YES      | URL логотипа                                        |
-| `homepage_url`               | varchar(2000)| YES      | URL домашней страницы                               |
-| `redirect_uris`              | jsonb        | NO       | OAuth redirect URIs (DEFAULT '[]'::jsonb)           |
-| `post_logout_redirect_uris`  | jsonb        | NO       | Post-logout redirect URIs (DEFAULT '[]'::jsonb)     |
-| `created_at`                 | timestamptz  | NO       |                                                     |
-| `updated_at`                 | timestamptz  | NO       |                                                     |
-| `deleted_at`                 | timestamptz  | YES      | Soft delete                                         |
+| Колонка                         | Тип           | Nullable | Описание                                            |
+| ------------------------------- | ------------- | -------- | --------------------------------------------------- |
+| `id`                            | uuid          | NO       | PK                                                  |
+| `name`                          | varchar(120)  | NO       | Уникальное название приложения (partial index)      |
+| `description`                   | varchar(500)  | YES      | Описание приложения                                 |
+| `client_id`                     | varchar(200)  | NO       | Уникальный OAuth ClientId (partial index)           |
+| `is_active`                     | boolean       | NO       | Признак активности (DEFAULT true)                   |
+| `is_confidential`               | boolean       | NO       | Confidential client (DEFAULT true)                  |
+| `logo_url`                      | varchar(2000) | YES      | URL логотипа                                        |
+| `homepage_url`                  | varchar(2000) | YES      | URL домашней страницы                               |
+| `redirect_uris`                 | jsonb         | NO       | OAuth redirect URIs (DEFAULT '[]'::jsonb)           |
+| `post_logout_redirect_uris`     | jsonb         | NO       | Post-logout redirect URIs (DEFAULT '[]'::jsonb)     |
+| `allowed_origins`               | jsonb         | NO       | Допустимые CORS origins (DEFAULT '[]'::jsonb)       |
+| `scopes`                        | jsonb         | NO       | Разрешённые OAuth scopes (DEFAULT '[]'::jsonb)      |
+| `grant_types`                   | jsonb         | NO       | Разрешённые grant types (DEFAULT authorization_code + refresh_token) |
+| `audiences`                     | jsonb         | NO       | Список ресурсов (aud claim) (DEFAULT '[]'::jsonb)   |
+| `access_token_lifetime_minutes` | integer       | YES      | TTL access-токена в минутах                         |
+| `refresh_token_lifetime_minutes`| integer       | YES      | TTL refresh-токена в минутах                        |
+| `created_at`                    | timestamptz   | NO       |                                                     |
+| `updated_at`                    | timestamptz   | NO       |                                                     |
+| `deleted_at`                    | timestamptz   | YES      | Soft delete                                         |
 
 Индексы:
 
@@ -330,3 +344,43 @@ OAuth2-приложения (authorization code flow). Могут быть publi
 
 - `IX_identity_source_links_IdentitySourceId_ExternalIdentity` UNIQUE
 - `IX_identity_source_links_UserId`
+
+### Таблица `notification_templates`
+
+| Колонка      | Тип          | Nullable | Описание                                              |
+| ------------ | ------------ | -------- | ----------------------------------------------------- |
+| `id`         | uuid         | NO       | PK                                                    |
+| `type`       | varchar(32)  | NO       | Тип шаблона (twofactoremail, twofactorsms, emailverification, phoneverification) |
+| `locale`     | varchar(16)  | NO       | Язык шаблона BCP 47 (DEFAULT 'en-US')                 |
+| `subject`    | varchar(500) | NO       | Тема письма (пустая строка для SMS)                   |
+| `body`       | text         | NO       | Тело шаблона (HTML для email, текст для SMS)          |
+| `created_at` | timestamptz  | NO       |                                                       |
+| `updated_at` | timestamptz  | NO       |                                                       |
+| `deleted_at` | timestamptz  | YES      | Soft delete                                           |
+
+Индексы:
+
+- `IX_notification_templates_Type_Locale` UNIQUE ON (`Type`, `Locale`) WHERE `"DeletedAt" IS NULL`
+
+### Таблица `audit_log_entries`
+
+| Колонка          | Тип          | Nullable | Описание                                       |
+| ---------------- | ------------ | -------- | ---------------------------------------------- |
+| `id`             | uuid         | NO       | PK                                             |
+| `timestamp`      | timestamptz  | NO       | Время события                                  |
+| `actor_id`       | uuid         | YES      | ID субъекта (пользователь или сервисный аккаунт) |
+| `actor_name`     | varchar(200) | YES      | Имя субъекта                                   |
+| `actor_type`     | varchar(50)  | NO       | Тип субъекта (user, serviceaccount, system)    |
+| `entity_type`    | varchar(100) | NO       | Тип сущности (user, role, permission, ...)     |
+| `entity_id`      | uuid         | NO       | ID затронутой сущности                         |
+| `action`         | varchar(100) | NO       | Действие (create, update, delete, ...)         |
+| `details`        | jsonb        | YES      | Детали изменений (diff полей)                  |
+| `ip_address`     | varchar(45)  | YES      | IP-адрес клиента                               |
+| `user_agent`     | varchar(500) | YES      | User-Agent клиента                             |
+| `correlation_id` | varchar(64)  | YES      | Корреляционный ID запроса                      |
+
+Индексы:
+
+- `IX_audit_log_entries_EntityType_EntityId` ON (`EntityType`, `EntityId`)
+- `IX_audit_log_entries_ActorId` ON (`ActorId`)
+- `IX_audit_log_entries_Timestamp` DESC ON (`Timestamp`)

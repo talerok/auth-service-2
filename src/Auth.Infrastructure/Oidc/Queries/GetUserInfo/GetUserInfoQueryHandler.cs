@@ -26,17 +26,19 @@ internal sealed class GetUserInfoQueryHandler(
         {
             claims[Claims.Name] = user.FullName;
             claims[Claims.PreferredUsername] = user.Username;
+            claims[Claims.Locale] = user.Locale;
         }
 
         if (scopes.Contains(Scopes.Email) && user.Email is not null)
         {
             claims[Claims.Email] = user.Email;
-            claims["email_verified"] = true;
+            claims["email_verified"] = user.EmailVerified;
         }
 
         if (scopes.Contains(Scopes.Phone) && !string.IsNullOrWhiteSpace(user.Phone))
         {
             claims[Claims.PhoneNumber] = user.Phone;
+            claims["phone_number_verified"] = user.PhoneVerified;
         }
 
         return claims;

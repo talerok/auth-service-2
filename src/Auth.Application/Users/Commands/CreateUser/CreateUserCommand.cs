@@ -13,7 +13,10 @@ public sealed record CreateUserCommand(
     bool IsInternalAuthEnabled = true,
     bool MustChangePassword = false,
     bool TwoFactorEnabled = false,
-    TwoFactorChannel? TwoFactorChannel = null) : IRequest<UserDto>, IAuditable
+    TwoFactorChannel? TwoFactorChannel = null,
+    string Locale = "en-US",
+    bool EmailVerified = false,
+    bool PhoneVerified = false) : IRequest<UserDto>, IAuditable
 {
     public AuditEntityType EntityType => AuditEntityType.User;
     public AuditAction Action => AuditAction.Create;

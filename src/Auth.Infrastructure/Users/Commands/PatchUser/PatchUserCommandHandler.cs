@@ -46,6 +46,15 @@ internal sealed class PatchUserCommandHandler(
                 user.DisableTwoFactor();
         }
 
+        if (command.Locale is not null)
+            user.Locale = command.Locale;
+
+        if (command.EmailVerified.HasValue)
+            user.EmailVerified = command.EmailVerified.Value;
+
+        if (command.PhoneVerified.HasValue)
+            user.PhoneVerified = command.PhoneVerified.Value;
+
         var changes = AuditDiff.CaptureChanges(dbContext.Entry(user));
         if (changes.Count > 0)
             auditContext.Details = changes;
@@ -53,7 +62,8 @@ internal sealed class PatchUserCommandHandler(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var dto = new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone,
-            user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel);
+            user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel,
+            user.Locale, user.EmailVerified, user.PhoneVerified);
 
         await searchIndexService.IndexUserAsync(dto, cancellationToken);
         return dto;

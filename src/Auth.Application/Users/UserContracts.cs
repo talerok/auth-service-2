@@ -12,7 +12,10 @@ public sealed record UserDto(
     bool IsInternalAuthEnabled,
     bool MustChangePassword,
     bool TwoFactorEnabled,
-    TwoFactorChannel? TwoFactorChannel);
+    TwoFactorChannel? TwoFactorChannel,
+    string Locale,
+    bool EmailVerified,
+    bool PhoneVerified);
 
 public sealed record CreateUserRequest(
     string Username,
@@ -24,7 +27,10 @@ public sealed record CreateUserRequest(
     bool IsInternalAuthEnabled = true,
     bool MustChangePassword = false,
     bool TwoFactorEnabled = false,
-    TwoFactorChannel? TwoFactorChannel = null);
+    TwoFactorChannel? TwoFactorChannel = null,
+    string Locale = "en-US",
+    bool EmailVerified = false,
+    bool PhoneVerified = false);
 
 public sealed record UpdateUserRequest(
     string Username,
@@ -34,7 +40,10 @@ public sealed record UpdateUserRequest(
     bool IsActive,
     bool IsInternalAuthEnabled = true,
     bool TwoFactorEnabled = false,
-    TwoFactorChannel? TwoFactorChannel = null);
+    TwoFactorChannel? TwoFactorChannel = null,
+    string Locale = "en-US",
+    bool EmailVerified = false,
+    bool PhoneVerified = false);
 
 public sealed record PatchUserRequest(
     string? Username,
@@ -44,7 +53,10 @@ public sealed record PatchUserRequest(
     bool? IsActive,
     bool? IsInternalAuthEnabled = null,
     bool? TwoFactorEnabled = null,
-    TwoFactorChannel? TwoFactorChannel = null);
+    TwoFactorChannel? TwoFactorChannel = null,
+    string? Locale = null,
+    bool? EmailVerified = null,
+    bool? PhoneVerified = null);
 
 public sealed record AdminResetPasswordRequest(string Password);
 
@@ -60,6 +72,9 @@ public sealed record ExportUserDto(
     bool MustChangePassword,
     bool TwoFactorEnabled,
     TwoFactorChannel? TwoFactorChannel,
+    string Locale,
+    bool EmailVerified,
+    bool PhoneVerified,
     IReadOnlyCollection<ExportUserWorkspaceDto> Workspaces,
     IReadOnlyCollection<ExportUserIdentitySourceDto> IdentitySources);
 
@@ -73,8 +88,11 @@ public sealed record ImportUserItem(
     bool MustChangePassword,
     bool TwoFactorEnabled,
     TwoFactorChannel? TwoFactorChannel,
-    IReadOnlyCollection<ImportUserWorkspaceItem>? Workspaces,
-    IReadOnlyCollection<ImportUserIdentitySourceItem>? IdentitySources);
+    string Locale = "en-US",
+    bool EmailVerified = false,
+    bool PhoneVerified = false,
+    IReadOnlyCollection<ImportUserWorkspaceItem>? Workspaces = null,
+    IReadOnlyCollection<ImportUserIdentitySourceItem>? IdentitySources = null);
 public sealed record ImportUserWorkspaceItem(string WorkspaceCode, IReadOnlyCollection<string> RoleCodes);
 public sealed record ImportUserIdentitySourceItem(string IdentitySourceCode, string ExternalIdentity);
 public sealed record ImportUsersResult(IReadOnlyCollection<ImportUserResultItem> Items, int Blocked);

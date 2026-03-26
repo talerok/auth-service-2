@@ -22,6 +22,9 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(16);
         builder.Property(x => x.IsInternalAuthEnabled).IsRequired().HasDefaultValue(true);
         builder.Property(x => x.MustChangePassword).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.Locale).IsRequired().HasMaxLength(16).HasDefaultValue("en-US");
+        builder.Property(x => x.EmailVerified).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.PhoneVerified).IsRequired().HasDefaultValue(false);
         builder.HasQueryFilter(x => x.DeletedAt == null);
         builder.HasIndex(x => x.Username).IsUnique().HasFilter("\"DeletedAt\" IS NULL");
         builder.HasIndex(x => x.Email).IsUnique().HasFilter("\"DeletedAt\" IS NULL");

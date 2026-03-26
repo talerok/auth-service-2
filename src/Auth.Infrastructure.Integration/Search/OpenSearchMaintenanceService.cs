@@ -91,6 +91,16 @@ public sealed class OpenSearchMaintenanceService(
         {
             await ReindexAuditLogsAsync(cancellationToken);
         }
+
+        if (await EnsureIndexExistsAsync<NotificationTemplateDto>(indexNames.NotificationTemplates, p => p
+                .Keyword(k => k.Name(n => n.Id))
+                .Keyword(k => k.Name(n => n.Type))
+                .Keyword(k => k.Name(n => n.Locale))
+                .Keyword(k => k.Name(n => n.Subject))
+                .Keyword(k => k.Name(n => n.Body)), cancellationToken))
+        {
+            await ReindexNotificationTemplatesAsync(cancellationToken);
+        }
     }
 
     public async Task ReindexAllAsync(CancellationToken cancellationToken)
@@ -103,7 +113,7 @@ public sealed class OpenSearchMaintenanceService(
     {
         await ClearIndexAsync(indexNames.Users, cancellationToken);
         var users = await dbContext.Users.AsNoTracking()
-            .Select(x => new UserDto(x.Id, x.Username, x.FullName, x.Email, x.Phone, x.IsActive, x.IsInternalAuthEnabled, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel))
+            .Select(x => new UserDto(x.Id, x.Username, x.FullName, x.Email, x.Phone, x.IsActive, x.IsInternalAuthEnabled, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel, x.Locale, x.EmailVerified, x.PhoneVerified))
             .ToListAsync(cancellationToken);
         await searchIndexService.BulkIndexUsersAsync(users, cancellationToken);
     }
@@ -170,6 +180,15 @@ public sealed class OpenSearchMaintenanceService(
         await searchIndexService.BulkIndexAuditLogsAsync(entries, cancellationToken);
     }
 
+    public async Task ReindexNotificationTemplatesAsync(CancellationToken cancellationToken)
+    {
+        await ClearIndexAsync(indexNames.NotificationTemplates, cancellationToken);
+        var templates = await dbContext.NotificationTemplates.AsNoTracking()
+            .Select(x => new NotificationTemplateDto(x.Id, x.Type.ToString(), x.Locale, x.Subject, x.Body))
+            .ToListAsync(cancellationToken);
+        await searchIndexService.BulkIndexNotificationTemplatesAsync(templates, cancellationToken);
+    }
+
     private async Task ClearIndexAsync(string indexName, CancellationToken cancellationToken)
     {
         var response = await client.DeleteByQueryAsync<object>(d => d
@@ -185,7 +204,7 @@ public sealed class OpenSearchMaintenanceService(
 
     private async Task DeleteAllIndicesAsync(CancellationToken cancellationToken)
     {
-        var all = string.Join(",", indexNames.Users, indexNames.Roles, indexNames.Permissions, indexNames.Workspaces, indexNames.Applications, indexNames.ServiceAccounts, indexNames.AuditLogs);
+        var all = string.Join(",", indexNames.Users, indexNames.Roles, indexNames.Permissions, indexNames.Workspaces, indexNames.Applications, indexNames.ServiceAccounts, indexNames.AuditLogs, indexNames.NotificationTemplates);
         await client.Indices.DeleteAsync(all, ct: cancellationToken);
     }
 
