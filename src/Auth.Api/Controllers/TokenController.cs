@@ -68,8 +68,12 @@ public sealed class TokenController(ISender sender) : ControllerBase
         if (!Guid.TryParse(subject, out var userId))
             return OidcForbid(Errors.InvalidGrant, "The user identifier is invalid.");
 
+        var authMethods = authResult.Principal
+            .FindAll(Claims.AuthenticationMethodReference)
+            .Select(c => c.Value).ToList();
+
         var principal = await sender.Send(new BuildPrincipalQuery(
-            userId, authResult.Principal.GetScopes().ToList(), clientId), cancellationToken);
+            userId, authResult.Principal.GetScopes().ToList(), clientId, authMethods), cancellationToken);
 
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }

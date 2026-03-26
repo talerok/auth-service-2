@@ -68,9 +68,13 @@ public sealed class AuthorizeController(
         var authorizationId = resolveResult.AuthorizationId
             ?? await sender.Send(new GrantConsentCommand(request.ClientId!, userId, scopes), cancellationToken);
 
-        var principal = await sender.Send(new BuildPrincipalQuery(userId, scopes), cancellationToken);
+        var authMethods = authResult.Principal
+            .FindAll(Claims.AuthenticationMethodReference)
+            .Select(c => c.Value).ToList();
 
-        principal.SetScopes(request.GetScopes());
+        var principal = await sender.Send(new BuildPrincipalQuery(
+            userId, scopes, request.ClientId, authMethods), cancellationToken);
+
         principal.SetAuthorizationId(authorizationId);
 
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);

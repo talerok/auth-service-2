@@ -16,7 +16,7 @@ internal static class OidcPrincipalFactory
 
     public static async Task<ClaimsPrincipal> CreateUserPrincipalAsync(
         User user, IEnumerable<string> scopes, ISender sender, string? clientId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, IReadOnlyList<string>? authMethods = null)
     {
         var scopeList = scopes.ToList();
 
@@ -41,6 +41,15 @@ internal static class OidcPrincipalFactory
             isWildcard);
         ApplyWorkspaceClaims(identity, accessibleMasks);
 
+        identity.SetClaim(Claims.AuthenticationTime,
+            DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+
+        if (authMethods is { Count: > 0 })
+        {
+            foreach (var method in authMethods)
+                identity.AddClaim(new Claim(Claims.AuthenticationMethodReference, method));
+        }
+
         var principal = new ClaimsPrincipal(identity);
         principal.SetScopes(scopeList);
         await ApplyAudiencesAsync(principal, clientId, sender, cancellationToken);
@@ -52,6 +61,8 @@ internal static class OidcPrincipalFactory
             Claims.PreferredUsername => [Destinations.IdentityToken],
             Claims.Email => [Destinations.IdentityToken],
             Claims.PhoneNumber => [Destinations.IdentityToken],
+            Claims.AuthenticationMethodReference => [Destinations.IdentityToken],
+            Claims.AuthenticationTime => [Destinations.IdentityToken],
             _ when claim.Type.StartsWith(OidcConstants.WorkspaceScopePrefix, StringComparison.Ordinal)
                 => [Destinations.AccessToken],
             _ => [Destinations.AccessToken]

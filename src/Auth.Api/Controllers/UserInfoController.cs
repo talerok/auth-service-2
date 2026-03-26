@@ -1,6 +1,9 @@
+using Auth.Application.Oidc.Queries.GetUserInfo;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
@@ -8,30 +11,20 @@ namespace Auth.Api.Controllers;
 
 [ApiController]
 [EnableCors("Oidc")]
-public sealed class UserInfoController : ControllerBase
+public sealed class UserInfoController(ISender sender) : ControllerBase
 {
     [Authorize(AuthenticationSchemes = OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)]
     [HttpGet("connect/userinfo")]
     [HttpPost("connect/userinfo")]
-    public IActionResult UserInfo()
+    public async Task<IActionResult> UserInfo(CancellationToken cancellationToken)
     {
-        var claims = new Dictionary<string, object?>();
+        var subject = User.FindFirst(Claims.Subject)?.Value;
+        if (!Guid.TryParse(subject, out var userId))
+            return Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
 
-        var sub = User.FindFirst(Claims.Subject)?.Value;
-        if (sub is not null) claims[Claims.Subject] = sub;
-
-        var name = User.FindFirst(Claims.Name)?.Value;
-        if (name is not null) claims[Claims.Name] = name;
-
-        var preferredUsername = User.FindFirst(Claims.PreferredUsername)?.Value;
-        if (preferredUsername is not null) claims[Claims.PreferredUsername] = preferredUsername;
-
-        var email = User.FindFirst(Claims.Email)?.Value;
-        if (email is not null) claims[Claims.Email] = email;
-
-        var phone = User.FindFirst(Claims.PhoneNumber)?.Value;
-        if (phone is not null) claims[Claims.PhoneNumber] = phone;
-
+        var scopes = User.GetScopes().ToList();
+        var userInfo = new GetUserInfoQuery(userId, scopes);
+        var claims = await sender.Send(userInfo, cancellationToken);
         return Ok(claims);
     }
 }

@@ -4,4 +4,5 @@ using MediatR;
 namespace Auth.Application.Oidc.Queries.BuildPrincipal;
 
 public sealed record BuildPrincipalQuery(
-    Guid UserId, IReadOnlyCollection<string> Scopes, string? ClientId = null) : IRequest<ClaimsPrincipal>;
+    Guid UserId, IReadOnlyCollection<string> Scopes, string? ClientId = null,
+    IReadOnlyList<string>? AuthMethods = null) : IRequest<ClaimsPrincipal>;

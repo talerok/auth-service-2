@@ -48,7 +48,10 @@ builder.Services.AddOpenIddict()
               .SetUserInfoEndpointUris("/connect/userinfo")
               .SetAuthorizationEndpointUris("/connect/authorize")
               .SetEndSessionEndpointUris("/connect/logout")
-              .SetRevocationEndpointUris("/connect/revocation");
+              .SetRevocationEndpointUris("/connect/revocation")
+              .SetIntrospectionEndpointUris("/connect/introspect");
+
+        options.RequireProofKeyForCodeExchange();
 
         options.AllowRefreshTokenFlow()
               .AllowClientCredentialsFlow()

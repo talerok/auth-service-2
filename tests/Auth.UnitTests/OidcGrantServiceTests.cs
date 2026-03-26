@@ -47,11 +47,17 @@ public sealed class OidcGrantServiceTests
     [Fact]
     public async Task ValidateCredentialsForLogin_WhenCredentialsValid_ReturnsSuccessWithPrincipal()
     {
+        var expectedPrincipal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(Claims.Subject, TestUser.Id.ToString())]));
         var sender = new Mock<ISender>();
         sender.Setup(x => x.Send(
                 It.Is<ValidateCredentialsCommand>(c => c.Username == "testuser" && c.Password == "password"),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
+        sender.Setup(x => x.Send(
+                It.Is<BuildPrincipalQuery>(q => q.UserId == TestUser.Id
+                    && q.AuthMethods != null && q.AuthMethods.SequenceEqual(new[] { "pwd" })),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedPrincipal);
         var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object);
 
         var result = await handler.Handle(
@@ -145,11 +151,17 @@ public sealed class OidcGrantServiceTests
     public async Task HandleMfaOtpGrant_WhenValid_ReturnsPrincipal()
     {
         var challengeId = Guid.NewGuid();
+        var expectedPrincipal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(Claims.Subject, TestUser.Id.ToString())]));
         var sender = new Mock<ISender>();
         sender.Setup(x => x.Send(
                 It.Is<ValidateLoginOtpCommand>(c => c.ChallengeId == challengeId && c.Channel == TwoFactorChannel.Email && c.Otp == "123456"),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
+        sender.Setup(x => x.Send(
+                It.Is<BuildPrincipalQuery>(q => q.UserId == TestUser.Id
+                    && q.AuthMethods != null && q.AuthMethods.SequenceEqual(new[] { "pwd", "otp" })),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedPrincipal);
         var handler = new HandleMfaOtpGrantCommandHandler(sender.Object);
 
         var principal = await handler.Handle(
@@ -197,6 +209,7 @@ public sealed class OidcGrantServiceTests
         principal.FindFirst(Claims.Name)!.Value.Should().Be("Test User");
         principal.FindFirst(Claims.PreferredUsername)!.Value.Should().Be("testuser");
         principal.FindFirst(Claims.Email).Should().BeNull("email scope was not requested");
+        principal.FindFirst(Claims.AuthenticationTime).Should().NotBeNull();
     }
 
     [Fact]
@@ -359,6 +372,61 @@ public sealed class OidcGrantServiceTests
         var nameClaim = principal.FindFirst(Claims.Name)!;
         nameClaim.GetDestinations().Should().Contain(Destinations.IdentityToken);
         nameClaim.GetDestinations().Should().Contain(Destinations.AccessToken);
+
+        var authTimeClaim = principal.FindFirst(Claims.AuthenticationTime)!;
+        authTimeClaim.GetDestinations().Should().Contain(Destinations.IdentityToken);
+        authTimeClaim.GetDestinations().Should().NotContain(Destinations.AccessToken);
+    }
+
+    [Fact]
+    public async Task BuildPrincipal_WhenAuthMethodsProvided_IncludesAmrClaims()
+    {
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(
+                It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestUser);
+        var handler = new BuildPrincipalQueryHandler(sender.Object);
+
+        var principal = await handler.Handle(
+            new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"], AuthMethods: ["pwd", "otp"]), CancellationToken.None);
+
+        var amrClaims = principal.FindAll(Claims.AuthenticationMethodReference).Select(c => c.Value).ToList();
+        amrClaims.Should().BeEquivalentTo(["pwd", "otp"]);
+    }
+
+    [Fact]
+    public async Task BuildPrincipal_WhenNoAuthMethods_OmitsAmrClaims()
+    {
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(
+                It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestUser);
+        var handler = new BuildPrincipalQueryHandler(sender.Object);
+
+        var principal = await handler.Handle(
+            new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"]), CancellationToken.None);
+
+        principal.FindAll(Claims.AuthenticationMethodReference).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task BuildPrincipal_AmrClaimsDestination_IsIdentityToken()
+    {
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(
+                It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestUser);
+        var handler = new BuildPrincipalQueryHandler(sender.Object);
+
+        var principal = await handler.Handle(
+            new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"], AuthMethods: ["pwd"]), CancellationToken.None);
+
+        var amrClaim = principal.FindFirst(Claims.AuthenticationMethodReference)!;
+        amrClaim.GetDestinations().Should().Contain(Destinations.IdentityToken);
+        amrClaim.GetDestinations().Should().NotContain(Destinations.AccessToken);
     }
 
     // HandleClientCredentialsGrantCommandHandler tests

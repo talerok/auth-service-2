@@ -3,6 +3,7 @@ using Auth.Application.Auth.Commands.CreateLoginChallenge;
 using Auth.Application.Auth.Commands.CreatePasswordChangeChallenge;
 using Auth.Application.Auth.Commands.ValidateCredentials;
 using Auth.Application.Oidc.Commands.ValidateCredentialsForLogin;
+using Auth.Application.Oidc.Queries.BuildPrincipal;
 using MediatR;
 
 namespace Auth.Infrastructure.Oidc.Commands.ValidateCredentialsForLogin;
@@ -27,8 +28,8 @@ internal sealed class ValidateCredentialsForLoginCommandHandler(
             return new CredentialValidationResult.MfaRequired(mfaChallenge.Id, mfaChallenge.Channel);
         }
 
-        var principal = await OidcPrincipalFactory.CreateUserPrincipalAsync(
-            user, command.Scopes, sender, command.ClientId, cancellationToken);
+        var principal = await sender.Send(
+            new BuildPrincipalQuery(user.Id, command.Scopes, command.ClientId, ["pwd"]), cancellationToken);
         return new CredentialValidationResult.Success(principal);
     }
 }

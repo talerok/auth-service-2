@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
@@ -17,8 +18,11 @@ public sealed class LogoutController : ControllerBase
     {
         await HttpContext.SignOutAsync(CookieScheme);
 
+        var request = HttpContext.GetOpenIddictServerRequest();
+        var redirectUri = request?.PostLogoutRedirectUri ?? "/";
+
         return SignOut(
             authenticationSchemes: [OpenIddictServerAspNetCoreDefaults.AuthenticationScheme],
-            properties: new AuthenticationProperties { RedirectUri = "/" });
+            properties: new AuthenticationProperties { RedirectUri = redirectUri });
     }
 }

@@ -242,7 +242,8 @@ public sealed class LdapGrantHandlerTests
         var senderMock = new Mock<ISender>();
         senderMock
             .Setup(x => x.Send(
-                It.Is<BuildPrincipalQuery>(q => q.UserId == user.Id),
+                It.Is<BuildPrincipalQuery>(q => q.UserId == user.Id
+                    && q.AuthMethods != null && q.AuthMethods.SequenceEqual(new[] { "pwd" })),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(principal);
 

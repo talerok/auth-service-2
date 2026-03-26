@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Auth.Application;
 using Auth.Application.Oidc.Commands.HandleMfaOtpGrant;
+using Auth.Application.Oidc.Queries.BuildPrincipal;
 using Auth.Application.TwoFactor.Commands.ValidateLoginOtp;
 using Auth.Domain;
 using MediatR;
@@ -22,7 +23,7 @@ internal sealed class HandleMfaOtpGrantCommandHandler(
             throw new AuthException(AuthErrorCatalog.InvalidRequest);
 
         var user = await sender.Send(new ValidateLoginOtpCommand(challengeId, channel, command.Otp), cancellationToken);
-        return await OidcPrincipalFactory.CreateUserPrincipalAsync(
-            user, command.Scopes, sender, command.ClientId, cancellationToken);
+        return await sender.Send(
+            new BuildPrincipalQuery(user.Id, command.Scopes, command.ClientId, ["pwd", "otp"]), cancellationToken);
     }
 }

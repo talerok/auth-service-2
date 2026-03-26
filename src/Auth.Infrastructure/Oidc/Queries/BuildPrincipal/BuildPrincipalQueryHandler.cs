@@ -12,6 +12,6 @@ internal sealed class BuildPrincipalQueryHandler(
     {
         var user = await sender.Send(new GetActiveUserQuery(query.UserId), cancellationToken);
         return await OidcPrincipalFactory.CreateUserPrincipalAsync(
-            user, query.Scopes, sender, query.ClientId, cancellationToken);
+            user, query.Scopes, sender, query.ClientId, cancellationToken, query.AuthMethods);
     }
 }
