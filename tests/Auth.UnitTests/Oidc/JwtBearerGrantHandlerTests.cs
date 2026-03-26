@@ -11,6 +11,7 @@ using FluentAssertions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using static Auth.UnitTests.TestDbContextFactory;
 
@@ -311,7 +312,8 @@ public sealed class JwtBearerGrantHandlerTests
         return new HandleJwtBearerGrantCommandHandler(
             dbContext,
             sender.Object,
-            tokenValidator.Object);
+            tokenValidator.Object,
+            NullLogger<HandleJwtBearerGrantCommandHandler>.Instance);
     }
 
     private static string CreateFakeJwt(string issuer)

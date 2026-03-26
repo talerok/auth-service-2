@@ -4,8 +4,6 @@ namespace Auth.Api;
 
 public static class AuthProblemDetailsMapper
 {
-    public static AuthProblemDescriptor Map(AuthException exception) => Map(exception.Code);
-
     public static AuthProblemDescriptor Map(string code)
     {
         return code switch

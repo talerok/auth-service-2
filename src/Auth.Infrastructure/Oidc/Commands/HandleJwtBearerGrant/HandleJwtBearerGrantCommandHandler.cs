@@ -6,13 +6,15 @@ using Auth.Application.Oidc.Queries.BuildPrincipal;
 using Auth.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Auth.Infrastructure.Oidc.Commands.HandleJwtBearerGrant;
 
 internal sealed class HandleJwtBearerGrantCommandHandler(
     AuthDbContext dbContext,
     ISender sender,
-    IOidcTokenValidator tokenValidator) : IRequestHandler<HandleJwtBearerGrantCommand, CredentialValidationResult>
+    IOidcTokenValidator tokenValidator,
+    ILogger<HandleJwtBearerGrantCommandHandler> logger) : IRequestHandler<HandleJwtBearerGrantCommand, CredentialValidationResult>
 {
     public async Task<CredentialValidationResult> Handle(HandleJwtBearerGrantCommand command, CancellationToken cancellationToken)
     {
@@ -58,7 +60,7 @@ internal sealed class HandleJwtBearerGrantCommandHandler(
         return new CredentialValidationResult.Success(principal);
     }
 
-    private static string? ReadIssuerFromJwt(string token)
+    private string? ReadIssuerFromJwt(string token)
     {
         try
         {
@@ -66,8 +68,9 @@ internal sealed class HandleJwtBearerGrantCommandHandler(
             var jwt = handler.ReadJwtToken(token);
             return jwt.Issuer;
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "Failed to read issuer from JWT token");
             return null;
         }
     }

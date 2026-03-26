@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
 using Auth.Application;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -12,7 +13,7 @@ internal interface IOidcTokenValidator
     Task<string> ValidateAndGetSubjectAsync(string authority, string clientId, string token, CancellationToken cancellationToken);
 }
 
-internal sealed class OidcTokenValidator : IOidcTokenValidator
+internal sealed class OidcTokenValidator(ILogger<OidcTokenValidator> logger) : IOidcTokenValidator
 {
     private static readonly JwtSecurityTokenHandler TokenHandler = new();
 
@@ -32,8 +33,9 @@ internal sealed class OidcTokenValidator : IOidcTokenValidator
         {
             openIdConfig = await configManager.GetConfigurationAsync(cancellationToken);
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "Failed to fetch OIDC discovery for authority {Authority}", authority);
             throw new AuthException(AuthErrorCatalog.IdentitySourceTokenInvalid);
         }
 
@@ -61,8 +63,9 @@ internal sealed class OidcTokenValidator : IOidcTokenValidator
         {
             throw;
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "OIDC token validation failed for authority {Authority}", authority);
             throw new AuthException(AuthErrorCatalog.IdentitySourceTokenInvalid);
         }
     }

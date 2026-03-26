@@ -126,7 +126,9 @@ builder.Services.AddAuthentication(options =>
     options.LoginPath = new PathString(oidc.LoginUrl);
     options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing")
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
