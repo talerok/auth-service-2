@@ -99,6 +99,13 @@ public sealed class OpenSearchQueryService(
         {
             yield return $"{fieldName}:*{EscapeQueryValue(filter.Ts)}*";
         }
+
+        if (!string.IsNullOrWhiteSpace(filter.From) || !string.IsNullOrWhiteSpace(filter.To))
+        {
+            var from = string.IsNullOrWhiteSpace(filter.From) ? "*" : EscapeQueryValue(filter.From);
+            var to = string.IsNullOrWhiteSpace(filter.To) ? "*" : EscapeQueryValue(filter.To);
+            yield return $"{fieldName}:[{from} TO {to}]";
+        }
     }
 
     private static SortDescriptor<TDocument> ApplySort<TDocument>(SortDescriptor<TDocument> sortDescriptor, AppSearchRequest request)

@@ -14,7 +14,9 @@ public sealed record SetUserIdentitySourceLinksRequest(IReadOnlyCollection<UserI
 public sealed record SearchFieldFilter(
     [property: JsonPropertyName("eq")] string? Eq = null,
     [property: JsonPropertyName("in")] IReadOnlyCollection<string>? In = null,
-    [property: JsonPropertyName("ts")] string? Ts = null);
+    [property: JsonPropertyName("ts")] string? Ts = null,
+    [property: JsonPropertyName("from")] string? From = null,
+    [property: JsonPropertyName("to")] string? To = null);
 
 [JsonConverter(typeof(SearchSortOrderJsonConverter))]
 public enum SearchSortOrder
