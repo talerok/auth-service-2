@@ -59,9 +59,8 @@ internal sealed class AuditBehavior<TRequest, TResponse>(
         var entityId = auditContext.EntityId ?? request.EntityId;
         var details = auditContext.Details;
 
-        AuditActor? actor = response is IAuditActorProvider actorProvider
-            ? actorProvider.GetAuditActor()
-            : null;
+        AuditActor? actor = auditContext.Actor
+            ?? (response is IAuditActorProvider actorProvider ? actorProvider.GetAuditActor() : null);
 
         await auditService.LogAsync(
             request.EntityType, entityId, request.Action,
@@ -75,6 +74,6 @@ internal sealed class AuditBehavior<TRequest, TResponse>(
 
         await auditService.LogAsync(
             request.EntityType, entityId, request.Action,
-            details, actor: null, request.Critical, cancellationToken);
+            details, auditContext.Actor, request.Critical, cancellationToken);
     }
 }

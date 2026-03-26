@@ -6,4 +6,5 @@ internal sealed class AuditContext : IAuditContext
 {
     public Dictionary<string, object?>? Details { get; set; }
     public Guid? EntityId { get; set; }
+    public AuditActor? Actor { get; set; }
 }

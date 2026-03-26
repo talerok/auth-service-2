@@ -8,4 +8,5 @@ public interface IAuditContext
 {
     Dictionary<string, object?>? Details { get; set; }
     Guid? EntityId { get; set; }
+    AuditActor? Actor { get; set; }
 }

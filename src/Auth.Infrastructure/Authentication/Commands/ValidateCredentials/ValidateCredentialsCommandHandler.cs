@@ -25,6 +25,7 @@ internal sealed class ValidateCredentialsCommandHandler(
                 throw new AuthException(AuthErrorCatalog.InternalAuthDisabled);
 
             auditContext.EntityId = user.Id;
+            auditContext.Actor = new AuditActor(user.Id, user.FullName);
             auditContext.Details = new Dictionary<string, object?>
             {
                 ["username"] = command.Username,

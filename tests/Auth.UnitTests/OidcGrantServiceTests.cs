@@ -358,7 +358,7 @@ public sealed class OidcGrantServiceTests
 
         var nameClaim = principal.FindFirst(Claims.Name)!;
         nameClaim.GetDestinations().Should().Contain(Destinations.IdentityToken);
-        nameClaim.GetDestinations().Should().NotContain(Destinations.AccessToken);
+        nameClaim.GetDestinations().Should().Contain(Destinations.AccessToken);
     }
 
     // HandleClientCredentialsGrantCommandHandler tests

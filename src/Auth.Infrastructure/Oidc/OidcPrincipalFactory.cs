@@ -48,7 +48,7 @@ internal static class OidcPrincipalFactory
         principal.SetDestinations(claim => claim.Type switch
         {
             Claims.Subject => [Destinations.AccessToken, Destinations.IdentityToken],
-            Claims.Name => [Destinations.IdentityToken],
+            Claims.Name => [Destinations.AccessToken, Destinations.IdentityToken],
             Claims.PreferredUsername => [Destinations.IdentityToken],
             Claims.Email => [Destinations.IdentityToken],
             Claims.PhoneNumber => [Destinations.IdentityToken],
