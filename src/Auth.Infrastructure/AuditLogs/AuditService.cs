@@ -80,9 +80,12 @@ internal sealed class AuditService(
     }
 
     private static AuditLogDto MapToDto(AuditLogEntry entry) =>
-        new(entry.Id, entry.Timestamp, entry.ActorId, entry.ActorName, entry.ActorType,
-            entry.EntityType, entry.EntityId, entry.Action, entry.Details,
-            entry.IpAddress, entry.UserAgent, entry.CorrelationId);
+        new(entry.Id, entry.Timestamp, entry.ActorId, entry.ActorName,
+            AuditLogDto.CamelCase(entry.ActorType),
+            AuditLogDto.CamelCase(entry.EntityType),
+            entry.EntityId,
+            AuditLogDto.CamelCase(entry.Action),
+            entry.Details, entry.IpAddress, entry.UserAgent, entry.CorrelationId);
 }
 
 internal static class StringExtensions

@@ -158,10 +158,15 @@ public sealed class OpenSearchMaintenanceService(
     public async Task ReindexAuditLogsAsync(CancellationToken cancellationToken)
     {
         await ClearIndexAsync(indexNames.AuditLogs, cancellationToken);
-        var entries = await dbContext.AuditLogEntries.AsNoTracking()
-            .Select(x => new AuditLogDto(x.Id, x.Timestamp, x.ActorId, x.ActorName, x.ActorType,
-                x.EntityType, x.EntityId, x.Action, x.Details, x.IpAddress, x.UserAgent, x.CorrelationId))
-            .ToListAsync(cancellationToken);
+        var rawEntries = await dbContext.AuditLogEntries.AsNoTracking().ToListAsync(cancellationToken);
+        var entries = rawEntries.Select(x => new AuditLogDto(
+                x.Id, x.Timestamp, x.ActorId, x.ActorName,
+                AuditLogDto.CamelCase(x.ActorType),
+                AuditLogDto.CamelCase(x.EntityType),
+                x.EntityId,
+                AuditLogDto.CamelCase(x.Action),
+                x.Details, x.IpAddress, x.UserAgent, x.CorrelationId))
+            .ToList();
         await searchIndexService.BulkIndexAuditLogsAsync(entries, cancellationToken);
     }
 

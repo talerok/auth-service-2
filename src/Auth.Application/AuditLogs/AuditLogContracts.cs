@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Auth.Domain;
 
 namespace Auth.Application;
@@ -7,11 +8,15 @@ public sealed record AuditLogDto(
     DateTime Timestamp,
     Guid? ActorId,
     string? ActorName,
-    AuditActorType ActorType,
-    AuditEntityType EntityType,
+    string ActorType,
+    string EntityType,
     Guid EntityId,
-    AuditAction Action,
+    string Action,
     Dictionary<string, object?>? Details,
     string? IpAddress,
     string? UserAgent,
-    string? CorrelationId);
+    string? CorrelationId)
+{
+    public static string CamelCase<TEnum>(TEnum value) where TEnum : struct, Enum =>
+        JsonNamingPolicy.CamelCase.ConvertName(value.ToString());
+}

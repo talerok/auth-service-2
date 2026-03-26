@@ -45,7 +45,7 @@ public sealed class AuditLogEntryConfiguration : IEntityTypeConfiguration<AuditL
             .HasColumnType("jsonb")
             .HasConversion(
                 v => v == null ? null : JsonSerializer.Serialize(v, JsonOptions),
-                v => v == null ? null : JsonSerializer.Deserialize<Dictionary<string, object?>>(v, JsonOptions));
+                v => v == null ? null : DeserializeDetails(v));
 
         builder.Property(x => x.IpAddress).HasMaxLength(45);
         builder.Property(x => x.UserAgent).HasMaxLength(500);
@@ -54,5 +54,26 @@ public sealed class AuditLogEntryConfiguration : IEntityTypeConfiguration<AuditL
         builder.HasIndex(x => new { x.EntityType, x.EntityId });
         builder.HasIndex(x => x.ActorId);
         builder.HasIndex(x => x.Timestamp).IsDescending();
+    }
+
+    private static Dictionary<string, object?>? DeserializeDetails(string? json)
+    {
+        if (json is null) return null;
+        var raw = JsonSerializer.Deserialize<Dictionary<string, object?>>(json, JsonOptions);
+        if (raw is null) return null;
+
+        var result = new Dictionary<string, object?>(raw.Count);
+        foreach (var (key, value) in raw)
+        {
+            result[key] = value is JsonElement el ? el.ValueKind switch
+            {
+                JsonValueKind.String => el.GetString(),
+                JsonValueKind.Number => el.TryGetInt64(out var l) ? (object)l : el.GetDouble(),
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                _ => null
+            } : value;
+        }
+        return result;
     }
 }

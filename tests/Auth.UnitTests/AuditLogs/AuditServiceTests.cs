@@ -95,9 +95,9 @@ public sealed class AuditServiceTests
 
         _searchIndexService.Verify(x => x.IndexAuditLogAsync(
             It.Is<AuditLogDto>(dto =>
-                dto.EntityType == AuditEntityType.Permission &&
+                dto.EntityType == AuditLogDto.CamelCase(AuditEntityType.Permission) &&
                 dto.EntityId == entityId &&
-                dto.Action == AuditAction.SoftDelete),
+                dto.Action == AuditLogDto.CamelCase(AuditAction.SoftDelete)),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 

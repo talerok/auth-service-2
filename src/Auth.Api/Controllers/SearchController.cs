@@ -65,4 +65,12 @@ public sealed class SearchController(ISearchMaintenanceService searchMaintenance
         await searchMaintenanceService.ReindexServiceAccountsAsync(cancellationToken);
         return NoContent();
     }
+
+    [HttpPost("reindex/audit-logs")]
+    [HasPermissionIn("system", "system", "system.search.reindex")]
+    public async Task<IActionResult> ReindexAuditLogs(CancellationToken cancellationToken)
+    {
+        await searchMaintenanceService.ReindexAuditLogsAsync(cancellationToken);
+        return NoContent();
+    }
 }
