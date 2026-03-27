@@ -15,8 +15,6 @@ using Auth.Application.Users.Commands.ImportUsers;
 using Auth.Application.Users.Queries.ExportUsers;
 using Auth.Application.Users.Queries.SearchUsers;
 using Auth.Application.Verification;
-using Auth.Application.Verification.Commands.ConfirmEmailVerification;
-using Auth.Application.Verification.Commands.ConfirmPhoneVerification;
 using Auth.Application.Verification.Commands.SendEmailVerification;
 using Auth.Application.Verification.Commands.SendPhoneVerification;
 using MediatR;
@@ -129,26 +127,10 @@ public sealed class UsersController(ISender sender) : ControllerBase
     public async Task<ActionResult<SendVerificationResponse>> SendEmailVerification(Guid id, CancellationToken cancellationToken) =>
         Ok(await sender.Send(new SendEmailVerificationCommand(id), cancellationToken));
 
-    [HttpPost("{id:guid}/verify-email/confirm")]
-    [HasPermissionIn("system", "system", "system.users.update")]
-    public async Task<IActionResult> ConfirmEmailVerification(Guid id, [FromBody] ConfirmVerificationRequest request, CancellationToken cancellationToken)
-    {
-        await sender.Send(new ConfirmEmailVerificationCommand(id, request.ChallengeId, request.Otp), cancellationToken);
-        return NoContent();
-    }
-
     [HttpPost("{id:guid}/verify-phone/send")]
     [HasPermissionIn("system", "system", "system.users.update")]
     public async Task<ActionResult<SendVerificationResponse>> SendPhoneVerification(Guid id, CancellationToken cancellationToken) =>
         Ok(await sender.Send(new SendPhoneVerificationCommand(id), cancellationToken));
-
-    [HttpPost("{id:guid}/verify-phone/confirm")]
-    [HasPermissionIn("system", "system", "system.users.update")]
-    public async Task<IActionResult> ConfirmPhoneVerification(Guid id, [FromBody] ConfirmVerificationRequest request, CancellationToken cancellationToken)
-    {
-        await sender.Send(new ConfirmPhoneVerificationCommand(id, request.ChallengeId, request.Otp), cancellationToken);
-        return NoContent();
-    }
 
     [HttpPost("search")]
     [HasPermissionIn("system", "system", "system.users.view")]

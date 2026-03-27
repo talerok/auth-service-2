@@ -22,9 +22,6 @@ internal sealed class ConfirmEmailVerificationCommandHandler(
                 cancellationToken)
             ?? throw new AuthException(VerificationErrorCatalog.InvalidChallenge);
 
-        if (challenge.UserId != command.UserId)
-            throw new AuthException(VerificationErrorCatalog.InvalidChallenge);
-
         if (challenge.IsExpired(DateTime.UtcNow))
             throw new AuthException(VerificationErrorCatalog.ChallengeExpired);
 
@@ -45,11 +42,12 @@ internal sealed class ConfirmEmailVerificationCommandHandler(
 
         challenge.MarkVerified();
 
-        var user = await dbContext.Users.FirstAsync(x => x.Id == command.UserId, cancellationToken);
+        var user = await dbContext.Users.FirstAsync(x => x.Id == challenge.UserId, cancellationToken);
         user.VerifyEmail();
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        auditContext.EntityId = user.Id;
         auditContext.Details = new Dictionary<string, object?>
         {
             ["channel"] = "Email",

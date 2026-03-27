@@ -29,46 +29,7 @@ public sealed class ConfirmEmailVerificationCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         var act = () => handler.Handle(
-            new ConfirmEmailVerificationCommand(Guid.NewGuid(), Guid.NewGuid(), "123456"),
-            CancellationToken.None);
-
-        var ex = await act.Should().ThrowAsync<AuthException>();
-        ex.Which.Code.Should().Be(VerificationErrorCatalog.InvalidChallenge);
-    }
-
-    [Fact]
-    public async Task Confirm_WhenUserIdMismatch_Throws()
-    {
-        await using var dbContext = CreateDbContext();
-        var owner = new User
-        {
-            Username = "owner",
-            Email = "owner@example.com",
-            PasswordHash = "hash",
-            IsActive = true
-        };
-        dbContext.Users.Add(owner);
-
-        var otp = "123456";
-        var salt = TwoFactorOtpSecurity.CreateSalt();
-        var hash = TwoFactorOtpSecurity.HashOtp(otp, salt);
-        var encrypted = TwoFactorOtpSecurity.EncryptOtp(otp, "test-key");
-        var challenge = TwoFactorChallenge.Create(
-            owner.Id,
-            TwoFactorChallenge.PurposeEmailVerification,
-            TwoFactorChannel.Email,
-            hash, salt, encrypted,
-            DateTime.UtcNow.AddMinutes(5),
-            5);
-        challenge.MarkDelivered();
-        dbContext.TwoFactorChallenges.Add(challenge);
-        await dbContext.SaveChangesAsync();
-
-        var handler = CreateHandler(dbContext);
-        var differentUserId = Guid.NewGuid();
-
-        var act = () => handler.Handle(
-            new ConfirmEmailVerificationCommand(differentUserId, challenge.Id, otp),
+            new ConfirmEmailVerificationCommand(Guid.NewGuid(), "123456"),
             CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<AuthException>();
@@ -106,7 +67,7 @@ public sealed class ConfirmEmailVerificationCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         var act = () => handler.Handle(
-            new ConfirmEmailVerificationCommand(user.Id, challenge.Id, otp),
+            new ConfirmEmailVerificationCommand(challenge.Id, otp),
             CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<AuthException>();
@@ -144,7 +105,7 @@ public sealed class ConfirmEmailVerificationCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         var act = () => handler.Handle(
-            new ConfirmEmailVerificationCommand(user.Id, challenge.Id, "000000"),
+            new ConfirmEmailVerificationCommand(challenge.Id, "000000"),
             CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<AuthException>();
@@ -185,7 +146,7 @@ public sealed class ConfirmEmailVerificationCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         await handler.Handle(
-            new ConfirmEmailVerificationCommand(user.Id, challenge.Id, otp),
+            new ConfirmEmailVerificationCommand(challenge.Id, otp),
             CancellationToken.None);
 
         var updatedUser = await dbContext.Users.SingleAsync(x => x.Id == user.Id);

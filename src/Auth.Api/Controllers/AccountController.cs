@@ -69,12 +69,12 @@ public sealed class AccountController(ISender sender, IOptions<PasswordRequireme
         Ok(await sender.Send(new SendEmailVerificationCommand(GetUserId()), cancellationToken));
 
     [HttpPost("verify-email/confirm")]
-    [Authorize]
+    [AllowAnonymous]
     public async Task<IActionResult> ConfirmEmailVerification(
         [FromBody] ConfirmVerificationRequest request,
         CancellationToken cancellationToken)
     {
-        await sender.Send(new ConfirmEmailVerificationCommand(GetUserId(), request.ChallengeId, request.Otp), cancellationToken);
+        await sender.Send(new ConfirmEmailVerificationCommand(request.ChallengeId, request.Otp), cancellationToken);
         return NoContent();
     }
 
@@ -84,12 +84,12 @@ public sealed class AccountController(ISender sender, IOptions<PasswordRequireme
         Ok(await sender.Send(new SendPhoneVerificationCommand(GetUserId()), cancellationToken));
 
     [HttpPost("verify-phone/confirm")]
-    [Authorize]
+    [AllowAnonymous]
     public async Task<IActionResult> ConfirmPhoneVerification(
         [FromBody] ConfirmVerificationRequest request,
         CancellationToken cancellationToken)
     {
-        await sender.Send(new ConfirmPhoneVerificationCommand(GetUserId(), request.ChallengeId, request.Otp), cancellationToken);
+        await sender.Send(new ConfirmPhoneVerificationCommand(request.ChallengeId, request.Otp), cancellationToken);
         return NoContent();
     }
 

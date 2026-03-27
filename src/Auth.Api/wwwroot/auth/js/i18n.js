@@ -35,6 +35,18 @@ const messages = {
     scopeWs: 'Рабочие пространства',
     scopeOfflineAccess: 'Offline-доступ (refresh token)',
 
+    // verify
+    verifyEmailTitle: 'Подтверждение email',
+    verifyPhoneTitle: 'Подтверждение телефона',
+    verifyLoading: 'Подтверждение...',
+    verifySuccess: 'Подтверждено',
+    verifyEmailSuccess: 'Ваш email успешно подтверждён',
+    verifyPhoneSuccess: 'Ваш телефон успешно подтверждён',
+    verifyFailed: 'Ошибка подтверждения',
+    verifyFailedHint: 'Код недействителен или срок действия истёк. Запросите новый код.',
+    verifyInvalidLink: 'Недействительная ссылка',
+    verifyInvalidLinkHint: 'Ссылка повреждена или неполная. Запросите новую ссылку для подтверждения.',
+
     // password change
     passwordChangeTitle: 'Смена пароля',
     newPassword: 'Новый пароль',

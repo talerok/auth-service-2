@@ -6,7 +6,6 @@ public sealed class ConfirmPhoneVerificationCommandValidator : AbstractValidator
 {
     public ConfirmPhoneVerificationCommandValidator()
     {
-        RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.ChallengeId).NotEmpty();
         RuleFor(x => x.Otp).NotEmpty().MaximumLength(16);
     }

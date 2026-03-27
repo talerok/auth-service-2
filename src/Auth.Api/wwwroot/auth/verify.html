@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Подтверждение</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>[v-cloak] { display: none; }</style>
+</head>
+<body class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+  <div v-scope="VerifyPage()" v-cloak class="w-full max-w-sm bg-white rounded-lg shadow p-8" @vue:mounted="confirm">
+    <div v-if="status === 'loading'" class="text-center">
+      <h1 class="text-2xl font-semibold mb-2">{{ title }}</h1>
+      <p class="text-sm text-gray-500">{{ t('verifyLoading') }}</p>
+    </div>
+
+    <div v-else-if="status === 'success'" class="text-center">
+      <div class="text-green-500 text-5xl mb-4">&#10003;</div>
+      <h1 class="text-2xl font-semibold mb-2">{{ t('verifySuccess') }}</h1>
+      <p class="text-sm text-gray-500">{{ successMessage }}</p>
+    </div>
+
+    <div v-else-if="status === 'error'" class="text-center">
+      <div class="text-red-500 text-5xl mb-4">&#10007;</div>
+      <h1 class="text-2xl font-semibold mb-2">{{ t('verifyFailed') }}</h1>
+      <p class="text-sm text-gray-500">{{ errorMessage || t('verifyFailedHint') }}</p>
+    </div>
+
+    <div v-else class="text-center">
+      <h1 class="text-2xl font-semibold mb-2">{{ t('verifyInvalidLink') }}</h1>
+      <p class="text-sm text-gray-500">{{ t('verifyInvalidLinkHint') }}</p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createApp } from './js/petite-vue.js'
+    import { t } from './js/i18n.js'
+    import { api, getParams } from './js/shared.js'
+
+    const { type, challengeId, code } = getParams('type', 'challengeId', 'code');
+
+    function VerifyPage() {
+      return {
+        t,
+        status: (!challengeId || !code) ? 'missing' : 'loading',
+        errorMessage: '',
+        get title() {
+          return type === 'phone' ? t('verifyPhoneTitle') : t('verifyEmailTitle');
+        },
+        get successMessage() {
+          return type === 'phone' ? t('verifyPhoneSuccess') : t('verifyEmailSuccess');
+        },
+        async confirm() {
+          if (this.status !== 'loading') return;
+
+          const endpoint = type === 'phone'
+            ? '/api/account/verify-phone/confirm'
+            : '/api/account/verify-email/confirm';
+
+          const { ok, data, error } = await api(endpoint, 'POST', {
+            challengeId,
+            otp: code
+          });
+
+          if (ok) {
+            this.status = 'success';
+          } else {
+            this.status = 'error';
+            this.errorMessage = error || data?.detail || '';
+          }
+        }
+      }
+    }
+
+    createApp({ VerifyPage }).mount()
+  </script>
+</body>
+</html>

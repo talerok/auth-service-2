@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Verification;
 
 namespace Auth.Api;
 
@@ -48,6 +49,14 @@ public static class AuthProblemDetailsMapper
             AuthErrorCatalog.ConsentRequired => new AuthProblemDescriptor(StatusCodes.Status403Forbidden, "Consent required", "User consent is required"),
             AuthErrorCatalog.AuthorizationNotFound => new AuthProblemDescriptor(StatusCodes.Status404NotFound, "Resource not found", "Authorization not found"),
             AuthErrorCatalog.InvalidRedirectUri => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Validation error", "Invalid redirect URI"),
+            VerificationErrorCatalog.InvalidChallenge => new AuthProblemDescriptor(StatusCodes.Status404NotFound, "Resource not found", "Verification challenge not found"),
+            VerificationErrorCatalog.ChallengeExpired => new AuthProblemDescriptor(StatusCodes.Status410Gone, "Challenge expired", "Verification challenge expired"),
+            VerificationErrorCatalog.InvalidOtp => new AuthProblemDescriptor(StatusCodes.Status401Unauthorized, "Unauthorized", "Verification code is invalid"),
+            VerificationErrorCatalog.MaxAttemptsExceeded => new AuthProblemDescriptor(StatusCodes.Status429TooManyRequests, "Too many attempts", "Maximum verification attempts exceeded"),
+            VerificationErrorCatalog.VerificationCooldown => new AuthProblemDescriptor(StatusCodes.Status429TooManyRequests, "Too many requests", "Verification already in progress"),
+            VerificationErrorCatalog.UserNotFound => new AuthProblemDescriptor(StatusCodes.Status404NotFound, "Resource not found", "User not found"),
+            VerificationErrorCatalog.NoEmailConfigured => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Validation error", "No email configured for user"),
+            VerificationErrorCatalog.NoPhoneConfigured => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Validation error", "No phone configured for user"),
             _ => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Business rule violation")
         };
     }

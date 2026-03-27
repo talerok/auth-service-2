@@ -29,47 +29,7 @@ public sealed class ConfirmPhoneVerificationCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         var act = () => handler.Handle(
-            new ConfirmPhoneVerificationCommand(Guid.NewGuid(), Guid.NewGuid(), "123456"),
-            CancellationToken.None);
-
-        var ex = await act.Should().ThrowAsync<AuthException>();
-        ex.Which.Code.Should().Be(VerificationErrorCatalog.InvalidChallenge);
-    }
-
-    [Fact]
-    public async Task Confirm_WhenUserIdMismatch_Throws()
-    {
-        await using var dbContext = CreateDbContext();
-        var owner = new User
-        {
-            Username = "owner",
-            Email = "owner@example.com",
-            Phone = "+71234567890",
-            PasswordHash = "hash",
-            IsActive = true
-        };
-        dbContext.Users.Add(owner);
-
-        var otp = "123456";
-        var salt = TwoFactorOtpSecurity.CreateSalt();
-        var hash = TwoFactorOtpSecurity.HashOtp(otp, salt);
-        var encrypted = TwoFactorOtpSecurity.EncryptOtp(otp, "test-key");
-        var challenge = TwoFactorChallenge.Create(
-            owner.Id,
-            TwoFactorChallenge.PurposePhoneVerification,
-            TwoFactorChannel.Sms,
-            hash, salt, encrypted,
-            DateTime.UtcNow.AddMinutes(5),
-            5);
-        challenge.MarkDelivered();
-        dbContext.TwoFactorChallenges.Add(challenge);
-        await dbContext.SaveChangesAsync();
-
-        var handler = CreateHandler(dbContext);
-        var differentUserId = Guid.NewGuid();
-
-        var act = () => handler.Handle(
-            new ConfirmPhoneVerificationCommand(differentUserId, challenge.Id, otp),
+            new ConfirmPhoneVerificationCommand(Guid.NewGuid(), "123456"),
             CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<AuthException>();
@@ -108,7 +68,7 @@ public sealed class ConfirmPhoneVerificationCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         var act = () => handler.Handle(
-            new ConfirmPhoneVerificationCommand(user.Id, challenge.Id, otp),
+            new ConfirmPhoneVerificationCommand(challenge.Id, otp),
             CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<AuthException>();
@@ -147,7 +107,7 @@ public sealed class ConfirmPhoneVerificationCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         var act = () => handler.Handle(
-            new ConfirmPhoneVerificationCommand(user.Id, challenge.Id, "000000"),
+            new ConfirmPhoneVerificationCommand(challenge.Id, "000000"),
             CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<AuthException>();
@@ -189,7 +149,7 @@ public sealed class ConfirmPhoneVerificationCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         await handler.Handle(
-            new ConfirmPhoneVerificationCommand(user.Id, challenge.Id, otp),
+            new ConfirmPhoneVerificationCommand(challenge.Id, otp),
             CancellationToken.None);
 
         var updatedUser = await dbContext.Users.SingleAsync(x => x.Id == user.Id);
