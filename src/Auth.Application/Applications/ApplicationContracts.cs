@@ -16,7 +16,9 @@ public sealed record ApplicationDto(
     IReadOnlyCollection<string> GrantTypes,
     IReadOnlyCollection<string> Audiences,
     int? AccessTokenLifetimeMinutes,
-    int? RefreshTokenLifetimeMinutes);
+    int? RefreshTokenLifetimeMinutes,
+    bool RequireEmailVerified,
+    bool RequirePhoneVerified);
 
 public sealed record CreateApplicationRequest(
     string Name,
@@ -33,7 +35,9 @@ public sealed record CreateApplicationRequest(
     List<string>? GrantTypes = null,
     List<string>? Audiences = null,
     int? AccessTokenLifetimeMinutes = null,
-    int? RefreshTokenLifetimeMinutes = null);
+    int? RefreshTokenLifetimeMinutes = null,
+    bool RequireEmailVerified = false,
+    bool RequirePhoneVerified = false);
 
 public sealed record CreateApplicationResponse(
     ApplicationDto Application,
@@ -53,7 +57,9 @@ public sealed record UpdateApplicationRequest(
     List<string> GrantTypes,
     List<string> Audiences,
     int? AccessTokenLifetimeMinutes,
-    int? RefreshTokenLifetimeMinutes);
+    int? RefreshTokenLifetimeMinutes,
+    bool RequireEmailVerified,
+    bool RequirePhoneVerified);
 
 public sealed record PatchApplicationRequest(
     string? Name,
@@ -69,6 +75,8 @@ public sealed record PatchApplicationRequest(
     List<string>? GrantTypes,
     List<string>? Audiences,
     int? AccessTokenLifetimeMinutes,
-    int? RefreshTokenLifetimeMinutes);
+    int? RefreshTokenLifetimeMinutes,
+    bool? RequireEmailVerified,
+    bool? RequirePhoneVerified);
 
 public sealed record RegenerateApplicationSecretResponse(string ClientSecret);

@@ -28,6 +28,9 @@ public sealed class ApplicationConfiguration : IEntityTypeConfiguration<Domain.A
         builder.Property(x => x.AccessTokenLifetimeMinutes);
         builder.Property(x => x.RefreshTokenLifetimeMinutes);
 
+        builder.Property(x => x.RequireEmailVerified).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.RequirePhoneVerified).IsRequired().HasDefaultValue(false);
+
         builder.HasQueryFilter(x => x.DeletedAt == null);
         builder.HasIndex(x => x.Name).IsUnique().HasFilter("\"DeletedAt\" IS NULL");
         builder.HasIndex(x => x.ClientId).IsUnique().HasFilter("\"DeletedAt\" IS NULL");

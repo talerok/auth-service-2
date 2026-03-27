@@ -102,7 +102,8 @@ public sealed class ApplicationsControllerTests(IntegrationTestFixture fixture)
             newName, "Updated", IsActive: true,
             LogoUrl: null, HomepageUrl: null,
             RedirectUris: ["http://localhost:3000/callback"], PostLogoutRedirectUris: [], AllowedOrigins: [], ConsentType: null, Scopes: [],
-            GrantTypes: ["authorization_code", "refresh_token"], Audiences: [], AccessTokenLifetimeMinutes: null, RefreshTokenLifetimeMinutes: null);
+            GrantTypes: ["authorization_code", "refresh_token"], Audiences: [], AccessTokenLifetimeMinutes: null, RefreshTokenLifetimeMinutes: null,
+            RequireEmailVerified: false, RequirePhoneVerified: false);
 
         var response = await Client.PutAsJsonAsync(
             $"/api/applications/{created.Application.Id}", request, IntegrationTestFixture.JsonOptions);
@@ -121,7 +122,8 @@ public sealed class ApplicationsControllerTests(IntegrationTestFixture fixture)
         var request = new PatchApplicationRequest(
             Name: "patched-app", Description: null, IsActive: null,
             LogoUrl: null, HomepageUrl: null, RedirectUris: null, PostLogoutRedirectUris: null, AllowedOrigins: null, ConsentType: null, Scopes: null,
-            GrantTypes: null, Audiences: null, AccessTokenLifetimeMinutes: null, RefreshTokenLifetimeMinutes: null);
+            GrantTypes: null, Audiences: null, AccessTokenLifetimeMinutes: null, RefreshTokenLifetimeMinutes: null,
+            RequireEmailVerified: null, RequirePhoneVerified: null);
 
         var response = await Client.PatchAsJsonAsync(
             $"/api/applications/{created.Application.Id}", request, IntegrationTestFixture.JsonOptions);

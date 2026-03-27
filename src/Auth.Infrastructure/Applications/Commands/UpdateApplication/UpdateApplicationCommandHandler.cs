@@ -35,6 +35,8 @@ internal sealed class UpdateApplicationCommandHandler(
         application.SetAudiences(command.Audiences);
         application.AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes;
         application.RefreshTokenLifetimeMinutes = command.RefreshTokenLifetimeMinutes;
+        application.RequireEmailVerified = command.RequireEmailVerified;
+        application.RequirePhoneVerified = command.RequirePhoneVerified;
 
         var changes = AuditDiff.CaptureChanges(dbContext.Entry(application));
         if (changes.Count > 0)
@@ -94,5 +96,6 @@ internal sealed class UpdateApplicationCommandHandler(
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
             c.RedirectUris, c.PostLogoutRedirectUris, c.AllowedOrigins, c.Scopes,
-            c.GrantTypes, c.Audiences, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
+            c.GrantTypes, c.Audiences, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes,
+            c.RequireEmailVerified, c.RequirePhoneVerified);
 }

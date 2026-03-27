@@ -151,7 +151,8 @@ public sealed class OpenSearchMaintenanceService(
         var applications = await dbContext.Applications.AsNoTracking()
             .Select(x => new ApplicationDto(x.Id, x.Name, x.Description, x.ClientId, x.IsActive,
                 x.IsConfidential, x.LogoUrl, x.HomepageUrl, x.RedirectUris, x.PostLogoutRedirectUris, x.AllowedOrigins,
-                x.Scopes, x.GrantTypes, x.Audiences, x.AccessTokenLifetimeMinutes, x.RefreshTokenLifetimeMinutes))
+                x.Scopes, x.GrantTypes, x.Audiences, x.AccessTokenLifetimeMinutes, x.RefreshTokenLifetimeMinutes,
+                x.RequireEmailVerified, x.RequirePhoneVerified))
             .ToListAsync(cancellationToken);
         await searchIndexService.BulkIndexApplicationsAsync(applications, cancellationToken);
     }

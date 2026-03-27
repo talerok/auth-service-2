@@ -18,7 +18,9 @@ public sealed record CreateApplicationCommand(
     List<string>? GrantTypes = null,
     List<string>? Audiences = null,
     int? AccessTokenLifetimeMinutes = null,
-    int? RefreshTokenLifetimeMinutes = null) : IRequest<CreateApplicationResponse>, IAuditable
+    int? RefreshTokenLifetimeMinutes = null,
+    bool RequireEmailVerified = false,
+    bool RequirePhoneVerified = false) : IRequest<CreateApplicationResponse>, IAuditable
 {
     public AuditEntityType EntityType => AuditEntityType.Application;
     public AuditAction Action => AuditAction.Create;

@@ -26,4 +26,7 @@ public sealed class Application : EntityBase
 
     [Auditable] public int? AccessTokenLifetimeMinutes { get; set; }
     [Auditable] public int? RefreshTokenLifetimeMinutes { get; set; }
+
+    [Auditable] public bool RequireEmailVerified { get; set; }
+    [Auditable] public bool RequirePhoneVerified { get; set; }
 }

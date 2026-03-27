@@ -53,6 +53,14 @@ public sealed class AuthorizeController(
         var resolveResult = await sender.Send(new ResolveAuthorizeRequestQuery(
             request.ClientId!, userId, request.GetScopes().ToList()), cancellationToken);
 
+        if (resolveResult.EmailVerificationRequired || resolveResult.PhoneVerificationRequired)
+        {
+            var parts = new List<string>();
+            if (resolveResult.EmailVerificationRequired) parts.Add("email");
+            if (resolveResult.PhoneVerificationRequired) parts.Add("phone");
+            return OidcForbid(Errors.AccessDenied, $"{string.Join(" and ", parts)} verification is required.");
+        }
+
         if (resolveResult.ConsentRequired)
         {
             var oidcOptions = integrationOptions.Value.Oidc;

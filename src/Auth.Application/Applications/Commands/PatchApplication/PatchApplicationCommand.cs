@@ -18,7 +18,9 @@ public sealed record PatchApplicationCommand(
     List<string>? GrantTypes,
     List<string>? Audiences,
     int? AccessTokenLifetimeMinutes,
-    int? RefreshTokenLifetimeMinutes) : IRequest<ApplicationDto?>, IAuditable
+    int? RefreshTokenLifetimeMinutes,
+    bool? RequireEmailVerified = null,
+    bool? RequirePhoneVerified = null) : IRequest<ApplicationDto?>, IAuditable
 {
     public AuditEntityType EntityType => AuditEntityType.Application;
     public AuditAction Action => AuditAction.Patch;

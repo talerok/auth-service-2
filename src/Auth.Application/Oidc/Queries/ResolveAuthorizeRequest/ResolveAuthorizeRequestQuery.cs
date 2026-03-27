@@ -9,4 +9,6 @@ public sealed record ResolveAuthorizeRequestQuery(
 
 public sealed record AuthorizeRequestResult(
     string? AuthorizationId,
-    bool ConsentRequired);
+    bool ConsentRequired,
+    bool EmailVerificationRequired,
+    bool PhoneVerificationRequired);

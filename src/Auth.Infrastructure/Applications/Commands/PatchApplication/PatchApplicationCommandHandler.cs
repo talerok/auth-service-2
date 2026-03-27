@@ -63,6 +63,12 @@ internal sealed class PatchApplicationCommandHandler(
             application.RefreshTokenLifetimeMinutes =
                 command.RefreshTokenLifetimeMinutes == 0 ? null : command.RefreshTokenLifetimeMinutes;
 
+        if (command.RequireEmailVerified.HasValue)
+            application.RequireEmailVerified = command.RequireEmailVerified.Value;
+
+        if (command.RequirePhoneVerified.HasValue)
+            application.RequirePhoneVerified = command.RequirePhoneVerified.Value;
+
         var changes = AuditDiff.CaptureChanges(dbContext.Entry(application));
         if (changes.Count > 0)
             auditContext.Details = changes;
@@ -157,5 +163,6 @@ internal sealed class PatchApplicationCommandHandler(
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
             c.RedirectUris, c.PostLogoutRedirectUris, c.AllowedOrigins, c.Scopes,
-            c.GrantTypes, c.Audiences, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
+            c.GrantTypes, c.Audiences, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes,
+            c.RequireEmailVerified, c.RequirePhoneVerified);
 }

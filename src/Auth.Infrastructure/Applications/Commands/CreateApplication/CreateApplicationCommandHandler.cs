@@ -38,7 +38,9 @@ internal sealed class CreateApplicationCommandHandler(
             LogoUrl = command.LogoUrl,
             HomepageUrl = command.HomepageUrl,
             AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes,
-            RefreshTokenLifetimeMinutes = command.RefreshTokenLifetimeMinutes
+            RefreshTokenLifetimeMinutes = command.RefreshTokenLifetimeMinutes,
+            RequireEmailVerified = command.RequireEmailVerified,
+            RequirePhoneVerified = command.RequirePhoneVerified
         };
 
         application.SetRedirectUris(command.RedirectUris ?? []);
@@ -100,7 +102,8 @@ internal sealed class CreateApplicationCommandHandler(
         new(c.Id, c.Name, c.Description, c.ClientId, c.IsActive,
             c.IsConfidential, c.LogoUrl, c.HomepageUrl,
             c.RedirectUris, c.PostLogoutRedirectUris, c.AllowedOrigins, c.Scopes,
-            c.GrantTypes, c.Audiences, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes);
+            c.GrantTypes, c.Audiences, c.AccessTokenLifetimeMinutes, c.RefreshTokenLifetimeMinutes,
+            c.RequireEmailVerified, c.RequirePhoneVerified);
 
     private static string GenerateSecret()
     {

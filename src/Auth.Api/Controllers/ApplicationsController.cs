@@ -40,7 +40,8 @@ public sealed class ApplicationsController(ISender sender) : ControllerBase
             request.RedirectUris, request.PostLogoutRedirectUris,
             request.AllowedOrigins, request.ConsentType, request.Scopes,
             request.GrantTypes, request.Audiences, request.AccessTokenLifetimeMinutes,
-            request.RefreshTokenLifetimeMinutes), cancellationToken);
+            request.RefreshTokenLifetimeMinutes, request.RequireEmailVerified,
+            request.RequirePhoneVerified), cancellationToken);
 
     [HttpPut("{id:guid}")]
     [HasPermissionIn("system", "system", "system.applications.update")]
@@ -52,7 +53,8 @@ public sealed class ApplicationsController(ISender sender) : ControllerBase
             request.RedirectUris, request.PostLogoutRedirectUris,
             request.AllowedOrigins, request.ConsentType, request.Scopes,
             request.GrantTypes, request.Audiences, request.AccessTokenLifetimeMinutes,
-            request.RefreshTokenLifetimeMinutes), cancellationToken);
+            request.RefreshTokenLifetimeMinutes, request.RequireEmailVerified,
+            request.RequirePhoneVerified), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -66,7 +68,8 @@ public sealed class ApplicationsController(ISender sender) : ControllerBase
             request.RedirectUris, request.PostLogoutRedirectUris,
             request.AllowedOrigins, request.ConsentType, request.Scopes,
             request.GrantTypes, request.Audiences, request.AccessTokenLifetimeMinutes,
-            request.RefreshTokenLifetimeMinutes), cancellationToken);
+            request.RefreshTokenLifetimeMinutes, request.RequireEmailVerified,
+            request.RequirePhoneVerified), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
