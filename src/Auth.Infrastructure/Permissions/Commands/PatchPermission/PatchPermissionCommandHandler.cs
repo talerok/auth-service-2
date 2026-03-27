@@ -19,10 +19,10 @@ internal sealed class PatchPermissionCommandHandler(
 
         entity.GuardNotSystem();
 
-        if (command.Code is not null)
-            entity.Code = command.Code;
-        if (command.Description is not null)
-            entity.Description = command.Description;
+        if (command.Code.HasValue)
+            entity.Code = command.Code.Value!;
+        if (command.Description.HasValue)
+            entity.Description = command.Description.Value!;
 
         var changes = AuditDiff.CaptureChanges(dbContext.Entry(entity));
         if (changes.Count > 0)

@@ -1,8 +1,10 @@
+using Auth.Application.Common;
 using Auth.IntegrationTests.Stubs;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Text.Json.Serialization.Metadata;
 using Testcontainers.PostgreSql;
 
 namespace Auth.IntegrationTests;
@@ -27,7 +29,15 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
     public static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+        Converters =
+        {
+            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
+            new OptionalJsonConverterFactory()
+        },
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver
+        {
+            Modifiers = { OptionalModifiers.SkipUnset }
+        }
     };
 
     public async Task InitializeAsync()

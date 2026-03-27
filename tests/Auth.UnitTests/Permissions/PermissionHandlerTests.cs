@@ -184,7 +184,7 @@ public sealed class PermissionHandlerTests
         var handler = new PatchPermissionCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
-            new PatchPermissionCommand(permission.Id, null, "UpdatedDesc"),
+            new PatchPermissionCommand(permission.Id, default, "UpdatedDesc"),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -210,7 +210,7 @@ public sealed class PermissionHandlerTests
         var handler = new PatchPermissionCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
-            new PatchPermissionCommand(permission.Id, null, null),
+            new PatchPermissionCommand(permission.Id, default, default),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -226,7 +226,7 @@ public sealed class PermissionHandlerTests
         var handler = new PatchPermissionCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
-            new PatchPermissionCommand(Guid.NewGuid(), null, "Desc"),
+            new PatchPermissionCommand(Guid.NewGuid(), default, "Desc"),
             CancellationToken.None);
 
         result.Should().BeNull();

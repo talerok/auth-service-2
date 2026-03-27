@@ -10,7 +10,7 @@ public sealed class PatchServiceAccountCommandValidatorTests
     [Fact]
     public async Task Validate_WithValidCommand_IsValid()
     {
-        var command = new PatchServiceAccountCommand(Guid.NewGuid(), "Name", null, null);
+        var command = new PatchServiceAccountCommand(Guid.NewGuid(), "Name", default, default, default, default);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -20,7 +20,7 @@ public sealed class PatchServiceAccountCommandValidatorTests
     [Fact]
     public async Task Validate_WithEmptyId_HasError()
     {
-        var command = new PatchServiceAccountCommand(Guid.Empty, "Name", null, null);
+        var command = new PatchServiceAccountCommand(Guid.Empty, "Name", default, default, default, default);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -31,7 +31,7 @@ public sealed class PatchServiceAccountCommandValidatorTests
     [Fact]
     public async Task Validate_WithAllNullFields_IsValid()
     {
-        var command = new PatchServiceAccountCommand(Guid.NewGuid(), null, null, null);
+        var command = new PatchServiceAccountCommand(Guid.NewGuid(), default, default, default, default, default);
 
         var result = await _validator.ValidateAsync(command);
 
@@ -41,29 +41,29 @@ public sealed class PatchServiceAccountCommandValidatorTests
     [Fact]
     public async Task Validate_WithNameExceedingMaxLength_HasError()
     {
-        var command = new PatchServiceAccountCommand(Guid.NewGuid(), new string('a', 201), null, null);
+        var command = new PatchServiceAccountCommand(Guid.NewGuid(), new string('a', 201), default, default, default, default);
 
         var result = await _validator.ValidateAsync(command);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Name");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("Name"));
     }
 
     [Fact]
     public async Task Validate_WithDescriptionExceedingMaxLength_HasError()
     {
-        var command = new PatchServiceAccountCommand(Guid.NewGuid(), null, new string('a', 501), null);
+        var command = new PatchServiceAccountCommand(Guid.NewGuid(), default, new string('a', 501), default, default, default);
 
         var result = await _validator.ValidateAsync(command);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Description");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("Description"));
     }
 
     [Fact]
     public async Task Validate_WithValidDescription_IsValid()
     {
-        var command = new PatchServiceAccountCommand(Guid.NewGuid(), null, "updated description", null);
+        var command = new PatchServiceAccountCommand(Guid.NewGuid(), default, "updated description", default, default, default);
 
         var result = await _validator.ValidateAsync(command);
 

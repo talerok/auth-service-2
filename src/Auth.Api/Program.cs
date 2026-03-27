@@ -9,8 +9,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using OpenIddict.Validation.AspNetCore;
 using Serilog;
+using Auth.Application.Common;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +30,11 @@ builder.Services
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
+        options.JsonSerializerOptions.Converters.Add(new OptionalJsonConverterFactory());
+        options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver
+        {
+            Modifiers = { OptionalModifiers.SkipUnset }
+        };
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

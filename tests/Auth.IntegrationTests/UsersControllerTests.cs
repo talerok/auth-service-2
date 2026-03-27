@@ -185,11 +185,17 @@ public sealed class UsersControllerTests(IntegrationTestFixture fixture)
         var user = await fixture.CreateUserAsync();
 
         var request = new PatchUserRequest(
-            Username: null,
+            Username: default,
             FullName: "Patched Name",
-            Email: null,
-            Phone: null,
-            IsActive: null);
+            Email: default,
+            Phone: default,
+            IsActive: default,
+            IsInternalAuthEnabled: default,
+            TwoFactorEnabled: default,
+            TwoFactorChannel: default,
+            Locale: default,
+            EmailVerified: default,
+            PhoneVerified: default);
 
         var response = await Client.PatchAsJsonAsync($"/api/users/{user.Id}", request, IntegrationTestFixture.JsonOptions);
 

@@ -1,3 +1,4 @@
+using Auth.Application.Common;
 using Auth.Domain;
 
 namespace Auth.Application;
@@ -46,17 +47,17 @@ public sealed record UpdateUserRequest(
     bool PhoneVerified = false);
 
 public sealed record PatchUserRequest(
-    string? Username,
-    string? FullName,
-    string? Email,
-    string? Phone,
-    bool? IsActive,
-    bool? IsInternalAuthEnabled = null,
-    bool? TwoFactorEnabled = null,
-    TwoFactorChannel? TwoFactorChannel = null,
-    string? Locale = null,
-    bool? EmailVerified = null,
-    bool? PhoneVerified = null);
+    Optional<string> Username,
+    Optional<string> FullName,
+    Optional<string> Email,
+    Optional<string?> Phone,
+    Optional<bool> IsActive,
+    Optional<bool> IsInternalAuthEnabled,
+    Optional<bool> TwoFactorEnabled,
+    Optional<TwoFactorChannel?> TwoFactorChannel,
+    Optional<string> Locale,
+    Optional<bool> EmailVerified,
+    Optional<bool> PhoneVerified);
 
 public sealed record AdminResetPasswordRequest(string Password);
 

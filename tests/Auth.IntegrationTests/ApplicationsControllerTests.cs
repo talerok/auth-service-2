@@ -120,10 +120,10 @@ public sealed class ApplicationsControllerTests(IntegrationTestFixture fixture)
     {
         var created = await fixture.CreateApplicationAsync();
         var request = new PatchApplicationRequest(
-            Name: "patched-app", Description: null, IsActive: null,
-            LogoUrl: null, HomepageUrl: null, RedirectUris: null, PostLogoutRedirectUris: null, AllowedOrigins: null, ConsentType: null, Scopes: null,
-            GrantTypes: null, Audiences: null, AccessTokenLifetimeMinutes: null, RefreshTokenLifetimeMinutes: null,
-            RequireEmailVerified: null, RequirePhoneVerified: null);
+            Name: "patched-app", Description: default, IsActive: default,
+            LogoUrl: default, HomepageUrl: default, RedirectUris: default, PostLogoutRedirectUris: default, AllowedOrigins: default, ConsentType: default, Scopes: default,
+            GrantTypes: default, Audiences: default, AccessTokenLifetimeMinutes: default, RefreshTokenLifetimeMinutes: default,
+            RequireEmailVerified: default, RequirePhoneVerified: default);
 
         var response = await Client.PatchAsJsonAsync(
             $"/api/applications/{created.Application.Id}", request, IntegrationTestFixture.JsonOptions);

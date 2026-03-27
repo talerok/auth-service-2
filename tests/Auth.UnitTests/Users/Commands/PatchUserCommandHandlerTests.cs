@@ -22,8 +22,8 @@ public sealed class PatchUserCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         var result = await handler.Handle(
-            new PatchUserCommand(user.Id, null, null, null, null, null,
-                TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email),
+            new PatchUserCommand(user.Id, default, default, default, default, default,
+                default, TwoFactorEnabled: true, TwoFactorChannel: TwoFactorChannel.Email, default, default, default),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -42,7 +42,7 @@ public sealed class PatchUserCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         var result = await handler.Handle(
-            new PatchUserCommand(user.Id, null, null, null, null, null, TwoFactorEnabled: false),
+            new PatchUserCommand(user.Id, default, default, default, default, default, default, TwoFactorEnabled: false, default, default, default, default),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -61,7 +61,7 @@ public sealed class PatchUserCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         var result = await handler.Handle(
-            new PatchUserCommand(user.Id, null, null, "newemail@example.com", null, null),
+            new PatchUserCommand(user.Id, default, default, "newemail@example.com", default, default, default, default, default, default, default, default),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -80,7 +80,7 @@ public sealed class PatchUserCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         var result = await handler.Handle(
-            new PatchUserCommand(user.Id, null, null, null, "+9876543210", null),
+            new PatchUserCommand(user.Id, default, default, default, "+9876543210", default, default, default, default, default, default, default),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -97,7 +97,7 @@ public sealed class PatchUserCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         var result = await handler.Handle(
-            new PatchUserCommand(user.Id, null, null, "newemail@example.com", null, null),
+            new PatchUserCommand(user.Id, default, default, "newemail@example.com", default, default, default, default, default, default, default, default),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -115,7 +115,7 @@ public sealed class PatchUserCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         var result = await handler.Handle(
-            new PatchUserCommand(user.Id, null, null, null, null, null, IsInternalAuthEnabled: false),
+            new PatchUserCommand(user.Id, default, default, default, default, default, IsInternalAuthEnabled: false, default, default, default, default, default),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -135,7 +135,7 @@ public sealed class PatchUserCommandHandlerTests
         var handler = CreateHandler(dbContext);
 
         var result = await handler.Handle(
-            new PatchUserCommand(user.Id, null, null, "newemail@example.com", null, null),
+            new PatchUserCommand(user.Id, default, default, "newemail@example.com", default, default, default, default, default, default, default, default),
             CancellationToken.None);
 
         result.Should().NotBeNull();

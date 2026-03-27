@@ -24,7 +24,7 @@ public sealed class PatchServiceAccountCommandHandlerTests
         var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
-            new PatchServiceAccountCommand(serviceAccount.Id, "Patched", null, null),
+            new PatchServiceAccountCommand(serviceAccount.Id, "Patched", default, default, default, default),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -42,7 +42,7 @@ public sealed class PatchServiceAccountCommandHandlerTests
         var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
-            new PatchServiceAccountCommand(Guid.NewGuid(), "Name", null, null),
+            new PatchServiceAccountCommand(Guid.NewGuid(), "Name", default, default, default, default),
             CancellationToken.None);
 
         result.Should().BeNull();
@@ -64,7 +64,7 @@ public sealed class PatchServiceAccountCommandHandlerTests
         var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
-            new PatchServiceAccountCommand(serviceAccount.Id, "New Name", null, null),
+            new PatchServiceAccountCommand(serviceAccount.Id, "New Name", default, default, default, default),
             CancellationToken.None);
 
         appManager.Verify(x => x.UpdateAsync(It.IsAny<object>(), It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -82,7 +82,7 @@ public sealed class PatchServiceAccountCommandHandlerTests
         var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
-            new PatchServiceAccountCommand(serviceAccount.Id, null, "new desc", null),
+            new PatchServiceAccountCommand(serviceAccount.Id, default, "new desc", default, default, default),
             CancellationToken.None);
 
         appManager.Verify(x => x.FindByClientIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -100,7 +100,7 @@ public sealed class PatchServiceAccountCommandHandlerTests
         var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
-            new PatchServiceAccountCommand(serviceAccount.Id, null, null, false),
+            new PatchServiceAccountCommand(serviceAccount.Id, default, default, false, default, default),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -119,7 +119,7 @@ public sealed class PatchServiceAccountCommandHandlerTests
         var handler = new PatchServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
-            new PatchServiceAccountCommand(serviceAccount.Id, null, "new desc", null),
+            new PatchServiceAccountCommand(serviceAccount.Id, default, "new desc", default, default, default),
             CancellationToken.None);
 
         searchIndex.Verify(x => x.IndexServiceAccountAsync(

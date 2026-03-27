@@ -25,7 +25,7 @@ public sealed class PatchRoleCommandHandlerTests
         var handler = new PatchRoleCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
-            new PatchRoleCommand(role.Id, "Updated", null, null),
+            new PatchRoleCommand(role.Id, "Updated", default, default),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -49,7 +49,7 @@ public sealed class PatchRoleCommandHandlerTests
         var handler = new PatchRoleCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
-            new PatchRoleCommand(Guid.NewGuid(), "Name", null, null),
+            new PatchRoleCommand(Guid.NewGuid(), "Name", default, default),
             CancellationToken.None);
 
         result.Should().BeNull();

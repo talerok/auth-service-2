@@ -7,8 +7,13 @@ public sealed class PatchUserCommandValidator : AbstractValidator<PatchUserComma
     public PatchUserCommandValidator()
     {
         RuleFor(x => x.Id).NotEmpty();
-        RuleFor(x => x.Username).MaximumLength(100).When(x => x.Username is not null);
-        RuleFor(x => x.FullName).MaximumLength(200).When(x => x.FullName is not null);
-        RuleFor(x => x.Email).EmailAddress().When(x => x.Email is not null);
+        RuleFor(x => x.Username.Value!).NotNull().MaximumLength(100)
+            .OverridePropertyName("Username").When(x => x.Username.HasValue);
+        RuleFor(x => x.FullName.Value!).NotNull().MaximumLength(200)
+            .OverridePropertyName("FullName").When(x => x.FullName.HasValue);
+        RuleFor(x => x.Email.Value!).NotNull().EmailAddress()
+            .OverridePropertyName("Email").When(x => x.Email.HasValue);
+        RuleFor(x => x.Locale.Value!).NotNull()
+            .OverridePropertyName("Locale").When(x => x.Locale.HasValue);
     }
 }

@@ -20,14 +20,14 @@ internal sealed class PatchNotificationTemplateCommandHandler(
         if (entity is null)
             return null;
 
-        if (command.Type is not null)
-            entity.Type = Enum.Parse<NotificationTemplateType>(command.Type, true);
-        if (command.Locale is not null)
-            entity.Locale = command.Locale;
-        if (command.Subject is not null)
-            entity.Subject = command.Subject;
-        if (command.Body is not null)
-            entity.Body = command.Body;
+        if (command.Type.HasValue)
+            entity.Type = Enum.Parse<NotificationTemplateType>(command.Type.Value!, true);
+        if (command.Locale.HasValue)
+            entity.Locale = command.Locale.Value!;
+        if (command.Subject.HasValue)
+            entity.Subject = command.Subject.Value!;
+        if (command.Body.HasValue)
+            entity.Body = command.Body.Value!;
 
         var changes = AuditDiff.CaptureChanges(dbContext.Entry(entity));
         if (changes.Count > 0)

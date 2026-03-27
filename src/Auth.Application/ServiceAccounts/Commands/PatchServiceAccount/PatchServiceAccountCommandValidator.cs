@@ -7,7 +7,11 @@ public sealed class PatchServiceAccountCommandValidator : AbstractValidator<Patc
     public PatchServiceAccountCommandValidator()
     {
         RuleFor(x => x.Id).NotEmpty();
-        RuleFor(x => x.Name).MaximumLength(200).When(x => x.Name is not null);
-        RuleFor(x => x.Description).MaximumLength(500).When(x => x.Description is not null);
+        RuleFor(x => x.Name.Value!).NotNull().MaximumLength(200)
+            .OverridePropertyName("Name").When(x => x.Name.HasValue);
+        RuleFor(x => x.Description.Value!).NotNull().MaximumLength(500)
+            .OverridePropertyName("Description").When(x => x.Description.HasValue);
+        RuleFor(x => x.Audiences.Value).NotNull()
+            .OverridePropertyName("Audiences").When(x => x.Audiences.HasValue);
     }
 }

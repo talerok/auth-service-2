@@ -18,7 +18,7 @@ public sealed class PatchNotificationTemplateCommandHandlerTests
             dbContext, new Mock<ISearchIndexService>().Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
-            new PatchNotificationTemplateCommand(Guid.NewGuid(), null, null, "New Subject", null),
+            new PatchNotificationTemplateCommand(Guid.NewGuid(), default, default, "New Subject", default),
             CancellationToken.None);
 
         result.Should().BeNull();
@@ -42,7 +42,7 @@ public sealed class PatchNotificationTemplateCommandHandlerTests
             dbContext, new Mock<ISearchIndexService>().Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
-            new PatchNotificationTemplateCommand(template.Id, null, null, "Patched Subject", null),
+            new PatchNotificationTemplateCommand(template.Id, default, default, "Patched Subject", default),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -78,7 +78,7 @@ public sealed class PatchNotificationTemplateCommandHandlerTests
             dbContext, searchService.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
-            new PatchNotificationTemplateCommand(template.Id, null, null, "Neuer Betreff", null),
+            new PatchNotificationTemplateCommand(template.Id, default, default, "Neuer Betreff", default),
             CancellationToken.None);
 
         searchService.Verify(x => x.IndexNotificationTemplateAsync(

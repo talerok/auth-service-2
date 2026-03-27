@@ -25,7 +25,7 @@ public sealed class PatchWorkspaceCommandHandlerTests
         var handler = new PatchWorkspaceCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
-            new PatchWorkspaceCommand(workspace.Id, "Patched", null, null),
+            new PatchWorkspaceCommand(workspace.Id, "Patched", default, default),
             CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -46,7 +46,7 @@ public sealed class PatchWorkspaceCommandHandlerTests
         var handler = new PatchWorkspaceCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
-            new PatchWorkspaceCommand(Guid.NewGuid(), "Name", null, null),
+            new PatchWorkspaceCommand(Guid.NewGuid(), "Name", default, default),
             CancellationToken.None);
 
         result.Should().BeNull();

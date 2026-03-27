@@ -19,17 +19,17 @@ internal sealed class PatchServiceAccountCommandHandler(
         if (serviceAccount is null)
             return null;
 
-        if (command.Name is not null)
-            serviceAccount.Name = command.Name;
+        if (command.Name.HasValue)
+            serviceAccount.Name = command.Name.Value!;
 
-        if (command.Description is not null)
-            serviceAccount.Description = command.Description;
+        if (command.Description.HasValue)
+            serviceAccount.Description = command.Description.Value!;
 
         if (command.IsActive.HasValue)
             serviceAccount.IsActive = command.IsActive.Value;
 
-        if (command.Audiences is not null)
-            serviceAccount.SetAudiences(command.Audiences.ToList());
+        if (command.Audiences.HasValue)
+            serviceAccount.SetAudiences(command.Audiences.Value!.ToList());
 
         if (command.AccessTokenLifetimeMinutes.HasValue)
             serviceAccount.AccessTokenLifetimeMinutes = command.AccessTokenLifetimeMinutes.Value;
@@ -40,7 +40,7 @@ internal sealed class PatchServiceAccountCommandHandler(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        if (command.Name is not null)
+        if (command.Name.HasValue)
         {
             var oidcApp = await appManager.FindByClientIdAsync(serviceAccount.ClientId, cancellationToken);
             if (oidcApp is not null)

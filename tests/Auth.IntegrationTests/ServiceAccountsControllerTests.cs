@@ -99,7 +99,8 @@ public sealed class ServiceAccountsControllerTests(IntegrationTestFixture fixtur
     public async Task Patch_ExistingServiceAccount_Returns200()
     {
         var created = await fixture.CreateServiceAccountAsync();
-        var request = new PatchServiceAccountRequest(Name: "patched-sa", Description: null, IsActive: null);
+        var request = new PatchServiceAccountRequest(Name: "patched-sa", Description: default, IsActive: default,
+            Audiences: default, AccessTokenLifetimeMinutes: default);
 
         var response = await Client.PatchAsJsonAsync(
             $"/api/service-accounts/{created.ServiceAccount.Id}", request, IntegrationTestFixture.JsonOptions);

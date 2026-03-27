@@ -1,3 +1,5 @@
+using Auth.Application.Common;
+
 namespace Auth.Application;
 
 public sealed record ServiceAccountDto(
@@ -28,11 +30,11 @@ public sealed record UpdateServiceAccountRequest(
     int? AccessTokenLifetimeMinutes = null);
 
 public sealed record PatchServiceAccountRequest(
-    string? Name,
-    string? Description,
-    bool? IsActive,
-    IReadOnlyCollection<string>? Audiences = null,
-    int? AccessTokenLifetimeMinutes = null);
+    Optional<string> Name,
+    Optional<string> Description,
+    Optional<bool> IsActive,
+    Optional<IReadOnlyCollection<string>> Audiences,
+    Optional<int?> AccessTokenLifetimeMinutes);
 
 public sealed record RegenerateServiceAccountSecretResponse(string ClientSecret);
 

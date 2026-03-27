@@ -22,46 +22,46 @@ internal sealed class PatchApplicationCommandHandler(
         if (application is null)
             return null;
 
-        if (command.Name is not null)
-            application.Name = command.Name;
+        if (command.Name.HasValue)
+            application.Name = command.Name.Value!;
 
-        if (command.Description is not null)
-            application.Description = command.Description;
+        if (command.Description.HasValue)
+            application.Description = command.Description.Value!;
 
         if (command.IsActive.HasValue)
             application.IsActive = command.IsActive.Value;
 
-        if (command.LogoUrl is not null)
-            application.LogoUrl = command.LogoUrl;
+        if (command.LogoUrl.HasValue)
+            application.LogoUrl = command.LogoUrl.Value;
 
-        if (command.HomepageUrl is not null)
-            application.HomepageUrl = command.HomepageUrl;
+        if (command.HomepageUrl.HasValue)
+            application.HomepageUrl = command.HomepageUrl.Value;
 
-        if (command.RedirectUris is not null)
-            application.SetRedirectUris(command.RedirectUris);
+        if (command.RedirectUris.HasValue)
+            application.SetRedirectUris(command.RedirectUris.Value!);
 
-        if (command.PostLogoutRedirectUris is not null)
-            application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris);
+        if (command.PostLogoutRedirectUris.HasValue)
+            application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris.Value!);
 
-        if (command.AllowedOrigins is not null)
-            application.SetAllowedOrigins(command.AllowedOrigins);
+        if (command.AllowedOrigins.HasValue)
+            application.SetAllowedOrigins(command.AllowedOrigins.Value!);
 
-        if (command.Scopes is not null)
-            application.SetScopes(command.Scopes);
+        if (command.Scopes.HasValue)
+            application.SetScopes(command.Scopes.Value!);
 
-        if (command.GrantTypes is not null)
-            application.SetGrantTypes(command.GrantTypes);
+        if (command.GrantTypes.HasValue)
+            application.SetGrantTypes(command.GrantTypes.Value!);
 
-        if (command.Audiences is not null)
-            application.SetAudiences(command.Audiences);
+        if (command.Audiences.HasValue)
+            application.SetAudiences(command.Audiences.Value!);
 
         if (command.AccessTokenLifetimeMinutes.HasValue)
             application.AccessTokenLifetimeMinutes =
-                command.AccessTokenLifetimeMinutes == 0 ? null : command.AccessTokenLifetimeMinutes;
+                command.AccessTokenLifetimeMinutes.Value == 0 ? null : command.AccessTokenLifetimeMinutes.Value;
 
         if (command.RefreshTokenLifetimeMinutes.HasValue)
             application.RefreshTokenLifetimeMinutes =
-                command.RefreshTokenLifetimeMinutes == 0 ? null : command.RefreshTokenLifetimeMinutes;
+                command.RefreshTokenLifetimeMinutes.Value == 0 ? null : command.RefreshTokenLifetimeMinutes.Value;
 
         if (command.RequireEmailVerified.HasValue)
             application.RequireEmailVerified = command.RequireEmailVerified.Value;
@@ -78,12 +78,12 @@ internal sealed class PatchApplicationCommandHandler(
 
         // Audiences are not synced to OpenIddict — stored only in our DB
         // and applied at token issuance time via OidcPrincipalFactory.
-        var needsOidcSync = command.Name is not null
-                            || command.RedirectUris is not null
-                            || command.PostLogoutRedirectUris is not null
-                            || command.ConsentType is not null
-                            || command.Scopes is not null
-                            || command.GrantTypes is not null
+        var needsOidcSync = command.Name.HasValue
+                            || command.RedirectUris.HasValue
+                            || command.PostLogoutRedirectUris.HasValue
+                            || command.ConsentType.HasValue
+                            || command.Scopes.HasValue
+                            || command.GrantTypes.HasValue
                             || command.AccessTokenLifetimeMinutes.HasValue
                             || command.RefreshTokenLifetimeMinutes.HasValue;
 
@@ -105,33 +105,33 @@ internal sealed class PatchApplicationCommandHandler(
         var descriptor = new OpenIddictApplicationDescriptor();
         await appManager.PopulateAsync(descriptor, oidcApp, cancellationToken);
 
-        if (command.Name is not null)
+        if (command.Name.HasValue)
             descriptor.DisplayName = application.Name;
 
-        if (command.RedirectUris is not null)
+        if (command.RedirectUris.HasValue)
         {
             descriptor.RedirectUris.Clear();
             foreach (var uri in application.RedirectUris)
                 descriptor.RedirectUris.Add(new Uri(uri));
         }
 
-        if (command.PostLogoutRedirectUris is not null)
+        if (command.PostLogoutRedirectUris.HasValue)
         {
             descriptor.PostLogoutRedirectUris.Clear();
             foreach (var uri in application.PostLogoutRedirectUris)
                 descriptor.PostLogoutRedirectUris.Add(new Uri(uri));
         }
 
-        if (command.ConsentType is not null)
+        if (command.ConsentType.HasValue)
         {
-            descriptor.ConsentType = command.ConsentType switch
+            descriptor.ConsentType = command.ConsentType.Value switch
             {
                 "implicit" => ConsentTypes.Implicit,
                 _ => ConsentTypes.Explicit
             };
         }
 
-        if (command.GrantTypes is not null)
+        if (command.GrantTypes.HasValue)
         {
             descriptor.Permissions.RemoveWhere(p =>
                 p.StartsWith(OidcPermissions.Prefixes.GrantType)
@@ -142,7 +142,7 @@ internal sealed class PatchApplicationCommandHandler(
             GrantTypeMapper.ApplyGrantTypes(descriptor, application.GrantTypes);
         }
 
-        if (command.Scopes is not null)
+        if (command.Scopes.HasValue)
         {
             var scopePrefix = OidcPermissions.Prefixes.Scope;
             descriptor.Permissions.RemoveWhere(p => p.StartsWith(scopePrefix));

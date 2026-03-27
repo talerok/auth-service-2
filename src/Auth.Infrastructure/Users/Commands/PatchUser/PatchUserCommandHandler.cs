@@ -18,17 +18,17 @@ internal sealed class PatchUserCommandHandler(
         if (user is null)
             return null;
 
-        if (command.Username is not null)
-            user.Username = command.Username;
+        if (command.Username.HasValue)
+            user.Username = command.Username.Value!;
 
-        if (command.FullName is not null)
-            user.FullName = command.FullName;
+        if (command.FullName.HasValue)
+            user.FullName = command.FullName.Value!;
 
-        if (command.Email is not null)
-            user.Email = command.Email;
+        if (command.Email.HasValue)
+            user.Email = command.Email.Value!;
 
-        if (command.Phone is not null)
-            user.Phone = command.Phone;
+        if (command.Phone.HasValue)
+            user.Phone = command.Phone.Value;
 
         if (command.IsActive.HasValue)
         {
@@ -41,13 +41,18 @@ internal sealed class PatchUserCommandHandler(
         if (command.TwoFactorEnabled.HasValue)
         {
             if (command.TwoFactorEnabled.Value)
-                user.EnableTwoFactor(command.TwoFactorChannel ?? TwoFactorChannel.Email);
+            {
+                var channel = command.TwoFactorChannel is { HasValue: true, Value: not null }
+                    ? command.TwoFactorChannel.Value.Value
+                    : TwoFactorChannel.Email;
+                user.EnableTwoFactor(channel);
+            }
             else
                 user.DisableTwoFactor();
         }
 
-        if (command.Locale is not null)
-            user.Locale = command.Locale;
+        if (command.Locale.HasValue)
+            user.Locale = command.Locale.Value!;
 
         if (command.EmailVerified.HasValue)
             user.EmailVerified = command.EmailVerified.Value;

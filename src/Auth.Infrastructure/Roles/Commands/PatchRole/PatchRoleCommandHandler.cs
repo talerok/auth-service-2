@@ -19,20 +19,14 @@ internal sealed class PatchRoleCommandHandler(
             return null;
         }
 
-        if (command.Name is not null)
-        {
-            entity.Name = command.Name;
-        }
+        if (command.Name.HasValue)
+            entity.Name = command.Name.Value!;
 
-        if (command.Code is not null)
-        {
-            entity.Code = command.Code;
-        }
+        if (command.Code.HasValue)
+            entity.Code = command.Code.Value!;
 
-        if (command.Description is not null)
-        {
-            entity.Description = command.Description;
-        }
+        if (command.Description.HasValue)
+            entity.Description = command.Description.Value!;
 
         var changes = AuditDiff.CaptureChanges(dbContext.Entry(entity));
         if (changes.Count > 0)
