@@ -13,7 +13,6 @@
 - `service_accounts`
 - `service_account_workspaces`
 - `service_account_workspace_roles`
-- `refresh_tokens`
 - `password_change_challenges`
 - `two_factor_challenges`
 - `identity_sources`
@@ -148,22 +147,6 @@
 
 - `IX_role_permissions_RoleId_PermissionId` UNIQUE
 - `IX_role_permissions_PermissionId`
-
-### Таблица `refresh_tokens`
-
-| Колонка      | Тип          | Nullable | Описание                         |
-| ------------ | ------------ | -------- | -------------------------------- |
-| `id`         | uuid         | NO       | PK                               |
-| `user_id`    | uuid         | NO       | FK → users(id) CASCADE           |
-| `token`      | varchar(200) | NO       | Значение refresh-токена (UNIQUE) |
-| `expires_at` | timestamptz  | NO       | Срок действия токена             |
-| `created_at` | timestamptz  | NO       |                                  |
-| `revoked_at` | timestamptz  | YES      | Время отзыва токена              |
-
-Индексы:
-
-- `IX_refresh_tokens_Token` UNIQUE
-- `IX_refresh_tokens_UserId`
 
 ### Таблица `password_change_challenges`
 

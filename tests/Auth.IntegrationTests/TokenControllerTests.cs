@@ -96,6 +96,56 @@ public sealed class TokenControllerTests(IntegrationTestFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(IntegrationTestFixture.JsonOptions);
         json.GetProperty("access_token").GetString().Should().NotBeNullOrWhiteSpace();
+        json.GetProperty("refresh_token").GetString().Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task Exchange_RefreshToken_Rotation_ReturnsNewRefreshToken()
+    {
+        var (_, originalRefreshToken) = await fixture.AcquireTokenWithRefreshAsync("admin", "admin");
+
+        var response = await ExchangeRefreshTokenAsync(originalRefreshToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>(IntegrationTestFixture.JsonOptions);
+        var newRefreshToken = json.GetProperty("refresh_token").GetString();
+        newRefreshToken.Should().NotBeNullOrWhiteSpace();
+        newRefreshToken.Should().NotBe(originalRefreshToken);
+    }
+
+    [Fact]
+    public async Task Exchange_RefreshToken_UsedToken_IsRejected()
+    {
+        var (_, originalRefreshToken) = await fixture.AcquireTokenWithRefreshAsync("admin", "admin");
+
+        // Use the refresh token once — it becomes redeemed
+        var firstResponse = await ExchangeRefreshTokenAsync(originalRefreshToken);
+        firstResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Try using the same (now redeemed) refresh token again
+        var replayResponse = await ExchangeRefreshTokenAsync(originalRefreshToken);
+
+        replayResponse.StatusCode.Should().NotBe(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Exchange_RefreshToken_ReplayDetected_RevokesTokenFamily()
+    {
+        var (_, originalRefreshToken) = await fixture.AcquireTokenWithRefreshAsync("admin", "admin");
+
+        // Use the refresh token — get a new one
+        var firstResponse = await ExchangeRefreshTokenAsync(originalRefreshToken);
+        firstResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var firstJson = await firstResponse.Content.ReadFromJsonAsync<JsonElement>(IntegrationTestFixture.JsonOptions);
+        var newRefreshToken = firstJson.GetProperty("refresh_token").GetString()!;
+
+        // Replay the old (redeemed) refresh token — triggers family revocation
+        var replayResponse = await ExchangeRefreshTokenAsync(originalRefreshToken);
+        replayResponse.StatusCode.Should().NotBe(HttpStatusCode.OK);
+
+        // The new refresh token should also be revoked (family revocation)
+        var familyResponse = await ExchangeRefreshTokenAsync(newRefreshToken);
+        familyResponse.StatusCode.Should().NotBe(HttpStatusCode.OK);
     }
 
     [Fact]
@@ -117,6 +167,21 @@ public sealed class TokenControllerTests(IntegrationTestFixture fixture)
         claims.TryGetProperty("ws:system", out var wsClaim).Should().BeTrue();
         wsClaim.GetString().Should().NotBeNullOrWhiteSpace();
     }
+
+    // ─── Helpers ────────────────────────────────────────────────────
+
+    private async Task<HttpResponseMessage> ExchangeRefreshTokenAsync(string refreshToken)
+    {
+        var request = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["grant_type"] = "refresh_token",
+            ["refresh_token"] = refreshToken,
+            ["client_id"] = "system-app"
+        });
+        return await Client.PostAsync("/connect/token", request);
+    }
+
+    // ─── Other Grants ─────────────────────────────────────────────
 
     [Fact]
     public async Task Exchange_ClientCredentials_ValidServiceAccount_ReturnsToken()

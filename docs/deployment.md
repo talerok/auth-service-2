@@ -110,3 +110,4 @@ docker compose up --build -d
 - `OPENSEARCH_REINDEX_ON_STARTUP`
 - `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD`
 - `JWT_SECRET` (must be at least 32 chars)
+- `Integration__Oidc__RefreshTokenReuseLeewaySeconds` (default 30) — окно повторного использования redeemed refresh token (секунды)

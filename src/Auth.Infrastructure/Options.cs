@@ -94,6 +94,7 @@ public sealed class OidcOptions
     public string EncryptionKeyPassword { get; set; } = string.Empty;
     public int AccessTokenLifetimeMinutes { get; set; } = 15;
     public int RefreshTokenLifetimeDays { get; set; } = 7;
+    public int RefreshTokenReuseLeewaySeconds { get; set; } = 30;
     public string LoginUrl { get; set; } = "/auth/login.html";
     public string ConsentUrl { get; set; } = "/auth/consent.html";
 }

@@ -110,6 +110,7 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         "Integration__Cors__AllowedOrigins__0",
         "Integration__Oidc__LoginUrl",
         "Integration__Oidc__ConsentUrl",
+        "Integration__Oidc__RefreshTokenReuseLeewaySeconds",
     ];
 
     private void SetEnvironmentVariables()
@@ -125,6 +126,7 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         Environment.SetEnvironmentVariable("Integration__Cors__AllowedOrigins__0", "http://localhost:3000");
         Environment.SetEnvironmentVariable("Integration__Oidc__LoginUrl", "/auth/login.html");
         Environment.SetEnvironmentVariable("Integration__Oidc__ConsentUrl", "/auth/consent.html");
+        Environment.SetEnvironmentVariable("Integration__Oidc__RefreshTokenReuseLeewaySeconds", "0");
     }
 
     private static void ClearEnvironmentVariables()

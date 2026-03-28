@@ -72,6 +72,7 @@ builder.Services.AddOpenIddict()
 
         options.SetAccessTokenLifetime(TimeSpan.FromMinutes(oidc.AccessTokenLifetimeMinutes));
         options.SetRefreshTokenLifetime(TimeSpan.FromDays(oidc.RefreshTokenLifetimeDays));
+        options.SetRefreshTokenReuseLeeway(TimeSpan.FromSeconds(oidc.RefreshTokenReuseLeewaySeconds));
 
         options.DisableAccessTokenEncryption();
 
