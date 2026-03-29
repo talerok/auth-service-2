@@ -122,7 +122,7 @@ public sealed class RolesControllerTests(IntegrationTestFixture fixture)
     public async Task Patch_PartialUpdate_Returns200()
     {
         var role = await fixture.CreateRoleAsync();
-        var request = new PatchRoleRequest(Name: "patched-name", Code: null, Description: null);
+        var request = new PatchRoleRequest(Name: "patched-name", Code: default, Description: default);
 
         var response = await Client.PatchAsJsonAsync($"/api/roles/{role.Id}", request, IntegrationTestFixture.JsonOptions);
 

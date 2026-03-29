@@ -107,7 +107,7 @@ public sealed class WorkspacesControllerTests(IntegrationTestFixture fixture)
     public async Task Patch_CustomWorkspace_Returns200()
     {
         var ws = await fixture.CreateWorkspaceAsync();
-        var request = new PatchWorkspaceRequest(Name: "patched-ws", Code: null, Description: null);
+        var request = new PatchWorkspaceRequest(Name: "patched-ws", Code: default, Description: default);
 
         var response = await Client.PatchAsJsonAsync($"/api/workspaces/{ws.Id}", request, IntegrationTestFixture.JsonOptions);
 

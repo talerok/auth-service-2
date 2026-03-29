@@ -107,7 +107,7 @@ public sealed class PermissionsControllerTests(IntegrationTestFixture fixture)
     public async Task Patch_CustomPermission_Returns200()
     {
         var perm = await fixture.CreatePermissionAsync();
-        var request = new PatchPermissionRequest(Code: null, Description: "Patched description");
+        var request = new PatchPermissionRequest(Code: default, Description: "Patched description");
 
         var response = await Client.PatchAsJsonAsync($"/api/permissions/{perm.Id}", request, IntegrationTestFixture.JsonOptions);
 
