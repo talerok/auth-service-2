@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.Workspaces.Commands.ImportWorkspaces;
 using Auth.Domain;
 using MediatR;
@@ -9,7 +10,7 @@ namespace Auth.Infrastructure.Workspaces.Commands.ImportWorkspaces;
 
 internal sealed class ImportWorkspacesCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IOpenIddictScopeManager scopeManager,
     IAuditContext auditContext) : IRequestHandler<ImportWorkspacesCommand, ImportWorkspacesResult>
 {
@@ -34,9 +35,14 @@ internal sealed class ImportWorkspacesCommandHandler(
             ["updated"] = updated
         };
 
+        foreach (var code in processed)
+        {
+            var wId = existing.TryGetValue(code, out var ex) ? ex.Id : dbContext.Workspaces.Local.First(x => x.Code == code).Id;
+            await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Workspace, EntityId = wId, Operation = IndexOperation.Index }, cancellationToken);
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
         await SyncWorkspaceScopesAsync(processed, cancellationToken);
-        await IndexAsync(processed, existing, cancellationToken);
 
         return new ImportWorkspacesResult(created, updated, skipped);
     }
@@ -102,17 +108,5 @@ internal sealed class ImportWorkspacesCommandHandler(
             Description = item.Description,
             IsSystem = false
         });
-    }
-
-    private async Task IndexAsync(List<string> processed, Dictionary<string, Workspace> existing, CancellationToken cancellationToken)
-    {
-        foreach (var code in processed)
-        {
-            var w = existing.TryGetValue(code, out var ex)
-                ? ex
-                : await dbContext.Workspaces.FirstAsync(x => x.Code == code, cancellationToken);
-            await searchIndexService.IndexWorkspaceAsync(
-                new WorkspaceDto(w.Id, w.Name, w.Code, w.Description, w.IsSystem), cancellationToken);
-        }
     }
 }

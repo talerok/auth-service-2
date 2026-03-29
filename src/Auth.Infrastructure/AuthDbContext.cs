@@ -1,4 +1,5 @@
 using Auth.Domain;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace Auth.Infrastructure;
@@ -41,6 +42,10 @@ public DbSet<TwoFactorChallenge> TwoFactorChallenges => Set<TwoFactorChallenge>(
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AuthDbContext).Assembly);
         modelBuilder.UseOpenIddict();
+
+        modelBuilder.AddInboxStateEntity();
+        modelBuilder.AddOutboxMessageEntity();
+        modelBuilder.AddOutboxStateEntity();
     }
 
     private void SetTimestamps()

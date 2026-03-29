@@ -22,7 +22,7 @@ public sealed class SendPhoneVerificationCommandHandlerTests
             TwoFactor = new TwoFactorOptions { StaticOtpForTesting = "123456" }
         });
         return new SendPhoneVerificationCommandHandler(
-            dbContext, options, new Mock<IAuditContext>().Object,
+            dbContext, new Mock<IEventBus>().Object, options, new Mock<IAuditContext>().Object,
             new Mock<ILogger<SendPhoneVerificationCommandHandler>>().Object);
     }
 

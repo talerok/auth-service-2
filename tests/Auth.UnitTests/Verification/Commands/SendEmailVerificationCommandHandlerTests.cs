@@ -22,7 +22,7 @@ public sealed class SendEmailVerificationCommandHandlerTests
             TwoFactor = new TwoFactorOptions { StaticOtpForTesting = "123456" }
         });
         return new SendEmailVerificationCommandHandler(
-            dbContext, options, new Mock<IAuditContext>().Object,
+            dbContext, new Mock<IEventBus>().Object, options, new Mock<IAuditContext>().Object,
             new Mock<ILogger<SendEmailVerificationCommandHandler>>().Object);
     }
 

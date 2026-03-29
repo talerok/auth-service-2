@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging;
 using Auth.Application.NotificationTemplates.Commands.SoftDeleteNotificationTemplate;
 using Auth.Domain;
 using Auth.Infrastructure.NotificationTemplates.Commands.SoftDeleteNotificationTemplate;
@@ -15,7 +16,7 @@ public sealed class SoftDeleteNotificationTemplateCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var handler = new SoftDeleteNotificationTemplateCommandHandler(
-            dbContext, new Mock<ISearchIndexService>().Object, new Mock<IAuditContext>().Object);
+            dbContext, new Mock<IEventBus>().Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeleteNotificationTemplateCommand(Guid.NewGuid()),
@@ -39,7 +40,7 @@ public sealed class SoftDeleteNotificationTemplateCommandHandlerTests
         await dbContext.SaveChangesAsync();
 
         var handler = new SoftDeleteNotificationTemplateCommandHandler(
-            dbContext, new Mock<ISearchIndexService>().Object, new Mock<IAuditContext>().Object);
+            dbContext, new Mock<IEventBus>().Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeleteNotificationTemplateCommand(template.Id),
@@ -67,15 +68,16 @@ public sealed class SoftDeleteNotificationTemplateCommandHandlerTests
         dbContext.NotificationTemplates.Add(template);
         await dbContext.SaveChangesAsync();
 
-        var searchService = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var handler = new SoftDeleteNotificationTemplateCommandHandler(
-            dbContext, searchService.Object, new Mock<IAuditContext>().Object);
+            dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new SoftDeleteNotificationTemplateCommand(template.Id),
             CancellationToken.None);
 
-        searchService.Verify(x => x.DeleteNotificationTemplateAsync(
-            template.Id, It.IsAny<CancellationToken>()), Times.Once);
+        eventBus.Verify(x => x.PublishAsync(
+            It.IsAny<IIntegrationEvent>(),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 }

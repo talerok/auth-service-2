@@ -19,10 +19,10 @@ public sealed class PatchApplicationCommandHandlerTests
         var application = new Domain.Application { Name = "Original", Description = "Orig desc", ClientId = "ac-1", IsActive = true };
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
         var corsOriginService = new Mock<ICorsOriginService>();
-        var handler = new PatchApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new PatchApplicationCommandHandler(dbContext, eventBus.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchApplicationCommand(application.Id, "Patched", default, default, default, default, default, default, default, default, default, default, default, default, default, default, default),
@@ -38,10 +38,10 @@ public sealed class PatchApplicationCommandHandlerTests
     public async Task Handle_WhenApplicationDoesNotExist_ReturnsNull()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
         var corsOriginService = new Mock<ICorsOriginService>();
-        var handler = new PatchApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new PatchApplicationCommandHandler(dbContext, eventBus.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchApplicationCommand(Guid.NewGuid(), "Name", default, default, default, default, default, default, default, default, default, default, default, default, default, default, default),
@@ -57,12 +57,12 @@ public sealed class PatchApplicationCommandHandlerTests
         var application = new Domain.Application { Name = "Old", Description = "desc", ClientId = "ac-2", IsActive = true };
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
         appManager.Setup(x => x.FindByClientIdAsync("ac-2", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new object());
         var corsOriginService = new Mock<ICorsOriginService>();
-        var handler = new PatchApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new PatchApplicationCommandHandler(dbContext, eventBus.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new PatchApplicationCommand(application.Id, "New Name", default, default, default, default, default, default, default, default, default, default, default, default, default, default, default),
@@ -78,10 +78,10 @@ public sealed class PatchApplicationCommandHandlerTests
         var application = new Domain.Application { Name = "Name", Description = "desc", ClientId = "ac-3", IsActive = true };
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
         var corsOriginService = new Mock<ICorsOriginService>();
-        var handler = new PatchApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new PatchApplicationCommandHandler(dbContext, eventBus.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new PatchApplicationCommand(application.Id, default, "new desc", default, default, default, default, default, default, default, default, default, default, default, default, default, default),
@@ -101,12 +101,12 @@ public sealed class PatchApplicationCommandHandlerTests
         };
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
         appManager.Setup(x => x.FindByClientIdAsync("ac-4", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new object());
         var corsOriginService = new Mock<ICorsOriginService>();
-        var handler = new PatchApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new PatchApplicationCommandHandler(dbContext, eventBus.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchApplicationCommand(application.Id, default, default, default,
@@ -131,12 +131,12 @@ public sealed class PatchApplicationCommandHandlerTests
         };
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
         appManager.Setup(x => x.FindByClientIdAsync("ac-5", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new object());
         var corsOriginService = new Mock<ICorsOriginService>();
-        var handler = new PatchApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new PatchApplicationCommandHandler(dbContext, eventBus.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new PatchApplicationCommand(application.Id, default, default, default, default, default,

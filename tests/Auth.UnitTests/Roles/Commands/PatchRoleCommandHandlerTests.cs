@@ -19,10 +19,8 @@ public sealed class PatchRoleCommandHandlerTests
         var role = new Role { Name = "Original", Code = "original", Description = "OriginalDesc" };
         dbContext.Roles.Add(role);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        searchIndex.Setup(x => x.IndexRoleAsync(It.IsAny<RoleDto>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        var handler = new PatchRoleCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new PatchRoleCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchRoleCommand(role.Id, "Updated", default, default),
@@ -37,16 +35,14 @@ public sealed class PatchRoleCommandHandlerTests
         entity.Name.Should().Be("Updated");
         entity.Code.Should().Be("original");
         entity.Description.Should().Be("OriginalDesc");
-
-        searchIndex.Verify(x => x.IndexRoleAsync(It.Is<RoleDto>(r => r.Id == role.Id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Handle_NonExistentRole_ReturnsNull()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new PatchRoleCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new PatchRoleCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchRoleCommand(Guid.NewGuid(), "Name", default, default),

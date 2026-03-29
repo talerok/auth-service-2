@@ -20,6 +20,7 @@ internal sealed class AuditBehavior<TRequest, TResponse>(
             {
                 var response = await next();
                 await WriteAudit(request, response, cancellationToken);
+                await dbContext.SaveChangesAsync(cancellationToken);
                 await tx.CommitAsync(cancellationToken);
                 return response;
             }
@@ -28,6 +29,7 @@ internal sealed class AuditBehavior<TRequest, TResponse>(
                 try
                 {
                     await WriteFailureAudit(request, cancellationToken);
+                    await dbContext.SaveChangesAsync(cancellationToken);
                     await tx.CommitAsync(cancellationToken);
                 }
                 catch (Exception ex)
@@ -45,6 +47,7 @@ internal sealed class AuditBehavior<TRequest, TResponse>(
             try
             {
                 await WriteAudit(request, response, cancellationToken);
+                await dbContext.SaveChangesAsync(cancellationToken);
             }
             catch (Exception ex)
             {

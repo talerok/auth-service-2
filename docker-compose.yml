@@ -10,6 +10,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
@@ -35,6 +39,11 @@ services:
       Integration__SmsGateway__ApiKey: ${SMS_GATEWAY_API_KEY}
       Integration__SmsGateway__TimeoutSeconds: ${SMS_GATEWAY_TIMEOUT_SECONDS}
       Integration__Cors__AllowedOrigins: ${CORS_ALLOWED_ORIGINS}
+
+      Integration__RabbitMq__Host: rabbitmq
+      Integration__RabbitMq__Username: ${RABBITMQ_USER:-guest}
+      Integration__RabbitMq__Password: ${RABBITMQ_PASSWORD:-guest}
+      Integration__Redis__ConnectionString: ${REDIS_CONNECTION_STRING:-redis:6379}
     ports:
       - "${AUTH_API_PORT}:8080"
     restart: unless-stopped
@@ -55,6 +64,51 @@ services:
       retries: 10
     volumes:
       - auth_postgres_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: auth-rabbitmq
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MGMT_PORT:-15672}:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    volumes:
+      - auth_rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: auth-redis
+    command: >
+      sh -c 'if [ -n "$REDIS_PASSWORD" ]; then
+        redis-server --requirepass "$REDIS_PASSWORD";
+      else
+        redis-server;
+      fi'
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - auth_redis_data:/data
+    healthcheck:
+      test: >
+        sh -c 'if [ -n "$REDIS_PASSWORD" ]; then
+          redis-cli -a "$REDIS_PASSWORD" ping;
+        else
+          redis-cli ping;
+        fi'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   opensearch:
     image: opensearchproject/opensearch:2.15.0
@@ -87,4 +141,6 @@ services:
 
 volumes:
   auth_postgres_data:
+  auth_rabbitmq_data:
+  auth_redis_data:
   auth_opensearch_data:

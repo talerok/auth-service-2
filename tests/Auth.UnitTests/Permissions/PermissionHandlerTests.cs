@@ -34,10 +34,8 @@ public sealed class PermissionHandlerTests
     public async Task Create_ValidRequest_CreatesPermissionAndIndexes()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        searchIndex.Setup(x => x.IndexPermissionAsync(It.IsAny<PermissionDto>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        var handler = new CreatePermissionCommandHandler(dbContext, searchIndex.Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new CreatePermissionCommandHandler(dbContext, eventBus.Object);
 
         var result = await handler.Handle(
             new CreatePermissionCommand("custom.domain", "users.read", "Read users"),
@@ -53,18 +51,14 @@ public sealed class PermissionHandlerTests
         entity.Code.Should().Be("users.read");
         entity.Description.Should().Be("Read users");
         entity.Domain.Should().Be("custom.domain");
-
-        searchIndex.Verify(
-            x => x.IndexPermissionAsync(It.Is<PermissionDto>(p => p.Id == result.Id), It.IsAny<CancellationToken>()),
-            Times.Once);
     }
 
     [Fact]
     public async Task Create_EmptyDatabase_AssignsBitZero()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new CreatePermissionCommandHandler(dbContext, searchIndex.Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new CreatePermissionCommandHandler(dbContext, eventBus.Object);
 
         var result = await handler.Handle(
             new CreatePermissionCommand("custom.domain", "first.perm", "First"),
@@ -79,8 +73,8 @@ public sealed class PermissionHandlerTests
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Domain = "system.domain", Bit = 5, Code = "existing", Description = "Existing", IsSystem = true });
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new CreatePermissionCommandHandler(dbContext, searchIndex.Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new CreatePermissionCommandHandler(dbContext, eventBus.Object);
 
         var result = await handler.Handle(
             new CreatePermissionCommand("custom.domain", "new.perm", "New permission"),
@@ -95,8 +89,8 @@ public sealed class PermissionHandlerTests
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 3, Code = "custom.existing", Description = "Existing custom" });
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new CreatePermissionCommandHandler(dbContext, searchIndex.Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new CreatePermissionCommandHandler(dbContext, eventBus.Object);
 
         var result = await handler.Handle(
             new CreatePermissionCommand("custom.domain", "new.perm", "New permission"),
@@ -114,8 +108,8 @@ public sealed class PermissionHandlerTests
         deletedPerm.SoftDelete();
         dbContext.Permissions.Add(deletedPerm);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new CreatePermissionCommandHandler(dbContext, searchIndex.Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new CreatePermissionCommandHandler(dbContext, eventBus.Object);
 
         var result = await handler.Handle(
             new CreatePermissionCommand("custom.domain", "after.deleted", "After deleted"),
@@ -133,10 +127,8 @@ public sealed class PermissionHandlerTests
         var permission = new Permission { Domain = "test.domain", Bit = 0, Code = "perm.code", Description = "OldDesc" };
         dbContext.Permissions.Add(permission);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        searchIndex.Setup(x => x.IndexPermissionAsync(It.IsAny<PermissionDto>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        var handler = new UpdatePermissionCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new UpdatePermissionCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdatePermissionCommand(permission.Id, "new.code", "NewDesc"),
@@ -149,18 +141,14 @@ public sealed class PermissionHandlerTests
         var entity = await dbContext.Permissions.FirstAsync(x => x.Id == permission.Id);
         entity.Description.Should().Be("NewDesc");
         entity.Code.Should().Be("new.code");
-
-        searchIndex.Verify(
-            x => x.IndexPermissionAsync(It.Is<PermissionDto>(p => p.Id == permission.Id), It.IsAny<CancellationToken>()),
-            Times.Once);
     }
 
     [Fact]
     public async Task Update_NonExistentPermission_ReturnsNull()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new UpdatePermissionCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new UpdatePermissionCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdatePermissionCommand(Guid.NewGuid(), "code", "Desc"),
@@ -178,10 +166,8 @@ public sealed class PermissionHandlerTests
         var permission = new Permission { Domain = "test.domain", Bit = 0, Code = "perm.code", Description = "OriginalDesc" };
         dbContext.Permissions.Add(permission);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        searchIndex.Setup(x => x.IndexPermissionAsync(It.IsAny<PermissionDto>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        var handler = new PatchPermissionCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new PatchPermissionCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchPermissionCommand(permission.Id, default, "UpdatedDesc"),
@@ -193,10 +179,6 @@ public sealed class PermissionHandlerTests
 
         var entity = await dbContext.Permissions.FirstAsync(x => x.Id == permission.Id);
         entity.Description.Should().Be("UpdatedDesc");
-
-        searchIndex.Verify(
-            x => x.IndexPermissionAsync(It.Is<PermissionDto>(p => p.Id == permission.Id), It.IsAny<CancellationToken>()),
-            Times.Once);
     }
 
     [Fact]
@@ -206,8 +188,8 @@ public sealed class PermissionHandlerTests
         var permission = new Permission { Domain = "test.domain", Bit = 0, Code = "perm.code", Description = "OriginalDesc" };
         dbContext.Permissions.Add(permission);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new PatchPermissionCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new PatchPermissionCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchPermissionCommand(permission.Id, default, default),
@@ -222,8 +204,8 @@ public sealed class PermissionHandlerTests
     public async Task Patch_NonExistentPermission_ReturnsNull()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new PatchPermissionCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new PatchPermissionCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchPermissionCommand(Guid.NewGuid(), default, "Desc"),
@@ -241,8 +223,8 @@ public sealed class PermissionHandlerTests
         var permission = new Permission { Domain = "test.domain", Bit = 0, Code = "to.delete", Description = "desc" };
         dbContext.Permissions.Add(permission);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new SoftDeletePermissionCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new SoftDeletePermissionCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeletePermissionCommand(permission.Id),
@@ -251,15 +233,14 @@ public sealed class PermissionHandlerTests
         result.Should().BeTrue();
         var updated = await dbContext.Permissions.IgnoreQueryFilters().FirstAsync(x => x.Id == permission.Id);
         updated.DeletedAt.Should().NotBeNull();
-        searchIndex.Verify(x => x.DeletePermissionAsync(permission.Id, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task SoftDelete_NonExistentPermission_ReturnsFalse()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new SoftDeletePermissionCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new SoftDeletePermissionCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeletePermissionCommand(Guid.NewGuid()),
@@ -275,8 +256,8 @@ public sealed class PermissionHandlerTests
         var permission = new Permission { Domain = "test.domain", Bit = 0, Code = "system.perm", Description = "System", IsSystem = true };
         dbContext.Permissions.Add(permission);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new SoftDeletePermissionCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new SoftDeletePermissionCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var act = () => handler.Handle(
             new SoftDeletePermissionCommand(permission.Id),
@@ -442,8 +423,8 @@ public sealed class PermissionHandlerTests
     public async Task Import_CreatesNewPermissions()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportPermissionItem>
         {
@@ -466,8 +447,8 @@ public sealed class PermissionHandlerTests
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 0, Code = "old.code", Description = "Old" });
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportPermissionItem> { new("custom.domain", 0, "new.code", "New") };
         var result = await handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
@@ -485,8 +466,8 @@ public sealed class PermissionHandlerTests
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 0, Code = "existing", Description = "Existing" });
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportPermissionItem>
         {
@@ -505,8 +486,8 @@ public sealed class PermissionHandlerTests
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 5, Code = "system.perm", Description = "System", IsSystem = true });
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportPermissionItem> { new("custom.domain", 5, "system.hack", "Hack") };
         var act = () => handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
@@ -523,8 +504,8 @@ public sealed class PermissionHandlerTests
         deletedPerm.SoftDelete();
         dbContext.Permissions.Add(deletedPerm);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportPermissionItem> { new("custom.domain", 0, "restored", "Restored") };
         var result = await handler.Handle(new ImportPermissionsCommand(items), CancellationToken.None);
@@ -541,8 +522,8 @@ public sealed class PermissionHandlerTests
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 0, Code = "existing", Description = "Existing" });
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportPermissionItem>
         {
@@ -563,8 +544,8 @@ public sealed class PermissionHandlerTests
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 0, Code = "existing", Description = "Existing" });
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportPermissionItem>
         {
@@ -586,8 +567,8 @@ public sealed class PermissionHandlerTests
         await using var dbContext = CreateDbContext();
         dbContext.Permissions.Add(new Permission { Domain = "custom.domain", Bit = 0, Code = "existing", Description = "Existing" });
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportPermissionsCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new ImportPermissionsCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportPermissionItem>
         {

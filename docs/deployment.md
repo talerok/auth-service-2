@@ -4,6 +4,8 @@
 
 - PostgreSQL 16+
 - OpenSearch 2+
+- RabbitMQ 4+
+- Redis 7+
 - Docker + Docker Compose
 
 ## Docker services
@@ -14,6 +16,8 @@
 |---|---|---|---|
 | `auth-api` | build from Dockerfile | — | API-сервер |
 | `postgres` | postgres:16-alpine | — | PostgreSQL |
+| `rabbitmq` | rabbitmq:4-management-alpine | — | Message broker |
+| `redis` | redis:7-alpine | — | Distributed cache |
 | `opensearch` | opensearchproject/opensearch:2.15.0 | `local-opensearch` | Full-text search |
 | `mailhog` | jcalonso/mailhog:latest | `mailhog` | Mock SMTP (dev) |
 
@@ -129,6 +133,9 @@ COMPOSE_PROFILES=local-opensearch,mailhog docker compose up --build -d
 |---|---|---|
 | `AUTH_API_PORT` | 4000 | Порт API |
 | `POSTGRES_PORT` | 5432 | Порт PostgreSQL |
+| `RABBITMQ_PORT` | 5672 | Порт RabbitMQ |
+| `RABBITMQ_MGMT_PORT` | 15672 | Порт RabbitMQ Management UI |
+| `REDIS_PORT` | 6379 | Порт Redis |
 | `OPENSEARCH_PORT` | 9200 | Порт OpenSearch |
 | `OPENSEARCH_METRICS_PORT` | 9600 | Порт метрик OpenSearch |
 
@@ -148,6 +155,19 @@ COMPOSE_PROFILES=local-opensearch,mailhog docker compose up --build -d
 | `OPENSEARCH_REINDEX_ON_STARTUP` | false | Переиндексация при старте |
 | `OPENSEARCH_USERNAME` | — | Логин |
 | `OPENSEARCH_PASSWORD` | — | Пароль |
+
+### RabbitMQ
+
+| Variable | Default | Description |
+|---|---|---|
+| `RABBITMQ_USER` | guest | Логин RabbitMQ |
+| `RABBITMQ_PASSWORD` | guest | Пароль RabbitMQ |
+
+### Redis
+
+| Variable | Default | Description |
+|---|---|---|
+| `Integration__Redis__ConnectionString` | localhost:6379 | Connection string Redis |
 
 ### Security
 

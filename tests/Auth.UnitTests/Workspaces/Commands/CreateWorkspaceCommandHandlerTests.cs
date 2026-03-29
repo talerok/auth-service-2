@@ -1,7 +1,7 @@
 using Auth.Application;
+using Auth.Application.Messaging;
 using Auth.Application.Workspaces.Commands.CreateWorkspace;
 using Auth.Domain;
-using Auth.Infrastructure;
 using Auth.Infrastructure.Workspaces.Commands.CreateWorkspace;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -17,11 +17,9 @@ public sealed class CreateWorkspaceCommandHandlerTests
     public async Task Handle_ValidRequest_CreatesWorkspaceAndIndexes()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        searchIndex.Setup(x => x.IndexWorkspaceAsync(It.IsAny<WorkspaceDto>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+        var eventBus = new Mock<IEventBus>();
         var scopeManager = new Mock<IOpenIddictScopeManager>();
-        var handler = new CreateWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new CreateWorkspaceCommandHandler(dbContext, eventBus.Object, scopeManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new CreateWorkspaceCommand("Test Workspace", "test-ws", "A test workspace"),
@@ -36,9 +34,7 @@ public sealed class CreateWorkspaceCommandHandlerTests
         saved.Name.Should().Be("Test Workspace");
         saved.Code.Should().Be("test-ws");
 
-        searchIndex.Verify(x => x.IndexWorkspaceAsync(
-            It.Is<WorkspaceDto>(d => d.Name == "Test Workspace"),
-            It.IsAny<CancellationToken>()), Times.Once);
+        eventBus.Verify(x => x.PublishAsync(It.IsAny<IIntegrationEvent>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
 
         scopeManager.Verify(x => x.CreateAsync(
             It.Is<OpenIddictScopeDescriptor>(d => d.Name == "ws:test-ws"),

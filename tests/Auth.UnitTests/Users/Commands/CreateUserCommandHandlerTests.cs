@@ -122,8 +122,8 @@ public sealed class CreateUserCommandHandlerTests
         Mock<IPasswordHasher>? passwordHasher = null)
     {
         passwordHasher ??= new Mock<IPasswordHasher>();
-        var searchIndex = new Mock<ISearchIndexService>();
-        return new CreateUserCommandHandler(dbContext, passwordHasher.Object, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        return new CreateUserCommandHandler(dbContext, passwordHasher.Object, eventBus.Object, new Mock<IAuditContext>().Object);
     }
 
 }

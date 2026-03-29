@@ -1,4 +1,6 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
+using Auth.Application.Messaging.Events;
 using Auth.Application.Permissions.Commands.CreatePermission;
 using Auth.Domain;
 using MediatR;
@@ -8,7 +10,7 @@ namespace Auth.Infrastructure.Permissions.Commands.CreatePermission;
 
 internal sealed class CreatePermissionCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService) : IRequestHandler<CreatePermissionCommand, PermissionDto>
+    IEventBus eventBus) : IRequestHandler<CreatePermissionCommand, PermissionDto>
 {
     public async Task<PermissionDto> Handle(CreatePermissionCommand command, CancellationToken cancellationToken)
     {
@@ -26,9 +28,11 @@ internal sealed class CreatePermissionCommandHandler(
             IsSystem = false
         };
         dbContext.Permissions.Add(entity);
+
+        await eventBus.PublishAsync(new PermissionCreatedEvent { PermissionId = entity.Id, Code = entity.Code, Domain = entity.Domain, Bit = entity.Bit }, cancellationToken);
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Permission, EntityId = entity.Id, Operation = IndexOperation.Index }, cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = new PermissionDto(entity.Id, entity.Domain, entity.Bit, entity.Code, entity.Description, entity.IsSystem);
-        await searchIndexService.IndexPermissionAsync(dto, cancellationToken);
-        return dto;
+        return new PermissionDto(entity.Id, entity.Domain, entity.Bit, entity.Code, entity.Description, entity.IsSystem);
     }
 }

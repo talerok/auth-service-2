@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.NotificationTemplates.Commands.CreateNotificationTemplate;
 using Auth.Domain;
 using Auth.Infrastructure.AuditLogs;
@@ -8,7 +9,7 @@ namespace Auth.Infrastructure.NotificationTemplates.Commands.CreateNotificationT
 
 internal sealed class CreateNotificationTemplateCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IAuditContext auditContext) : IRequestHandler<CreateNotificationTemplateCommand, NotificationTemplateDto>
 {
     public async Task<NotificationTemplateDto> Handle(CreateNotificationTemplateCommand command, CancellationToken cancellationToken)
@@ -26,10 +27,10 @@ internal sealed class CreateNotificationTemplateCommandHandler(
 
         dbContext.NotificationTemplates.Add(entity);
         auditContext.Details = AuditDiff.CaptureState(dbContext.Entry(entity));
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.NotificationTemplate, EntityId = entity.Id, Operation = IndexOperation.Index }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var dto = new NotificationTemplateDto(entity.Id, entity.Type.ToString(), entity.Locale, entity.Subject, entity.Body);
-        await searchIndexService.IndexNotificationTemplateAsync(dto, cancellationToken);
         return dto;
     }
 }

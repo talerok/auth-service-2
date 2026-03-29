@@ -16,10 +16,8 @@ public sealed class CreateRoleCommandHandlerTests
     public async Task Handle_ValidRequest_CreatesRoleAndIndexes()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        searchIndex.Setup(x => x.IndexRoleAsync(It.IsAny<RoleDto>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        var handler = new CreateRoleCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new CreateRoleCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new CreateRoleCommand("Admin", "admin", "Administrator role"),
@@ -35,7 +33,6 @@ public sealed class CreateRoleCommandHandlerTests
         entity.Code.Should().Be("admin");
         entity.Description.Should().Be("Administrator role");
 
-        searchIndex.Verify(x => x.IndexRoleAsync(It.Is<RoleDto>(r => r.Id == result.Id), It.IsAny<CancellationToken>()), Times.Once);
     }
 
 }

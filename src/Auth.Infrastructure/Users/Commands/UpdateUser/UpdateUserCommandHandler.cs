@@ -1,4 +1,6 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
+using Auth.Application.Messaging.Events;
 using Auth.Application.Users.Commands.UpdateUser;
 using Auth.Domain;
 using Auth.Infrastructure.AuditLogs;
@@ -9,7 +11,7 @@ namespace Auth.Infrastructure.Users.Commands.UpdateUser;
 
 internal sealed class UpdateUserCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IAuditContext auditContext) : IRequestHandler<UpdateUserCommand, UserDto?>
 {
     public async Task<UserDto?> Handle(UpdateUserCommand command, CancellationToken cancellationToken)
@@ -39,13 +41,13 @@ internal sealed class UpdateUserCommandHandler(
         if (changes.Count > 0)
             auditContext.Details = changes;
 
+        await eventBus.PublishAsync(new UserUpdatedEvent { UserId = user.Id, ChangedFields = changes.Keys.ToArray() }, cancellationToken);
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.User, EntityId = user.Id, Operation = IndexOperation.Index }, cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var dto = new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone,
+        return new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone,
             user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel,
             user.Locale, user.EmailVerified, user.PhoneVerified, user.PasswordMaxAgeDays, user.PasswordChangedAt);
-
-        await searchIndexService.IndexUserAsync(dto, cancellationToken);
-        return dto;
     }
 }

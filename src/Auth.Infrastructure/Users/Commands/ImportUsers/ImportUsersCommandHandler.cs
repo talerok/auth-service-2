@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.Users.Commands.ImportUsers;
 using Auth.Domain;
 using MediatR;
@@ -9,7 +10,7 @@ namespace Auth.Infrastructure.Users.Commands.ImportUsers;
 internal sealed class ImportUsersCommandHandler(
     AuthDbContext dbContext,
     IPasswordHasher passwordHasher,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IAuditContext auditContext) : IRequestHandler<ImportUsersCommand, ImportUsersResult>
 {
     public async Task<ImportUsersResult> Handle(ImportUsersCommand command, CancellationToken cancellationToken)
@@ -102,8 +103,10 @@ internal sealed class ImportUsersCommandHandler(
             ["blocked"] = blocked
         };
 
+        foreach (var userId in processedUserIds)
+            await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.User, EntityId = userId, Operation = IndexOperation.Index }, cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
-        await IndexProcessedUsers(processedUserIds, existingUsers, cancellationToken);
 
         return new ImportUsersResult(results, blocked);
     }
@@ -205,19 +208,4 @@ internal sealed class ImportUsersCommandHandler(
         return conflicting.Select(c => (c.IdentitySourceId, c.ExternalIdentity)).ToHashSet();
     }
 
-    private async Task IndexProcessedUsers(
-        HashSet<Guid> processedUserIds, Dictionary<string, User> existingUsers, CancellationToken cancellationToken)
-    {
-        foreach (var userId in processedUserIds)
-        {
-            var user = existingUsers.Values.FirstOrDefault(u => u.Id == userId)
-                       ?? await dbContext.Users.FirstAsync(u => u.Id == userId, cancellationToken);
-            await searchIndexService.IndexUserAsync(
-                new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone,
-                    user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword,
-                    user.TwoFactorEnabled, user.TwoFactorChannel, user.Locale, user.EmailVerified, user.PhoneVerified,
-                    user.PasswordMaxAgeDays, user.PasswordChangedAt),
-                cancellationToken);
-        }
-    }
 }

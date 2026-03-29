@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.Roles.Commands.ImportRoles;
 using Auth.Domain;
 using MediatR;
@@ -8,7 +9,7 @@ namespace Auth.Infrastructure.Roles.Commands.ImportRoles;
 
 internal sealed class ImportRolesCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IAuditContext auditContext) : IRequestHandler<ImportRolesCommand, ImportRolesResult>
 {
     public async Task<ImportRolesResult> Handle(ImportRolesCommand command, CancellationToken cancellationToken)
@@ -30,8 +31,14 @@ internal sealed class ImportRolesCommandHandler(
             ["created"] = created,
             ["updated"] = updated
         };
+
+        foreach (var name in processed)
+        {
+            var roleId = existingRoles.TryGetValue(name, out var r) ? r.Id : dbContext.Roles.Local.First(x => x.Name == name).Id;
+            await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Role, EntityId = roleId, Operation = IndexOperation.Index }, cancellationToken);
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
-        await IndexAsync(processed, existingRoles, cancellationToken);
 
         return new ImportRolesResult(created, updated, skipped);
     }
@@ -106,17 +113,5 @@ internal sealed class ImportRolesCommandHandler(
         dbContext.Roles.Add(role);
         foreach (var code in item.Permissions)
             dbContext.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = permissionsByCode[code].Id });
-    }
-
-    private async Task IndexAsync(List<string> processed, Dictionary<string, Role> existingRoles, CancellationToken cancellationToken)
-    {
-        foreach (var name in processed)
-        {
-            var role = existingRoles.TryGetValue(name, out var r)
-                ? r
-                : await dbContext.Roles.FirstAsync(x => x.Name == name, cancellationToken);
-            await searchIndexService.IndexRoleAsync(
-                new RoleDto(role.Id, role.Name, role.Code, role.Description), cancellationToken);
-        }
     }
 }

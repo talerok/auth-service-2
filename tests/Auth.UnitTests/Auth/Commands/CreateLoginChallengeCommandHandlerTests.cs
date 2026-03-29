@@ -49,7 +49,7 @@ public sealed class CreateLoginChallengeCommandHandlerTests
     }
 
     private static CreateLoginChallengeCommandHandler CreateHandler(AuthDbContext dbContext) =>
-        new(dbContext, CreateOptions(), NullLogger<CreateLoginChallengeCommandHandler>.Instance);
+        new(dbContext, new Moq.Mock<IEventBus>().Object, CreateOptions(), NullLogger<CreateLoginChallengeCommandHandler>.Instance);
 
     private static IOptions<IntegrationOptions> CreateOptions() =>
         Options.Create(new IntegrationOptions { EncryptionKey = "super-secret-key-min-32-characters-long!", TwoFactor = new TwoFactorOptions { StaticOtpForTesting = "123456" }

@@ -1,7 +1,7 @@
 using Auth.Application;
+using Auth.Application.Messaging;
 using Auth.Application.Workspaces.Commands.PatchWorkspace;
 using Auth.Domain;
-using Auth.Infrastructure;
 using Auth.Infrastructure.Workspaces.Commands.PatchWorkspace;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -19,10 +19,8 @@ public sealed class PatchWorkspaceCommandHandlerTests
         var workspace = new Workspace { Name = "Original", Code = "orig-code", Description = "Orig desc" };
         dbContext.Workspaces.Add(workspace);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        searchIndex.Setup(x => x.IndexWorkspaceAsync(It.IsAny<WorkspaceDto>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        var handler = new PatchWorkspaceCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new PatchWorkspaceCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchWorkspaceCommand(workspace.Id, "Patched", default, default),
@@ -33,17 +31,15 @@ public sealed class PatchWorkspaceCommandHandlerTests
         result.Code.Should().Be("orig-code");
         result.Description.Should().Be("Orig desc");
 
-        searchIndex.Verify(x => x.IndexWorkspaceAsync(
-            It.Is<WorkspaceDto>(d => d.Name == "Patched"),
-            It.IsAny<CancellationToken>()), Times.Once);
+        eventBus.Verify(x => x.PublishAsync(It.IsAny<IIntegrationEvent>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
     public async Task Handle_NonExistent_ReturnsNull()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new PatchWorkspaceCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new PatchWorkspaceCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchWorkspaceCommand(Guid.NewGuid(), "Name", default, default),

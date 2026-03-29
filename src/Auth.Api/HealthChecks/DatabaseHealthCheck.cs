@@ -4,7 +4,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Auth.Api.HealthChecks;
 
-public sealed class DatabaseHealthCheck(AuthDbContext dbContext) : IHealthCheck
+internal sealed class DatabaseHealthCheck(AuthDbContext dbContext) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,

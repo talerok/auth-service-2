@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.ServiceAccounts.Commands.SoftDeleteServiceAccount;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,7 @@ namespace Auth.Infrastructure.ServiceAccounts.Commands.SoftDeleteServiceAccount;
 
 internal sealed class SoftDeleteServiceAccountCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IOpenIddictApplicationManager appManager,
     IAuditContext auditContext) : IRequestHandler<SoftDeleteServiceAccountCommand, bool>
 {
@@ -20,13 +21,13 @@ internal sealed class SoftDeleteServiceAccountCommandHandler(
 
         auditContext.Details = new Dictionary<string, object?> { ["name"] = serviceAccount.Name, ["clientId"] = serviceAccount.ClientId };
         serviceAccount.SoftDelete();
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.ServiceAccount, EntityId = serviceAccount.Id, Operation = IndexOperation.Delete }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var oidcApp = await appManager.FindByClientIdAsync(serviceAccount.ClientId, cancellationToken);
         if (oidcApp is not null)
             await appManager.DeleteAsync(oidcApp, cancellationToken);
 
-        await searchIndexService.DeleteServiceAccountAsync(serviceAccount.Id, cancellationToken);
         return true;
     }
 }

@@ -135,6 +135,7 @@ public sealed class ValidateLoginOtpCommandHandlerTests
 
     private static CreateLoginChallengeCommandHandler CreateChallengeHandler(AuthDbContext dbContext, string twoFactorStaticOtp) =>
         new(dbContext,
+            new Moq.Mock<IEventBus>().Object,
             Options.Create(new IntegrationOptions { EncryptionKey = "super-secret-key-min-32-characters-long!", TwoFactor = new TwoFactorOptions { StaticOtpForTesting = twoFactorStaticOtp, DeliveryPollIntervalMilliseconds = 5 }
             }),
             NullLogger<CreateLoginChallengeCommandHandler>.Instance);

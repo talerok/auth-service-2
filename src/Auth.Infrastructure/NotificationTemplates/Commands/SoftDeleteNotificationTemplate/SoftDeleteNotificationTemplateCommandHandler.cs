@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.NotificationTemplates.Commands.SoftDeleteNotificationTemplate;
 using Auth.Infrastructure.AuditLogs;
 using MediatR;
@@ -8,7 +9,7 @@ namespace Auth.Infrastructure.NotificationTemplates.Commands.SoftDeleteNotificat
 
 internal sealed class SoftDeleteNotificationTemplateCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IAuditContext auditContext) : IRequestHandler<SoftDeleteNotificationTemplateCommand, bool>
 {
     public async Task<bool> Handle(SoftDeleteNotificationTemplateCommand command, CancellationToken cancellationToken)
@@ -21,8 +22,8 @@ internal sealed class SoftDeleteNotificationTemplateCommandHandler(
 
         auditContext.Details = AuditDiff.CaptureState(dbContext.Entry(entity));
         entity.SoftDelete();
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.NotificationTemplate, EntityId = entity.Id, Operation = IndexOperation.Delete }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await searchIndexService.DeleteNotificationTemplateAsync(command.Id, cancellationToken);
         return true;
     }
 }

@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.ServiceAccounts.Commands.CreateServiceAccount;
 using Auth.Infrastructure.AuditLogs;
 using MediatR;
@@ -11,7 +12,7 @@ namespace Auth.Infrastructure.ServiceAccounts.Commands.CreateServiceAccount;
 
 internal sealed class CreateServiceAccountCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IOpenIddictApplicationManager appManager,
     IAuditContext auditContext) : IRequestHandler<CreateServiceAccountCommand, CreateServiceAccountResponse>
 {
@@ -34,6 +35,7 @@ internal sealed class CreateServiceAccountCommandHandler(
 
         dbContext.ServiceAccounts.Add(serviceAccount);
         auditContext.Details = AuditDiff.CaptureState(dbContext.Entry(serviceAccount));
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.ServiceAccount, EntityId = serviceAccount.Id, Operation = IndexOperation.Index }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var descriptor = new OpenIddictApplicationDescriptor
@@ -52,7 +54,6 @@ internal sealed class CreateServiceAccountCommandHandler(
         await appManager.CreateAsync(descriptor, cancellationToken);
 
         var dto = MapToDto(serviceAccount);
-        await searchIndexService.IndexServiceAccountAsync(dto, cancellationToken);
         return new CreateServiceAccountResponse(dto, clientSecret);
     }
 

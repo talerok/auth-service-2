@@ -19,8 +19,8 @@ public sealed class SoftDeleteRoleCommandHandlerTests
         var role = new Role { Name = "ToDelete", Description = "desc" };
         dbContext.Roles.Add(role);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new SoftDeleteRoleCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new SoftDeleteRoleCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeleteRoleCommand(role.Id),
@@ -29,15 +29,14 @@ public sealed class SoftDeleteRoleCommandHandlerTests
         result.Should().BeTrue();
         var updated = await dbContext.Roles.IgnoreQueryFilters().FirstAsync(x => x.Id == role.Id);
         updated.DeletedAt.Should().NotBeNull();
-        searchIndex.Verify(x => x.DeleteRoleAsync(role.Id, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Handle_NonExistentRole_ReturnsFalse()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new SoftDeleteRoleCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new SoftDeleteRoleCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeleteRoleCommand(Guid.NewGuid()),

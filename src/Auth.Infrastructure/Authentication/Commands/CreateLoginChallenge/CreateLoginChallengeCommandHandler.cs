@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Auth.Application;
 using Auth.Application.Auth.Commands.CreateLoginChallenge;
+using Auth.Application.Messaging.Commands;
 using Auth.Domain;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ namespace Auth.Infrastructure.Authentication.Commands.CreateLoginChallenge;
 
 internal sealed class CreateLoginChallengeCommandHandler(
     AuthDbContext dbContext,
+    IEventBus eventBus,
     IOptions<IntegrationOptions> options,
     ILogger<CreateLoginChallengeCommandHandler> logger) : IRequestHandler<CreateLoginChallengeCommand, TwoFactorChallenge>
 {
@@ -34,6 +36,7 @@ internal sealed class CreateLoginChallengeCommandHandler(
             _twoFactor.MaxAttemptsPerChallenge);
 
         dbContext.TwoFactorChallenges.Add(challenge);
+        await eventBus.PublishAsync(new DeliverOtpRequested { ChallengeId = challenge.Id }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation(

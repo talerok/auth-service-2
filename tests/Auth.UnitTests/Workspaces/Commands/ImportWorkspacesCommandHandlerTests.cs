@@ -1,7 +1,6 @@
 using Auth.Application;
 using Auth.Application.Workspaces.Commands.ImportWorkspaces;
 using Auth.Domain;
-using Auth.Infrastructure;
 using Auth.Infrastructure.Workspaces.Commands.ImportWorkspaces;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -18,8 +17,8 @@ public sealed class ImportWorkspacesCommandHandlerTests
     public async Task Import_CreatesNewWorkspaces()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
+        var eventBus =new Mock<IEventBus>();
+        var handler = new ImportWorkspacesCommandHandler(dbContext, eventBus.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportWorkspaceItem> { new("Dev", "dev", "Development") };
         var result = await handler.Handle(new ImportWorkspacesCommand(items), CancellationToken.None);
@@ -37,8 +36,8 @@ public sealed class ImportWorkspacesCommandHandlerTests
         await using var dbContext = CreateDbContext();
         dbContext.Workspaces.Add(new Workspace { Name = "Old", Code = "dev", Description = "Old" });
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
+        var eventBus =new Mock<IEventBus>();
+        var handler = new ImportWorkspacesCommandHandler(dbContext, eventBus.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportWorkspaceItem> { new("New", "dev", "Updated") };
         var result = await handler.Handle(new ImportWorkspacesCommand(items), CancellationToken.None);
@@ -56,8 +55,8 @@ public sealed class ImportWorkspacesCommandHandlerTests
         await using var dbContext = CreateDbContext();
         dbContext.Workspaces.Add(new Workspace { Name = "System", Code = "system", Description = "System", IsSystem = true });
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
+        var eventBus =new Mock<IEventBus>();
+        var handler = new ImportWorkspacesCommandHandler(dbContext, eventBus.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportWorkspaceItem> { new("Hacked", "system", "Hack") };
         var act = () => handler.Handle(new ImportWorkspacesCommand(items), CancellationToken.None);
@@ -72,8 +71,8 @@ public sealed class ImportWorkspacesCommandHandlerTests
         await using var dbContext = CreateDbContext();
         dbContext.Workspaces.Add(new Workspace { Name = "Existing", Code = "existing", Description = "Old" });
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
+        var eventBus =new Mock<IEventBus>();
+        var handler = new ImportWorkspacesCommandHandler(dbContext, eventBus.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportWorkspaceItem>
         {
@@ -94,8 +93,8 @@ public sealed class ImportWorkspacesCommandHandlerTests
         deletedWs.SoftDelete();
         dbContext.Workspaces.Add(deletedWs);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
+        var eventBus =new Mock<IEventBus>();
+        var handler = new ImportWorkspacesCommandHandler(dbContext, eventBus.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportWorkspaceItem> { new("Restored", "deleted", "Restored") };
         var result = await handler.Handle(new ImportWorkspacesCommand(items), CancellationToken.None);
@@ -112,8 +111,8 @@ public sealed class ImportWorkspacesCommandHandlerTests
         await using var dbContext = CreateDbContext();
         dbContext.Workspaces.Add(new Workspace { Name = "Existing", Code = "existing", Description = "Old" });
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
+        var eventBus =new Mock<IEventBus>();
+        var handler = new ImportWorkspacesCommandHandler(dbContext, eventBus.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportWorkspaceItem>
         {
@@ -134,8 +133,8 @@ public sealed class ImportWorkspacesCommandHandlerTests
         await using var dbContext = CreateDbContext();
         dbContext.Workspaces.Add(new Workspace { Name = "Existing", Code = "existing", Description = "Old" });
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
+        var eventBus =new Mock<IEventBus>();
+        var handler = new ImportWorkspacesCommandHandler(dbContext, eventBus.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportWorkspaceItem>
         {
@@ -157,8 +156,8 @@ public sealed class ImportWorkspacesCommandHandlerTests
         await using var dbContext = CreateDbContext();
         dbContext.Workspaces.Add(new Workspace { Name = "Existing", Code = "existing", Description = "Old" });
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new ImportWorkspacesCommandHandler(dbContext, searchIndex.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
+        var eventBus =new Mock<IEventBus>();
+        var handler = new ImportWorkspacesCommandHandler(dbContext, eventBus.Object, ScopeManager.Object, new Mock<IAuditContext>().Object);
 
         var items = new List<ImportWorkspaceItem>
         {

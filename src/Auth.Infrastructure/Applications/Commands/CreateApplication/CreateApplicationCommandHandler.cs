@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Auth.Application;
 using Auth.Application.Applications.Commands.CreateApplication;
+using Auth.Application.Messaging.Commands;
 using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using OpenIddict.Abstractions;
@@ -11,7 +12,7 @@ namespace Auth.Infrastructure.Applications.Commands.CreateApplication;
 
 internal sealed class CreateApplicationCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     ICorsOriginService corsOriginService,
     IOpenIddictApplicationManager appManager,
     IAuditContext auditContext) : IRequestHandler<CreateApplicationCommand, CreateApplicationResponse>
@@ -52,6 +53,7 @@ internal sealed class CreateApplicationCommandHandler(
 
         dbContext.Applications.Add(application);
         auditContext.Details = AuditDiff.CaptureState(dbContext.Entry(application));
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Application, EntityId = application.Id, Operation = IndexOperation.Index }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         corsOriginService.InvalidateCache();
 
@@ -59,7 +61,6 @@ internal sealed class CreateApplicationCommandHandler(
         await appManager.CreateAsync(descriptor, cancellationToken);
 
         var dto = MapToDto(application);
-        await searchIndexService.IndexApplicationAsync(dto, cancellationToken);
         return new CreateApplicationResponse(dto, clientSecret);
     }
 

@@ -20,10 +20,10 @@ public sealed class UpdateApplicationCommandHandlerTests
         var application = new Domain.Application { Name = "Old", Description = "Old desc", ClientId = "ac-123", IsActive = true };
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var corsOriginService = new Mock<ICorsOriginService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new UpdateApplicationCommandHandler(dbContext, eventBus.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateApplicationCommand(application.Id, "New", "New desc", false,
@@ -40,10 +40,10 @@ public sealed class UpdateApplicationCommandHandlerTests
     public async Task Handle_WhenApplicationDoesNotExist_ReturnsNull()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var corsOriginService = new Mock<ICorsOriginService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new UpdateApplicationCommandHandler(dbContext, eventBus.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateApplicationCommand(Guid.NewGuid(), "Name", "Desc", true,
@@ -60,10 +60,10 @@ public sealed class UpdateApplicationCommandHandlerTests
         var application = new Domain.Application { Name = "App", Description = "desc", ClientId = "ac-oauth", IsActive = true };
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var corsOriginService = new Mock<ICorsOriginService>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new UpdateApplicationCommandHandler(dbContext, eventBus.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateApplicationCommand(application.Id, "OAuth App", "updated", true,
@@ -90,7 +90,7 @@ public sealed class UpdateApplicationCommandHandlerTests
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync();
 
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
         var oidcApp = new object();
         appManager.Setup(x => x.FindByClientIdAsync("ac-sync", It.IsAny<CancellationToken>()))
@@ -104,7 +104,7 @@ public sealed class UpdateApplicationCommandHandlerTests
             .Returns(ValueTask.CompletedTask);
 
         var corsOriginService = new Mock<ICorsOriginService>();
-        var handler = new UpdateApplicationCommandHandler(dbContext, searchIndex.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new UpdateApplicationCommandHandler(dbContext, eventBus.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new UpdateApplicationCommand(application.Id, "OAuth App", "desc", true,

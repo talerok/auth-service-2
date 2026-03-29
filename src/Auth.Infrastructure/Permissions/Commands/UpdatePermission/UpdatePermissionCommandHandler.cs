@@ -1,4 +1,6 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
+using Auth.Application.Messaging.Events;
 using Auth.Application.Permissions.Commands.UpdatePermission;
 using Auth.Infrastructure.AuditLogs;
 using MediatR;
@@ -8,7 +10,7 @@ namespace Auth.Infrastructure.Permissions.Commands.UpdatePermission;
 
 internal sealed class UpdatePermissionCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IAuditContext auditContext) : IRequestHandler<UpdatePermissionCommand, PermissionDto?>
 {
     public async Task<PermissionDto?> Handle(UpdatePermissionCommand command, CancellationToken cancellationToken)
@@ -26,9 +28,10 @@ internal sealed class UpdatePermissionCommandHandler(
         if (changes.Count > 0)
             auditContext.Details = changes;
 
+        await eventBus.PublishAsync(new PermissionUpdatedEvent { PermissionId = entity.Id, Code = entity.Code }, cancellationToken);
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Permission, EntityId = entity.Id, Operation = IndexOperation.Index }, cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = new PermissionDto(entity.Id, entity.Domain, entity.Bit, entity.Code, entity.Description, entity.IsSystem);
-        await searchIndexService.IndexPermissionAsync(dto, cancellationToken);
-        return dto;
+        return new PermissionDto(entity.Id, entity.Domain, entity.Bit, entity.Code, entity.Description, entity.IsSystem);
     }
 }

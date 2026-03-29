@@ -1,7 +1,7 @@
 using Auth.Application;
+using Auth.Application.Messaging;
 using Auth.Application.Workspaces.Commands.SoftDeleteWorkspace;
 using Auth.Domain;
-using Auth.Infrastructure;
 using Auth.Infrastructure.Workspaces.Commands.SoftDeleteWorkspace;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -20,13 +20,11 @@ public sealed class SoftDeleteWorkspaceCommandHandlerTests
         var workspace = new Workspace { Name = "To Delete", Code = "del-ws", Description = "desc" };
         dbContext.Workspaces.Add(workspace);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        searchIndex.Setup(x => x.DeleteWorkspaceAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+        var eventBus = new Mock<IEventBus>();
         var scopeManager = new Mock<IOpenIddictScopeManager>();
         scopeManager.Setup(x => x.FindByNameAsync("ws:del-ws", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new object());
-        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, eventBus.Object, scopeManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeleteWorkspaceCommand(workspace.Id),
@@ -35,7 +33,7 @@ public sealed class SoftDeleteWorkspaceCommandHandlerTests
         result.Should().BeTrue();
         var updated = await dbContext.Workspaces.IgnoreQueryFilters().FirstAsync(x => x.Id == workspace.Id);
         updated.DeletedAt.Should().NotBeNull();
-        searchIndex.Verify(x => x.DeleteWorkspaceAsync(workspace.Id, It.IsAny<CancellationToken>()), Times.Once);
+        eventBus.Verify(x => x.PublishAsync(It.IsAny<IIntegrationEvent>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
         scopeManager.Verify(x => x.DeleteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -43,9 +41,9 @@ public sealed class SoftDeleteWorkspaceCommandHandlerTests
     public async Task Handle_NonExistent_ReturnsFalse()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var scopeManager = new Mock<IOpenIddictScopeManager>();
-        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, eventBus.Object, scopeManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeleteWorkspaceCommand(Guid.NewGuid()),
@@ -61,9 +59,9 @@ public sealed class SoftDeleteWorkspaceCommandHandlerTests
         var workspace = new Workspace { Name = "System", Code = "system", Description = "System workspace", IsSystem = true };
         dbContext.Workspaces.Add(workspace);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var scopeManager = new Mock<IOpenIddictScopeManager>();
-        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, searchIndex.Object, scopeManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new SoftDeleteWorkspaceCommandHandler(dbContext, eventBus.Object, scopeManager.Object, new Mock<IAuditContext>().Object);
 
         var act = () => handler.Handle(
             new SoftDeleteWorkspaceCommand(workspace.Id),

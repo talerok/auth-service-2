@@ -1,16 +1,21 @@
 using Auth.Application;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Auth.Infrastructure.Cors;
 
 internal sealed class CorsOriginService(
     IServiceScopeFactory scopeFactory,
-    IMemoryCache memoryCache) : ICorsOriginService
+    IDistributedCache distributedCache,
+    ILogger<CorsOriginService> logger) : ICorsOriginService
 {
     private const string CacheKey = "cors:allowed-origins";
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
+
+    private volatile HashSet<string>? _local;
 
     public bool IsOriginAllowed(string origin)
     {
@@ -20,24 +25,60 @@ internal sealed class CorsOriginService(
 
     public void InvalidateCache()
     {
-        memoryCache.Remove(CacheKey);
+        _local = LoadFromDatabase();
     }
 
-    private HashSet<string> GetAllowedOrigins() =>
-        memoryCache.GetOrCreate(CacheKey, entry =>
+    private HashSet<string> GetAllowedOrigins()
+    {
+        var local = _local;
+        if (local is not null)
+            return local;
+
+        try
         {
-            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            var cached = distributedCache.GetString(CacheKey);
+            if (cached is not null)
+            {
+                var origins = JsonSerializer.Deserialize<List<string>>(cached) ?? [];
+                var set = new HashSet<string>(origins, StringComparer.OrdinalIgnoreCase);
+                _local = set;
+                return set;
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to read CORS origin cache from Redis");
+        }
 
-            using var scope = scopeFactory.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+        return LoadFromDatabase();
+    }
 
-            var dbOrigins = dbContext.Applications
-                .AsNoTracking()
-                .Where(a => a.IsActive)
-                .SelectMany(a => a.AllowedOrigins)
-                .Distinct()
-                .ToList();
+    private HashSet<string> LoadFromDatabase()
+    {
+        using var scope = scopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
 
-            return new HashSet<string>(dbOrigins, StringComparer.OrdinalIgnoreCase);
-        })!;
+        var dbOrigins = dbContext.Applications
+            .AsNoTracking()
+            .Where(a => a.IsActive)
+            .SelectMany(a => a.AllowedOrigins)
+            .Distinct()
+            .ToList();
+
+        var set = new HashSet<string>(dbOrigins, StringComparer.OrdinalIgnoreCase);
+        _local = set;
+
+        try
+        {
+            distributedCache.SetString(CacheKey,
+                JsonSerializer.Serialize(dbOrigins),
+                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = CacheDuration });
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to write CORS origin cache to Redis");
+        }
+
+        return set;
+    }
 }

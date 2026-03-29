@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.Roles.Commands.SetRolePermissions;
 using Auth.Domain;
 using MediatR;
@@ -8,7 +9,7 @@ namespace Auth.Infrastructure.Roles.Commands.SetRolePermissions;
 
 internal sealed class SetRolePermissionsCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IAuditContext auditContext) : IRequestHandler<SetRolePermissionsCommand>
 {
     public async Task Handle(SetRolePermissionsCommand command, CancellationToken cancellationToken)
@@ -36,7 +37,7 @@ internal sealed class SetRolePermissionsCommandHandler(
         };
 
         var permissionById = command.Permissions.ToDictionary(x => x.Id);
-        var permissionsToReindex = new List<PermissionDto>();
+        var permissionsToReindex = new List<Guid>();
         var existingPermissions = await dbContext.Permissions
             .Where(x => permissionIds.Contains(x.Id))
             .ToListAsync(cancellationToken);
@@ -51,15 +52,14 @@ internal sealed class SetRolePermissionsCommandHandler(
             }
 
             permission.Description = model.Description;
-            permissionsToReindex.Add(
-                new PermissionDto(permission.Id, permission.Domain, permission.Bit, permission.Code, permission.Description, permission.IsSystem));
+            permissionsToReindex.Add(permission.Id);
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
-        foreach (var permission in permissionsToReindex)
+        foreach (var permissionId in permissionsToReindex)
         {
-            await searchIndexService.IndexPermissionAsync(permission, cancellationToken);
+            await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Permission, EntityId = permissionId, Operation = IndexOperation.Index }, cancellationToken);
         }
+        await dbContext.SaveChangesAsync(cancellationToken);
         await tx.CommitAsync(cancellationToken);
     }
 }

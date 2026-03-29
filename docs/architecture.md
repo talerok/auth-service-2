@@ -3,12 +3,20 @@
 Сервис построен по слоям:
 
 - `Auth.Domain` - сущности, системные permission-коды
-- `Auth.Application` - контракты use-case сервисов и DTO
-- `Auth.Infrastructure` - EF Core, реализация сервисов, seed
+- `Auth.Application` - контракты use-case сервисов, DTO, event contracts (`IEventBus`, `IIntegrationEvent`)
+- `Auth.Infrastructure` - EF Core, MassTransit (RabbitMQ), Redis, реализация сервисов, consumers
 - `Auth.Infrastructure.Integration` - OpenSearch интеграция
-- `Auth.Api` - контроллеры, middleware, authN/authZ
+- `Auth.Api` - контроллеры, middleware, authN/authZ, health checks
 
 JWT содержит per-workspace claims `ws:<code>` с bitmask-полномочиями. Скоупы запрашиваются в формате `ws:<workspaceCode>`.
+
+## Messaging
+
+Асинхронная обработка через MassTransit + RabbitMQ с transactional outbox (EF Core). Domain events для внешних потребителей, internal commands для OpenSearch индексации и OTP delivery.
+
+Redis используется как distributed cache (permission bitmask, CORS origins) для горизонтального масштабирования.
+
+Подробнее: [docs/messaging.md](messaging.md).
 
 ## Error handling
 

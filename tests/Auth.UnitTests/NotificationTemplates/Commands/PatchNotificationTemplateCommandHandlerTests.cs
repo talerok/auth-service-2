@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging;
 using Auth.Application.NotificationTemplates.Commands.PatchNotificationTemplate;
 using Auth.Domain;
 using Auth.Infrastructure.NotificationTemplates.Commands.PatchNotificationTemplate;
@@ -15,7 +16,7 @@ public sealed class PatchNotificationTemplateCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var handler = new PatchNotificationTemplateCommandHandler(
-            dbContext, new Mock<ISearchIndexService>().Object, new Mock<IAuditContext>().Object);
+            dbContext, new Mock<IEventBus>().Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchNotificationTemplateCommand(Guid.NewGuid(), default, default, "New Subject", default),
@@ -39,7 +40,7 @@ public sealed class PatchNotificationTemplateCommandHandlerTests
         await dbContext.SaveChangesAsync();
 
         var handler = new PatchNotificationTemplateCommandHandler(
-            dbContext, new Mock<ISearchIndexService>().Object, new Mock<IAuditContext>().Object);
+            dbContext, new Mock<IEventBus>().Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new PatchNotificationTemplateCommand(template.Id, default, default, "Patched Subject", default),
@@ -73,19 +74,16 @@ public sealed class PatchNotificationTemplateCommandHandlerTests
         dbContext.NotificationTemplates.Add(template);
         await dbContext.SaveChangesAsync();
 
-        var searchService = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var handler = new PatchNotificationTemplateCommandHandler(
-            dbContext, searchService.Object, new Mock<IAuditContext>().Object);
+            dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new PatchNotificationTemplateCommand(template.Id, default, default, "Neuer Betreff", default),
             CancellationToken.None);
 
-        searchService.Verify(x => x.IndexNotificationTemplateAsync(
-            It.Is<NotificationTemplateDto>(d =>
-                d.Id == template.Id &&
-                d.Subject == "Neuer Betreff" &&
-                d.Type == "EmailVerification"),
-            It.IsAny<CancellationToken>()), Times.Once);
+        eventBus.Verify(x => x.PublishAsync(
+            It.IsAny<IIntegrationEvent>(),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 }

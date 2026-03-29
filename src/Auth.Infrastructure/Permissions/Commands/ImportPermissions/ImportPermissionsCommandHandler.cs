@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.Permissions.Commands.ImportPermissions;
 using Auth.Domain;
 using MediatR;
@@ -8,7 +9,7 @@ namespace Auth.Infrastructure.Permissions.Commands.ImportPermissions;
 
 internal sealed class ImportPermissionsCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IAuditContext auditContext) : IRequestHandler<ImportPermissionsCommand, ImportPermissionsResult>
 {
     public async Task<ImportPermissionsResult> Handle(ImportPermissionsCommand command, CancellationToken cancellationToken)
@@ -25,7 +26,6 @@ internal sealed class ImportPermissionsCommandHandler(
 
         var existingLookup = existing.ToDictionary(x => (x.Domain, x.Bit));
 
-        // Prevent importing over system permissions
         var systemConflicts = command.Items
             .Where(item => existingLookup.TryGetValue((item.Domain, item.Bit), out var e) && e.IsSystem)
             .ToList();
@@ -41,8 +41,13 @@ internal sealed class ImportPermissionsCommandHandler(
             ["updated"] = updated
         };
 
+        foreach (var key in processed)
+        {
+            var entityId = existingLookup.TryGetValue(key, out var ex) ? ex.Id : dbContext.Permissions.Local.First(x => x.Domain == key.Domain && x.Bit == key.Bit).Id;
+            await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Permission, EntityId = entityId, Operation = IndexOperation.Index }, cancellationToken);
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
-        await IndexAsync(processed, existingLookup, cancellationToken);
 
         return new ImportPermissionsResult(created, updated, skipped);
     }
@@ -93,17 +98,5 @@ internal sealed class ImportPermissionsCommandHandler(
             Description = item.Description,
             IsSystem = false
         });
-    }
-
-    private async Task IndexAsync(List<(string Domain, int Bit)> processed, Dictionary<(string, int), Permission> existing, CancellationToken cancellationToken)
-    {
-        foreach (var key in processed)
-        {
-            var e = existing.TryGetValue(key, out var ex)
-                ? ex
-                : await dbContext.Permissions.FirstAsync(x => x.Domain == key.Domain && x.Bit == key.Bit, cancellationToken);
-            await searchIndexService.IndexPermissionAsync(
-                new PermissionDto(e.Id, e.Domain, e.Bit, e.Code, e.Description, e.IsSystem), cancellationToken);
-        }
     }
 }

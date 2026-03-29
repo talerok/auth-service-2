@@ -1,4 +1,6 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
+using Auth.Application.Messaging.Events;
 using Auth.Application.Workspaces.Commands.SoftDeleteWorkspace;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +10,7 @@ namespace Auth.Infrastructure.Workspaces.Commands.SoftDeleteWorkspace;
 
 internal sealed class SoftDeleteWorkspaceCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IOpenIddictScopeManager scopeManager,
     IAuditContext auditContext) : IRequestHandler<SoftDeleteWorkspaceCommand, bool>
 {
@@ -26,13 +28,14 @@ internal sealed class SoftDeleteWorkspaceCommandHandler(
 
         auditContext.Details = new Dictionary<string, object?> { ["name"] = entity.Name, ["code"] = entity.Code };
         entity.SoftDelete();
+        await eventBus.PublishAsync(new WorkspaceDeletedEvent { WorkspaceId = command.Id }, cancellationToken);
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Workspace, EntityId = command.Id, Operation = IndexOperation.Delete }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var oidcScope = await scopeManager.FindByNameAsync($"ws:{entity.Code}", cancellationToken);
         if (oidcScope is not null)
             await scopeManager.DeleteAsync(oidcScope, cancellationToken);
 
-        await searchIndexService.DeleteWorkspaceAsync(command.Id, cancellationToken);
         return true;
     }
 }

@@ -1,4 +1,6 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
+using Auth.Application.Messaging.Events;
 using Auth.Application.Users.Commands.SoftDeleteUser;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +9,7 @@ namespace Auth.Infrastructure.Users.Commands.SoftDeleteUser;
 
 internal sealed class SoftDeleteUserCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IAuditContext auditContext) : IRequestHandler<SoftDeleteUserCommand, bool>
 {
     public async Task<bool> Handle(SoftDeleteUserCommand command, CancellationToken cancellationToken)
@@ -18,8 +20,11 @@ internal sealed class SoftDeleteUserCommandHandler(
 
         auditContext.Details = new Dictionary<string, object?> { ["username"] = user.Username };
         user.SoftDelete();
+
+        await eventBus.PublishAsync(new UserDeletedEvent { UserId = command.Id }, cancellationToken);
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.User, EntityId = command.Id, Operation = IndexOperation.Delete }, cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
-        await searchIndexService.DeleteUserAsync(command.Id, cancellationToken);
         return true;
     }
 }

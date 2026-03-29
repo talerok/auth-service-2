@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.ServiceAccounts.Commands.UpdateServiceAccount;
 using Auth.Infrastructure.AuditLogs;
 using MediatR;
@@ -10,7 +11,7 @@ namespace Auth.Infrastructure.ServiceAccounts.Commands.UpdateServiceAccount;
 
 internal sealed class UpdateServiceAccountCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IOpenIddictApplicationManager appManager,
     IAuditContext auditContext) : IRequestHandler<UpdateServiceAccountCommand, ServiceAccountDto?>
 {
@@ -31,6 +32,7 @@ internal sealed class UpdateServiceAccountCommandHandler(
         if (changes.Count > 0)
             auditContext.Details = changes;
 
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.ServiceAccount, EntityId = serviceAccount.Id, Operation = IndexOperation.Index }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var oidcApp = await appManager.FindByClientIdAsync(serviceAccount.ClientId, cancellationToken);
@@ -43,7 +45,6 @@ internal sealed class UpdateServiceAccountCommandHandler(
         }
 
         var dto = MapToDto(serviceAccount);
-        await searchIndexService.IndexServiceAccountAsync(dto, cancellationToken);
         return dto;
     }
 

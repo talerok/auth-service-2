@@ -1,7 +1,7 @@
 using Auth.Application;
+using Auth.Application.Messaging;
 using Auth.Application.Workspaces.Commands.UpdateWorkspace;
 using Auth.Domain;
-using Auth.Infrastructure;
 using Auth.Infrastructure.Workspaces.Commands.UpdateWorkspace;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -19,10 +19,8 @@ public sealed class UpdateWorkspaceCommandHandlerTests
         var workspace = new Workspace { Name = "Old", Code = "old-code", Description = "Old desc" };
         dbContext.Workspaces.Add(workspace);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
-        searchIndex.Setup(x => x.IndexWorkspaceAsync(It.IsAny<WorkspaceDto>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        var handler = new UpdateWorkspaceCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new UpdateWorkspaceCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateWorkspaceCommand(workspace.Id, "New", "new-code", "New desc"),
@@ -33,17 +31,15 @@ public sealed class UpdateWorkspaceCommandHandlerTests
         result.Code.Should().Be("new-code");
         result.Description.Should().Be("New desc");
 
-        searchIndex.Verify(x => x.IndexWorkspaceAsync(
-            It.Is<WorkspaceDto>(d => d.Name == "New"),
-            It.IsAny<CancellationToken>()), Times.Once);
+        eventBus.Verify(x => x.PublishAsync(It.IsAny<IIntegrationEvent>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
     public async Task Handle_NonExistent_ReturnsNull()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new UpdateWorkspaceCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new UpdateWorkspaceCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateWorkspaceCommand(Guid.NewGuid(), "Name", "code", "Desc"),

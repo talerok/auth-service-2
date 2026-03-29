@@ -66,16 +66,19 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
                     services.RemoveAll<ISearchMaintenanceService>();
                     services.AddScoped<ISearchMaintenanceService, StubSearchMaintenanceService>();
 
-                    // Remove hosted services (OpenSearch init, 2FA background delivery)
+                    // Remove hosted services (OpenSearch init, MassTransit bus)
                     services.RemoveAll<Microsoft.Extensions.Hosting.IHostedService>();
 
-                    // Remove OpenSearch health check (not available in tests)
+                    // Remove health checks not available in tests (OpenSearch, Redis, RabbitMQ)
                     services.Configure<Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckServiceOptions>(
                         options =>
                         {
-                            var osCheck = options.Registrations.FirstOrDefault(r => r.Name == "opensearch");
-                            if (osCheck is not null)
-                                options.Registrations.Remove(osCheck);
+                            var toRemove = options.Registrations
+                                .Where(r => r.Name is "opensearch" or "redis" or "rabbitmq"
+                                    || r.Name.StartsWith("masstransit-", StringComparison.OrdinalIgnoreCase))
+                                .ToList();
+                            foreach (var reg in toRemove)
+                                options.Registrations.Remove(reg);
                         });
                 });
             });
@@ -111,6 +114,8 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         "Integration__Oidc__LoginUrl",
         "Integration__Oidc__ConsentUrl",
         "Integration__Oidc__RefreshTokenReuseLeewaySeconds",
+        "Integration__RabbitMq__Host",
+        "Integration__Redis__ConnectionString",
     ];
 
     private void SetEnvironmentVariables()
@@ -127,6 +132,8 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         Environment.SetEnvironmentVariable("Integration__Oidc__LoginUrl", "/auth/login.html");
         Environment.SetEnvironmentVariable("Integration__Oidc__ConsentUrl", "/auth/consent.html");
         Environment.SetEnvironmentVariable("Integration__Oidc__RefreshTokenReuseLeewaySeconds", "0");
+        Environment.SetEnvironmentVariable("Integration__RabbitMq__Host", "localhost");
+        Environment.SetEnvironmentVariable("Integration__Redis__ConnectionString", "localhost:6379");
     }
 
     private static void ClearEnvironmentVariables()

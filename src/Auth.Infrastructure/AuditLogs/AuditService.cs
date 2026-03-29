@@ -1,15 +1,14 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Domain;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 
 namespace Auth.Infrastructure.AuditLogs;
 
 internal sealed class AuditService(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
-    IHttpContextAccessor httpContextAccessor,
-    ILogger<AuditService> logger) : IAuditService
+    IEventBus eventBus,
+    IHttpContextAccessor httpContextAccessor) : IAuditService
 {
     public async Task LogAsync(
         AuditEntityType entityType,
@@ -54,17 +53,8 @@ internal sealed class AuditService(
         };
 
         dbContext.AuditLogEntries.Add(entry);
-        await dbContext.SaveChangesAsync(cancellationToken);
 
-        try
-        {
-            var dto = MapToDto(entry);
-            await searchIndexService.IndexAuditLogAsync(dto, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Failed to index audit log {AuditLogId} to search", entry.Id);
-        }
+        await eventBus.PublishAsync(new IndexAuditLogRequested { AuditLogEntryId = entry.Id }, cancellationToken);
     }
 
     private static Guid? ResolveActorId(HttpContext? httpContext)
@@ -79,13 +69,6 @@ internal sealed class AuditService(
             ?? httpContext?.User.FindFirst("preferred_username")?.Value;
     }
 
-    private static AuditLogDto MapToDto(AuditLogEntry entry) =>
-        new(entry.Id, entry.Timestamp, entry.ActorId, entry.ActorName,
-            AuditLogDto.CamelCase(entry.ActorType),
-            AuditLogDto.CamelCase(entry.EntityType),
-            entry.EntityId,
-            AuditLogDto.CamelCase(entry.Action),
-            entry.Details, entry.IpAddress, entry.UserAgent, entry.CorrelationId);
 }
 
 internal static class StringExtensions

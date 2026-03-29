@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.ServiceAccounts.Commands.SoftDeleteServiceAccount;
 using Auth.Infrastructure;
 using Auth.Infrastructure.ServiceAccounts.Commands.SoftDeleteServiceAccount;
@@ -19,9 +20,9 @@ public sealed class SoftDeleteServiceAccountCommandHandlerTests
         var serviceAccount = new Domain.ServiceAccount { Name = "To Delete", Description = "desc", ClientId = "sa-del", IsActive = true };
         dbContext.ServiceAccounts.Add(serviceAccount);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new SoftDeleteServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new SoftDeleteServiceAccountCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeleteServiceAccountCommand(serviceAccount.Id),
@@ -30,16 +31,18 @@ public sealed class SoftDeleteServiceAccountCommandHandlerTests
         result.Should().BeTrue();
         var updated = await dbContext.ServiceAccounts.IgnoreQueryFilters().FirstAsync(x => x.Id == serviceAccount.Id);
         updated.DeletedAt.Should().NotBeNull();
-        searchIndex.Verify(x => x.DeleteServiceAccountAsync(serviceAccount.Id, It.IsAny<CancellationToken>()), Times.Once);
+        eventBus.Verify(x => x.PublishAsync(
+            It.Is<IndexEntityRequested>(e => e.EntityType == IndexEntityType.ServiceAccount && e.EntityId == serviceAccount.Id && e.Operation == IndexOperation.Delete),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Handle_WhenServiceAccountDoesNotExist_ReturnsFalse()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new SoftDeleteServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new SoftDeleteServiceAccountCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new SoftDeleteServiceAccountCommand(Guid.NewGuid()),
@@ -55,12 +58,12 @@ public sealed class SoftDeleteServiceAccountCommandHandlerTests
         var serviceAccount = new Domain.ServiceAccount { Name = "SA", Description = "desc", ClientId = "sa-oidc", IsActive = true };
         dbContext.ServiceAccounts.Add(serviceAccount);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
         var oidcApp = new object();
         appManager.Setup(x => x.FindByClientIdAsync("sa-oidc", It.IsAny<CancellationToken>()))
             .ReturnsAsync(oidcApp);
-        var handler = new SoftDeleteServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new SoftDeleteServiceAccountCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new SoftDeleteServiceAccountCommand(serviceAccount.Id),

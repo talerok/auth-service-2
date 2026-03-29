@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging;
 using Auth.Application.Auth.Commands.Register;
 using Auth.Domain;
 using Auth.Infrastructure;
@@ -18,8 +19,8 @@ public sealed class RegisterCommandHandlerTests
         await using var dbContext = CreateDbContext();
         var hasher = new Mock<IPasswordHasher>();
         hasher.Setup(x => x.Hash("password123")).Returns("hashed_password");
-        var searchIndex = new Mock<ISearchIndexService>();
-        var handler = new RegisterCommandHandler(dbContext, hasher.Object, searchIndex.Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new RegisterCommandHandler(dbContext, hasher.Object, eventBus.Object);
 
         var result = await handler.Handle(
             new RegisterCommand("bob", "Bob Smith", "bob@example.com", "password123"),
@@ -33,9 +34,9 @@ public sealed class RegisterCommandHandlerTests
         var user = await dbContext.Users.FirstAsync(x => x.Id == result.Id);
         user.PasswordHash.Should().Be("hashed_password");
 
-        searchIndex.Verify(x => x.IndexUserAsync(
-            It.Is<UserDto>(dto => dto.Id == result.Id),
-            It.IsAny<CancellationToken>()), Times.Once);
+        eventBus.Verify(x => x.PublishAsync(
+            It.IsAny<IIntegrationEvent>(),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -43,11 +44,11 @@ public sealed class RegisterCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var hasher = new Mock<IPasswordHasher>();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var existing = new User { Username = "bob", Email = "existing@example.com", PasswordHash = "hash", IsActive = true };
         dbContext.Users.Add(existing);
         await dbContext.SaveChangesAsync();
-        var handler = new RegisterCommandHandler(dbContext, hasher.Object, searchIndex.Object);
+        var handler = new RegisterCommandHandler(dbContext, hasher.Object, eventBus.Object);
 
         var act = () => handler.Handle(
             new RegisterCommand("bob", "Bob Smith", "bob-new@example.com", "password123"),

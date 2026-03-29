@@ -107,8 +107,8 @@ public sealed class NotificationTemplateHandlerTests
         var template = new NotificationTemplate { Type = NotificationTemplateType.TwoFactorEmail, Locale = "en-US", Subject = "Old", Body = "Old Body" };
         dbContext.NotificationTemplates.Add(template);
         await dbContext.SaveChangesAsync();
-        var searchIndexService = new Mock<ISearchIndexService>();
-        var handler = new UpdateNotificationTemplateCommandHandler(dbContext, searchIndexService.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new UpdateNotificationTemplateCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateNotificationTemplateCommand(template.Id, "TwoFactorEmail", "ru-RU", "New Subject", "New Body"), CancellationToken.None);
@@ -130,8 +130,8 @@ public sealed class NotificationTemplateHandlerTests
     public async Task Update_WhenNotFound_ReturnsNull()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndexService = new Mock<ISearchIndexService>();
-        var handler = new UpdateNotificationTemplateCommandHandler(dbContext, searchIndexService.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new UpdateNotificationTemplateCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateNotificationTemplateCommand(Guid.NewGuid(), "TwoFactorEmail", "en-US", "S", "B"), CancellationToken.None);
@@ -147,8 +147,8 @@ public sealed class NotificationTemplateHandlerTests
         dbContext.NotificationTemplates.Add(template);
         await dbContext.SaveChangesAsync();
         var originalUpdatedAt = template.UpdatedAt;
-        var searchIndexService = new Mock<ISearchIndexService>();
-        var handler = new UpdateNotificationTemplateCommandHandler(dbContext, searchIndexService.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        var handler = new UpdateNotificationTemplateCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
 
         await Task.Delay(50);
         var result = await handler.Handle(

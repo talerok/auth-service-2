@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.Verification;
 using Auth.Application.Verification.Commands.SendEmailVerification;
 using Auth.Domain;
@@ -12,6 +13,7 @@ namespace Auth.Infrastructure.Verification.Commands.SendEmailVerification;
 
 internal sealed class SendEmailVerificationCommandHandler(
     AuthDbContext dbContext,
+    IEventBus eventBus,
     IOptions<IntegrationOptions> options,
     IAuditContext auditContext,
     ILogger<SendEmailVerificationCommandHandler> logger) : IRequestHandler<SendEmailVerificationCommand, SendVerificationResponse>
@@ -51,6 +53,7 @@ internal sealed class SendEmailVerificationCommandHandler(
             _twoFactor.MaxAttemptsPerChallenge);
 
         dbContext.TwoFactorChallenges.Add(challenge);
+        await eventBus.PublishAsync(new DeliverOtpRequested { ChallengeId = challenge.Id }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         auditContext.Details = new Dictionary<string, object?> { ["channel"] = "Email" };

@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.ServiceAccounts.Commands.CreateServiceAccount;
 using Auth.Infrastructure;
 using Auth.Infrastructure.ServiceAccounts.Commands.CreateServiceAccount;
@@ -17,9 +18,9 @@ public sealed class CreateServiceAccountCommandHandlerTests
     public async Task Handle_CreatesServiceAccountAndReturnsResponse()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new CreateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new CreateServiceAccountCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new CreateServiceAccountCommand("My SA", "Some description", true),
@@ -39,9 +40,9 @@ public sealed class CreateServiceAccountCommandHandlerTests
     public async Task Handle_RegistersOpenIddictApplication()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new CreateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new CreateServiceAccountCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new CreateServiceAccountCommand("My SA", "desc"),
@@ -56,16 +57,16 @@ public sealed class CreateServiceAccountCommandHandlerTests
     public async Task Handle_IndexesServiceAccountInSearch()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new CreateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new CreateServiceAccountCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new CreateServiceAccountCommand("My SA", "desc"),
             CancellationToken.None);
 
-        searchIndex.Verify(x => x.IndexServiceAccountAsync(
-            It.Is<ServiceAccountDto>(d => d.Name == "My SA"),
+        eventBus.Verify(x => x.PublishAsync(
+            It.Is<IndexEntityRequested>(e => e.EntityType == IndexEntityType.ServiceAccount && e.Operation == IndexOperation.Index),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -73,13 +74,13 @@ public sealed class CreateServiceAccountCommandHandlerTests
     public async Task Handle_SetsClientCredentialsPermissions()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
         OpenIddictApplicationDescriptor? capturedDescriptor = null;
         appManager.Setup(x => x.CreateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<CancellationToken>()))
             .Callback<OpenIddictApplicationDescriptor, CancellationToken>((d, _) => capturedDescriptor = d)
             .ReturnsAsync(new object());
-        var handler = new CreateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new CreateServiceAccountCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new CreateServiceAccountCommand("SA", "desc"),
@@ -98,9 +99,9 @@ public sealed class CreateServiceAccountCommandHandlerTests
     public async Task Handle_AlwaysReturnsSecret()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new CreateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new CreateServiceAccountCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new CreateServiceAccountCommand("SA", "desc"),
@@ -113,9 +114,9 @@ public sealed class CreateServiceAccountCommandHandlerTests
     public async Task Handle_DefaultIsActive_True()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new CreateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new CreateServiceAccountCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new CreateServiceAccountCommand("SA", "desc"),

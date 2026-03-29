@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.ServiceAccounts.Commands.PatchServiceAccount;
 using Auth.Infrastructure.AuditLogs;
 using MediatR;
@@ -9,7 +10,7 @@ namespace Auth.Infrastructure.ServiceAccounts.Commands.PatchServiceAccount;
 
 internal sealed class PatchServiceAccountCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IOpenIddictApplicationManager appManager,
     IAuditContext auditContext) : IRequestHandler<PatchServiceAccountCommand, ServiceAccountDto?>
 {
@@ -38,6 +39,7 @@ internal sealed class PatchServiceAccountCommandHandler(
         if (changes.Count > 0)
             auditContext.Details = changes;
 
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.ServiceAccount, EntityId = serviceAccount.Id, Operation = IndexOperation.Index }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         if (command.Name.HasValue)
@@ -53,7 +55,6 @@ internal sealed class PatchServiceAccountCommandHandler(
         }
 
         var dto = MapToDto(serviceAccount);
-        await searchIndexService.IndexServiceAccountAsync(dto, cancellationToken);
         return dto;
     }
 

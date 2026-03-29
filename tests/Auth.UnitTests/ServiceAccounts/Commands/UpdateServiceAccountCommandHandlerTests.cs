@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.ServiceAccounts.Commands.UpdateServiceAccount;
 using Auth.Infrastructure;
 using Auth.Infrastructure.ServiceAccounts.Commands.UpdateServiceAccount;
@@ -19,9 +20,9 @@ public sealed class UpdateServiceAccountCommandHandlerTests
         var serviceAccount = new Domain.ServiceAccount { Name = "Old", Description = "Old desc", ClientId = "sa-123", IsActive = true };
         dbContext.ServiceAccounts.Add(serviceAccount);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new UpdateServiceAccountCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateServiceAccountCommand(serviceAccount.Id, "New", "New desc", false),
@@ -37,9 +38,9 @@ public sealed class UpdateServiceAccountCommandHandlerTests
     public async Task Handle_WhenServiceAccountDoesNotExist_ReturnsNull()
     {
         await using var dbContext = CreateDbContext();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new UpdateServiceAccountCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateServiceAccountCommand(Guid.NewGuid(), "Name", "Desc", true),
@@ -60,7 +61,7 @@ public sealed class UpdateServiceAccountCommandHandlerTests
         dbContext.ServiceAccounts.Add(serviceAccount);
         await dbContext.SaveChangesAsync();
 
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
         var oidcApp = new object();
         appManager.Setup(x => x.FindByClientIdAsync("sa-sync", It.IsAny<CancellationToken>()))
@@ -73,7 +74,7 @@ public sealed class UpdateServiceAccountCommandHandlerTests
             .Callback<object, OpenIddictApplicationDescriptor, CancellationToken>((_, d, _) => capturedDescriptor = d)
             .Returns(ValueTask.CompletedTask);
 
-        var handler = new UpdateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new UpdateServiceAccountCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new UpdateServiceAccountCommand(serviceAccount.Id, "Updated SA", "desc", true),
@@ -90,16 +91,16 @@ public sealed class UpdateServiceAccountCommandHandlerTests
         var serviceAccount = new Domain.ServiceAccount { Name = "SA", Description = "desc", ClientId = "sa-idx", IsActive = true };
         dbContext.ServiceAccounts.Add(serviceAccount);
         await dbContext.SaveChangesAsync();
-        var searchIndex = new Mock<ISearchIndexService>();
+        var eventBus = new Mock<IEventBus>();
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateServiceAccountCommandHandler(dbContext, searchIndex.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new UpdateServiceAccountCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new UpdateServiceAccountCommand(serviceAccount.Id, "Updated", "updated desc", true),
             CancellationToken.None);
 
-        searchIndex.Verify(x => x.IndexServiceAccountAsync(
-            It.Is<ServiceAccountDto>(d => d.Name == "Updated"),
+        eventBus.Verify(x => x.PublishAsync(
+            It.Is<IndexEntityRequested>(e => e.EntityType == IndexEntityType.ServiceAccount && e.Operation == IndexOperation.Index),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 

@@ -1,11 +1,11 @@
 using System.Security.Claims;
 using Auth.Application;
+using Auth.Application.Messaging;
 using Auth.Domain;
 using Auth.Infrastructure.AuditLogs;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Moq;
 using static Auth.UnitTests.TestDbContextFactory;
 
@@ -13,12 +13,11 @@ namespace Auth.UnitTests.AuditLogs;
 
 public sealed class AuditServiceTests
 {
-    private readonly Mock<ISearchIndexService> _searchIndexService = new();
+    private readonly Mock<IEventBus> _eventBus = new();
     private readonly Mock<IHttpContextAccessor> _httpContextAccessor = new();
-    private readonly Mock<ILogger<AuditService>> _logger = new();
 
     private AuditService CreateService(Infrastructure.AuthDbContext dbContext) =>
-        new(dbContext, _searchIndexService.Object, _httpContextAccessor.Object, _logger.Object);
+        new(dbContext, _eventBus.Object, _httpContextAccessor.Object);
 
     [Fact]
     public async Task LogAsync_SavesEntryToDatabase()
@@ -30,6 +29,7 @@ public sealed class AuditServiceTests
         await service.LogAsync(
             AuditEntityType.User, entityId, AuditAction.Create,
             cancellationToken: CancellationToken.None);
+        await dbContext.SaveChangesAsync(); // caller (AuditBehavior) is responsible for save
 
         var entry = await dbContext.AuditLogEntries.SingleAsync();
         entry.EntityType.Should().Be(AuditEntityType.User);
@@ -48,6 +48,7 @@ public sealed class AuditServiceTests
         await service.LogAsync(
             AuditEntityType.Role, Guid.NewGuid(), AuditAction.Update,
             actor: actor, cancellationToken: CancellationToken.None);
+        await dbContext.SaveChangesAsync();
 
         var entry = await dbContext.AuditLogEntries.SingleAsync();
         entry.ActorId.Should().Be(actorId);
@@ -75,6 +76,7 @@ public sealed class AuditServiceTests
         await service.LogAsync(
             AuditEntityType.Workspace, Guid.NewGuid(), AuditAction.Create,
             cancellationToken: CancellationToken.None);
+        await dbContext.SaveChangesAsync();
 
         var entry = await dbContext.AuditLogEntries.SingleAsync();
         entry.ActorId.Should().Be(userId);
@@ -83,7 +85,7 @@ public sealed class AuditServiceTests
     }
 
     [Fact]
-    public async Task LogAsync_IndexesEntryToSearch()
+    public async Task LogAsync_PublishesIndexEvent()
     {
         await using var dbContext = CreateDbContext();
         var service = CreateService(dbContext);
@@ -93,33 +95,9 @@ public sealed class AuditServiceTests
             AuditEntityType.Permission, entityId, AuditAction.SoftDelete,
             cancellationToken: CancellationToken.None);
 
-        _searchIndexService.Verify(x => x.IndexAuditLogAsync(
-            It.Is<AuditLogDto>(dto =>
-                dto.EntityType == AuditLogDto.CamelCase(AuditEntityType.Permission) &&
-                dto.EntityId == entityId &&
-                dto.Action == AuditLogDto.CamelCase(AuditAction.SoftDelete)),
+        _eventBus.Verify(x => x.PublishAsync(
+            It.IsAny<IIntegrationEvent>(),
             It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task LogAsync_SearchIndexFails_DoesNotThrow()
-    {
-        await using var dbContext = CreateDbContext();
-        _searchIndexService.Setup(x => x.IndexAuditLogAsync(
-                It.IsAny<AuditLogDto>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("OpenSearch unavailable"));
-
-        var service = CreateService(dbContext);
-        var entityId = Guid.NewGuid();
-
-        var act = () => service.LogAsync(
-            AuditEntityType.Application, entityId, AuditAction.Create,
-            cancellationToken: CancellationToken.None);
-
-        await act.Should().NotThrowAsync();
-
-        var entry = await dbContext.AuditLogEntries.SingleAsync();
-        entry.EntityId.Should().Be(entityId);
     }
 
     [Fact]
@@ -137,6 +115,7 @@ public sealed class AuditServiceTests
         await service.LogAsync(
             AuditEntityType.User, Guid.NewGuid(), AuditAction.Patch,
             details: details, cancellationToken: CancellationToken.None);
+        await dbContext.SaveChangesAsync();
 
         var entry = await dbContext.AuditLogEntries.SingleAsync();
         entry.Details.Should().NotBeNull();

@@ -17,6 +17,8 @@ public sealed class IntegrationOptions
     public OidcOptions Oidc { get; set; } = new();
     public PasswordRequirementsOptions PasswordRequirements { get; set; } = new();
     public PasswordExpirationOptions PasswordExpiration { get; set; } = new();
+    public RabbitMqOptions RabbitMq { get; set; } = new();
+    public RedisOptions Redis { get; set; } = new();
 }
 
 public sealed class PostgreSqlOptions
@@ -85,6 +87,20 @@ public sealed class VerificationOptions
 {
     public string EmailBaseUrl { get; set; } = string.Empty;
     public string PhoneBaseUrl { get; set; } = string.Empty;
+}
+
+public sealed class RabbitMqOptions
+{
+    public string Host { get; set; } = "localhost";
+    public ushort Port { get; set; } = 5672;
+    public string VirtualHost { get; set; } = "/";
+    public string Username { get; set; } = "guest";
+    public string Password { get; set; } = "guest";
+}
+
+public sealed class RedisOptions
+{
+    public string ConnectionString { get; set; } = "localhost:6379";
 }
 
 public sealed class OidcOptions

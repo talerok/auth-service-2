@@ -40,7 +40,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("postgresql")
-    .AddCheck<OpenSearchHealthCheck>("opensearch");
+    .AddCheck<OpenSearchHealthCheck>("opensearch")
+    .AddCheck<RedisHealthCheck>("redis")
+    .AddCheck<RabbitMqHealthCheck>("rabbitmq");
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddInfrastructureIntegration(builder.Configuration);

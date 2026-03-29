@@ -3,7 +3,7 @@ using OpenSearch.Client;
 
 namespace Auth.Api.HealthChecks;
 
-public sealed class OpenSearchHealthCheck(IOpenSearchClient openSearchClient) : IHealthCheck
+internal sealed class OpenSearchHealthCheck(IOpenSearchClient openSearchClient) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,

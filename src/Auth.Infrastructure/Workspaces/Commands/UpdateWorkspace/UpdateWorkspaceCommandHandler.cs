@@ -1,4 +1,6 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
+using Auth.Application.Messaging.Events;
 using Auth.Application.Workspaces.Commands.UpdateWorkspace;
 using Auth.Infrastructure.AuditLogs;
 using MediatR;
@@ -8,7 +10,7 @@ namespace Auth.Infrastructure.Workspaces.Commands.UpdateWorkspace;
 
 internal sealed class UpdateWorkspaceCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     IAuditContext auditContext) : IRequestHandler<UpdateWorkspaceCommand, WorkspaceDto?>
 {
     public async Task<WorkspaceDto?> Handle(UpdateWorkspaceCommand command, CancellationToken cancellationToken)
@@ -29,9 +31,10 @@ internal sealed class UpdateWorkspaceCommandHandler(
         if (changes.Count > 0)
             auditContext.Details = changes;
 
+        await eventBus.PublishAsync(new WorkspaceUpdatedEvent { WorkspaceId = entity.Id }, cancellationToken);
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Workspace, EntityId = entity.Id, Operation = IndexOperation.Index }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         var dto = new WorkspaceDto(entity.Id, entity.Name, entity.Code, entity.Description, entity.IsSystem);
-        await searchIndexService.IndexWorkspaceAsync(dto, cancellationToken);
         return dto;
     }
 }

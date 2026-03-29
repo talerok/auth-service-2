@@ -549,8 +549,8 @@ public sealed class ImportUsersCommandHandlerTests
     {
         var passwordHasher = new Mock<IPasswordHasher>();
         passwordHasher.Setup(x => x.Hash(It.IsAny<string>())).Returns("hashed");
-        var searchIndex = new Mock<ISearchIndexService>();
-        return new ImportUsersCommandHandler(dbContext, passwordHasher.Object, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        return new ImportUsersCommandHandler(dbContext, passwordHasher.Object, eventBus.Object, new Mock<IAuditContext>().Object);
     }
 
 }

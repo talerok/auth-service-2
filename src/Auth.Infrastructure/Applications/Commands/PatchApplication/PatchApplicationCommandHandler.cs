@@ -1,5 +1,6 @@
 using Auth.Application;
 using Auth.Application.Applications.Commands.PatchApplication;
+using Auth.Application.Messaging.Commands;
 using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,7 @@ namespace Auth.Infrastructure.Applications.Commands.PatchApplication;
 
 internal sealed class PatchApplicationCommandHandler(
     AuthDbContext dbContext,
-    ISearchIndexService searchIndexService,
+    IEventBus eventBus,
     ICorsOriginService corsOriginService,
     IOpenIddictApplicationManager appManager,
     IAuditContext auditContext) : IRequestHandler<PatchApplicationCommand, ApplicationDto?>
@@ -73,6 +74,7 @@ internal sealed class PatchApplicationCommandHandler(
         if (changes.Count > 0)
             auditContext.Details = changes;
 
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Application, EntityId = application.Id, Operation = IndexOperation.Index }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         corsOriginService.InvalidateCache();
 
@@ -91,7 +93,6 @@ internal sealed class PatchApplicationCommandHandler(
             await SyncOpenIddictApplication(application, command, cancellationToken);
 
         var dto = MapToDto(application);
-        await searchIndexService.IndexApplicationAsync(dto, cancellationToken);
         return dto;
     }
 

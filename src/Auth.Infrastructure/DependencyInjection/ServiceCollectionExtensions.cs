@@ -1,6 +1,9 @@
 using Auth.Application;
 using Auth.Infrastructure.Cors;
+using Auth.Infrastructure.Messaging;
+using Auth.Infrastructure.Messaging.Consumers;
 using FluentValidation;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -59,7 +62,41 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<ITwoFactorSmsGateway, SafeDefaultTwoFactorSmsGateway>();
         }
 
-        services.AddHostedService<TwoFactorDeliveryBackgroundService>();
+        services.AddScoped<IEventBus, MassTransitEventBus>();
+
+        services.AddMassTransit(x =>
+        {
+            x.AddConsumer<DeliverOtpConsumer, DeliverOtpConsumerDefinition>();
+            x.AddConsumer<DeliverOtpFaultConsumer>();
+            x.AddConsumer<IndexEntityConsumer, IndexEntityConsumerDefinition>();
+            x.AddConsumer<IndexAuditLogConsumer, IndexAuditLogConsumerDefinition>();
+            x.AddConsumer<PermissionCacheInvalidationConsumer>()
+                .Endpoint(e => e.Temporary = true);
+
+            x.AddEntityFrameworkOutbox<AuthDbContext>(o =>
+            {
+                o.UsePostgres();
+                o.UseBusOutbox();
+                o.QueryDelay = TimeSpan.FromSeconds(1);
+            });
+
+            x.UsingRabbitMq((context, cfg) =>
+            {
+                var rabbit = integration.RabbitMq;
+                cfg.Host(rabbit.Host, rabbit.Port, rabbit.VirtualHost, h =>
+                {
+                    h.Username(rabbit.Username);
+                    h.Password(rabbit.Password);
+                });
+                cfg.ConfigureEndpoints(context);
+            });
+        });
+
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = integration.Redis.ConnectionString;
+            options.InstanceName = "auth:";
+        });
 
         services.AddOpenIddict()
             .AddCore(options =>

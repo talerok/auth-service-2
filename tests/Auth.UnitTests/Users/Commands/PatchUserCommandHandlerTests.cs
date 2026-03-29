@@ -145,8 +145,8 @@ public sealed class PatchUserCommandHandlerTests
 
     private static PatchUserCommandHandler CreateHandler(AuthDbContext dbContext)
     {
-        var searchIndex = new Mock<ISearchIndexService>();
-        return new PatchUserCommandHandler(dbContext, searchIndex.Object, new Mock<IAuditContext>().Object);
+        var eventBus = new Mock<IEventBus>();
+        return new PatchUserCommandHandler(dbContext, eventBus.Object, new Mock<IAuditContext>().Object);
     }
 
 }
