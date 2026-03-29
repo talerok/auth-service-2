@@ -170,7 +170,7 @@
 | `id`              | uuid         | NO       | PK                                                  |
 | `user_id`         | uuid         | NO       | FK → users(id) CASCADE                              |
 | `channel`         | varchar(16)  | NO       | Канал доставки OTP (например, Email, SMS)           |
-| `purpose`         | varchar(32)  | NO       | Назначение challenge (например, Login, ChangeEmail) |
+| `purpose`         | varchar(32)  | NO       | Назначение challenge (Login, Activation, EmailVerification, PhoneVerification) |
 | `otp_hash`        | varchar(200) | NO       | Хэш одноразового кода                               |
 | `otp_salt`        | varchar(120) | NO       | Salt для хэширования OTP                            |
 | `otp_encrypted`   | varchar(512) | NO       | Зашифрованный OTP для повторной доставки            |
@@ -209,6 +209,8 @@ OAuth2-приложения (authorization code flow). Могут быть publi
 | `audiences`                     | jsonb         | NO       | Список ресурсов (aud claim) (DEFAULT '[]'::jsonb)   |
 | `access_token_lifetime_minutes` | integer       | YES      | TTL access-токена в минутах                         |
 | `refresh_token_lifetime_minutes`| integer       | YES      | TTL refresh-токена в минутах                        |
+| `require_email_verified`        | boolean       | NO       | Требовать подтверждённый email (DEFAULT false)      |
+| `require_phone_verified`        | boolean       | NO       | Требовать подтверждённый телефон (DEFAULT false)     |
 | `created_at`                    | timestamptz   | NO       |                                                     |
 | `updated_at`                    | timestamptz   | NO       |                                                     |
 | `deleted_at`                    | timestamptz   | YES      | Soft delete                                         |
