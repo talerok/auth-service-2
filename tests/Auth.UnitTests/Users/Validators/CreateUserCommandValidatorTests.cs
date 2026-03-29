@@ -56,4 +56,28 @@ public sealed class CreateUserCommandValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == "Password");
     }
+
+    [Fact]
+    public async Task Validate_WithNegativePasswordMaxAgeDays_HasError()
+    {
+        var command = new CreateUserCommand("alice", "Alice", "alice@example.com", "StrongPass1", PasswordMaxAgeDays: -1);
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "PasswordMaxAgeDays");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    [InlineData(90)]
+    public async Task Validate_WithValidPasswordMaxAgeDays_IsValid(int? days)
+    {
+        var command = new CreateUserCommand("alice", "Alice", "alice@example.com", "StrongPass1", PasswordMaxAgeDays: days);
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeTrue();
+    }
 }

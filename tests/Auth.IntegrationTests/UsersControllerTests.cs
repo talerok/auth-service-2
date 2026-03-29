@@ -195,7 +195,8 @@ public sealed class UsersControllerTests(IntegrationTestFixture fixture)
             TwoFactorChannel: default,
             Locale: default,
             EmailVerified: default,
-            PhoneVerified: default);
+            PhoneVerified: default,
+            PasswordMaxAgeDays: default);
 
         var response = await Client.PatchAsJsonAsync($"/api/users/{user.Id}", request, IntegrationTestFixture.JsonOptions);
 

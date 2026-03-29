@@ -33,6 +33,7 @@ internal sealed class UpdateUserCommandHandler(
         user.Locale = command.Locale;
         user.EmailVerified = command.EmailVerified;
         user.PhoneVerified = command.PhoneVerified;
+        user.PasswordMaxAgeDays = command.PasswordMaxAgeDays;
 
         var changes = AuditDiff.CaptureChanges(dbContext.Entry(user));
         if (changes.Count > 0)
@@ -42,7 +43,7 @@ internal sealed class UpdateUserCommandHandler(
 
         var dto = new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone,
             user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel,
-            user.Locale, user.EmailVerified, user.PhoneVerified);
+            user.Locale, user.EmailVerified, user.PhoneVerified, user.PasswordMaxAgeDays, user.PasswordChangedAt);
 
         await searchIndexService.IndexUserAsync(dto, cancellationToken);
         return dto;

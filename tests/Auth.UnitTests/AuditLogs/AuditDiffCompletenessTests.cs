@@ -14,7 +14,7 @@ public sealed class AuditDiffCompletenessTests
 
     private static readonly Dictionary<Type, HashSet<string>> ExcludedProperties = new()
     {
-        [typeof(User)] = ["PasswordHash", "UserWorkspaces", "TwoFactorChallenges"],
+        [typeof(User)] = ["PasswordHash", "PasswordChangedAt", "UserWorkspaces", "TwoFactorChallenges"],
         [typeof(Role)] = ["UserWorkspaceRoles", "RolePermissions"],
         [typeof(Permission)] = ["RolePermissions"],
         [typeof(Workspace)] = ["UserWorkspaces"],

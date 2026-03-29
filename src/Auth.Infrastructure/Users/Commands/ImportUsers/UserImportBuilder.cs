@@ -18,13 +18,14 @@ internal sealed class UserImportBuilder(AuthDbContext dbContext, IPasswordHasher
             FullName = item.FullName,
             Email = item.Email,
             Phone = item.Phone,
-            PasswordHash = passwordHasher.Hash(tempPassword),
             IsActive = item.IsActive,
             IsInternalAuthEnabled = item.IsInternalAuthEnabled,
             Locale = item.Locale,
             EmailVerified = item.EmailVerified,
-            PhoneVerified = item.PhoneVerified
+            PhoneVerified = item.PhoneVerified,
+            PasswordMaxAgeDays = item.PasswordMaxAgeDays
         };
+        user.SetPassword(passwordHasher.Hash(tempPassword));
 
         user.MarkMustChangePassword();
 
@@ -58,6 +59,7 @@ internal sealed class UserImportBuilder(AuthDbContext dbContext, IPasswordHasher
         user.Locale = item.Locale;
         user.EmailVerified = item.EmailVerified;
         user.PhoneVerified = item.PhoneVerified;
+        user.PasswordMaxAgeDays = item.PasswordMaxAgeDays;
         user.Restore();
 
         if (item.MustChangePassword)

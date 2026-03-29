@@ -16,7 +16,8 @@ internal static class OidcPrincipalFactory
 
     public static async Task<ClaimsPrincipal> CreateUserPrincipalAsync(
         User user, IEnumerable<string> scopes, ISender sender, string? clientId,
-        CancellationToken cancellationToken, IReadOnlyList<string>? authMethods = null)
+        CancellationToken cancellationToken, IReadOnlyList<string>? authMethods = null,
+        int defaultMaxAgeDays = 0)
     {
         var scopeList = scopes.ToList();
 
@@ -51,6 +52,10 @@ internal static class OidcPrincipalFactory
         identity.SetClaim(Claims.AuthenticationTime,
             DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 
+        var pwdExp = user.GetPasswordExpirationUnixTimestamp(defaultMaxAgeDays);
+        if (pwdExp.HasValue)
+            identity.SetClaim("pwd_exp", pwdExp.Value);
+
         if (authMethods is { Count: > 0 })
         {
             foreach (var method in authMethods)
@@ -73,6 +78,7 @@ internal static class OidcPrincipalFactory
             Claims.PhoneNumberVerified => [Destinations.IdentityToken],
             Claims.AuthenticationMethodReference => [Destinations.IdentityToken],
             Claims.AuthenticationTime => [Destinations.IdentityToken],
+            "pwd_exp" => [Destinations.AccessToken, Destinations.IdentityToken],
             _ when claim.Type.StartsWith(OidcConstants.WorkspaceScopePrefix, StringComparison.Ordinal)
                 => [Destinations.AccessToken],
             _ => [Destinations.AccessToken]

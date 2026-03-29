@@ -10,5 +10,8 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
         RuleFor(x => x.Username).NotEmpty().MaximumLength(100);
         RuleFor(x => x.FullName).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
+        RuleFor(x => x.PasswordMaxAgeDays)
+            .GreaterThanOrEqualTo(0)
+            .When(x => x.PasswordMaxAgeDays.HasValue);
     }
 }

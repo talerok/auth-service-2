@@ -15,6 +15,7 @@ public static class ServiceCollectionExtensions
     {
         services.Configure<IntegrationOptions>(configuration.GetSection("Integration"));
         services.Configure<PasswordRequirementsOptions>(configuration.GetSection("Integration:PasswordRequirements"));
+        services.Configure<PasswordExpirationOptions>(configuration.GetSection("Integration:PasswordExpiration"));
         var integration = configuration.GetSection("Integration").Get<IntegrationOptions>() ?? new IntegrationOptions();
 
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(integration.PostgreSql.ConnectionString);

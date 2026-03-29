@@ -15,7 +15,8 @@ public sealed record UpdateUserCommand(
     TwoFactorChannel? TwoFactorChannel = null,
     string Locale = "en-US",
     bool EmailVerified = false,
-    bool PhoneVerified = false) : IRequest<UserDto?>, IAuditable
+    bool PhoneVerified = false,
+    int? PasswordMaxAgeDays = null) : IRequest<UserDto?>, IAuditable
 {
     public AuditEntityType EntityType => AuditEntityType.User;
     public AuditAction Action => AuditAction.Update;

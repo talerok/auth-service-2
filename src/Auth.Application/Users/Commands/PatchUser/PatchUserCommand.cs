@@ -16,7 +16,8 @@ public sealed record PatchUserCommand(
     Optional<TwoFactorChannel?> TwoFactorChannel,
     Optional<string> Locale,
     Optional<bool> EmailVerified,
-    Optional<bool> PhoneVerified) : IRequest<UserDto?>, IAuditable
+    Optional<bool> PhoneVerified,
+    Optional<int?> PasswordMaxAgeDays) : IRequest<UserDto?>, IAuditable
 {
     public AuditEntityType EntityType => AuditEntityType.User;
     public AuditAction Action => AuditAction.Patch;

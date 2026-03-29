@@ -50,7 +50,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
             request.Username, request.FullName, request.Email, request.Password,
             request.Phone, request.IsActive, request.IsInternalAuthEnabled, request.MustChangePassword,
             request.TwoFactorEnabled, request.TwoFactorChannel, request.Locale, request.EmailVerified,
-            request.PhoneVerified), cancellationToken);
+            request.PhoneVerified, request.PasswordMaxAgeDays), cancellationToken);
 
     [HttpPut("{id:guid}")]
     [HasPermissionIn("system", "system", "system.users.update")]
@@ -59,7 +59,8 @@ public sealed class UsersController(ISender sender) : ControllerBase
         var updated = await sender.Send(new UpdateUserCommand(
             id, request.Username, request.FullName, request.Email,
             request.Phone, request.IsActive, request.IsInternalAuthEnabled, request.TwoFactorEnabled,
-            request.TwoFactorChannel, request.Locale, request.EmailVerified, request.PhoneVerified), cancellationToken);
+            request.TwoFactorChannel, request.Locale, request.EmailVerified, request.PhoneVerified,
+            request.PasswordMaxAgeDays), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -70,7 +71,8 @@ public sealed class UsersController(ISender sender) : ControllerBase
         var updated = await sender.Send(new PatchUserCommand(
             id, request.Username, request.FullName, request.Email,
             request.Phone, request.IsActive, request.IsInternalAuthEnabled, request.TwoFactorEnabled,
-            request.TwoFactorChannel, request.Locale, request.EmailVerified, request.PhoneVerified), cancellationToken);
+            request.TwoFactorChannel, request.Locale, request.EmailVerified, request.PhoneVerified,
+            request.PasswordMaxAgeDays), cancellationToken);
         return updated is null ? NotFound() : Ok(updated);
     }
 

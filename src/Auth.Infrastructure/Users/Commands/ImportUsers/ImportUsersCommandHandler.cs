@@ -215,7 +215,8 @@ internal sealed class ImportUsersCommandHandler(
             await searchIndexService.IndexUserAsync(
                 new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone,
                     user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword,
-                    user.TwoFactorEnabled, user.TwoFactorChannel, user.Locale, user.EmailVerified, user.PhoneVerified),
+                    user.TwoFactorEnabled, user.TwoFactorChannel, user.Locale, user.EmailVerified, user.PhoneVerified,
+                    user.PasswordMaxAgeDays, user.PasswordChangedAt),
                 cancellationToken);
         }
     }

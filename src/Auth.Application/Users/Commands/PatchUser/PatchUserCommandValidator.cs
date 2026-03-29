@@ -15,5 +15,9 @@ public sealed class PatchUserCommandValidator : AbstractValidator<PatchUserComma
             .OverridePropertyName("Email").When(x => x.Email.HasValue);
         RuleFor(x => x.Locale.Value!).NotNull()
             .OverridePropertyName("Locale").When(x => x.Locale.HasValue);
+        RuleFor(x => x.PasswordMaxAgeDays.Value)
+            .GreaterThanOrEqualTo(0)
+            .OverridePropertyName("PasswordMaxAgeDays")
+            .When(x => x.PasswordMaxAgeDays.HasValue);
     }
 }

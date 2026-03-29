@@ -16,6 +16,7 @@ public sealed class IntegrationOptions
     public CorsOptions Cors { get; set; } = new();
     public OidcOptions Oidc { get; set; } = new();
     public PasswordRequirementsOptions PasswordRequirements { get; set; } = new();
+    public PasswordExpirationOptions PasswordExpiration { get; set; } = new();
 }
 
 public sealed class PostgreSqlOptions

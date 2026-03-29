@@ -11,5 +11,8 @@ public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCom
         RuleFor(x => x.FullName).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
         RuleFor(x => x.Password).MeetsPasswordRequirements(passwordOptions.Value);
+        RuleFor(x => x.PasswordMaxAgeDays)
+            .GreaterThanOrEqualTo(0)
+            .When(x => x.PasswordMaxAgeDays.HasValue);
     }
 }

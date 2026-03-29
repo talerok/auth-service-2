@@ -47,6 +47,8 @@ internal sealed class ExportUsersQueryHandler(
             u.Locale,
             u.EmailVerified,
             u.PhoneVerified,
+            u.PasswordMaxAgeDays,
+            u.PasswordChangedAt,
             u.UserWorkspaces
                 .Where(uw => uw.Workspace is not null)
                 .Select(uw => new ExportUserWorkspaceDto(

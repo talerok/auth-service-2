@@ -46,6 +46,8 @@
 | `locale`                   | varchar(16)  | NO       | Язык пользователя BCP 47 (DEFAULT 'en-US')           |
 | `email_verified`           | boolean      | NO       | Подтверждён ли email (DEFAULT false)                 |
 | `phone_verified`           | boolean      | NO       | Подтверждён ли телефон (DEFAULT false)               |
+| `password_max_age_days`    | integer      | YES      | Макс. возраст пароля в днях (NULL = глобальный дефолт) |
+| `password_changed_at`      | timestamptz  | YES      | Дата последней смены пароля                            |
 | `created_at`               | timestamptz  | NO       |                                                      |
 | `updated_at`               | timestamptz  | NO       |                                                      |
 | `deleted_at`               | timestamptz  | YES      | Soft delete                                          |

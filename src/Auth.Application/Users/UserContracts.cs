@@ -16,7 +16,9 @@ public sealed record UserDto(
     TwoFactorChannel? TwoFactorChannel,
     string Locale,
     bool EmailVerified,
-    bool PhoneVerified);
+    bool PhoneVerified,
+    int? PasswordMaxAgeDays,
+    DateTime? PasswordChangedAt);
 
 public sealed record CreateUserRequest(
     string Username,
@@ -31,7 +33,8 @@ public sealed record CreateUserRequest(
     TwoFactorChannel? TwoFactorChannel = null,
     string Locale = "en-US",
     bool EmailVerified = false,
-    bool PhoneVerified = false);
+    bool PhoneVerified = false,
+    int? PasswordMaxAgeDays = null);
 
 public sealed record UpdateUserRequest(
     string Username,
@@ -44,7 +47,8 @@ public sealed record UpdateUserRequest(
     TwoFactorChannel? TwoFactorChannel = null,
     string Locale = "en-US",
     bool EmailVerified = false,
-    bool PhoneVerified = false);
+    bool PhoneVerified = false,
+    int? PasswordMaxAgeDays = null);
 
 public sealed record PatchUserRequest(
     Optional<string> Username,
@@ -57,7 +61,8 @@ public sealed record PatchUserRequest(
     Optional<TwoFactorChannel?> TwoFactorChannel,
     Optional<string> Locale,
     Optional<bool> EmailVerified,
-    Optional<bool> PhoneVerified);
+    Optional<bool> PhoneVerified,
+    Optional<int?> PasswordMaxAgeDays);
 
 public sealed record AdminResetPasswordRequest(string Password);
 
@@ -76,6 +81,8 @@ public sealed record ExportUserDto(
     string Locale,
     bool EmailVerified,
     bool PhoneVerified,
+    int? PasswordMaxAgeDays,
+    DateTime? PasswordChangedAt,
     IReadOnlyCollection<ExportUserWorkspaceDto> Workspaces,
     IReadOnlyCollection<ExportUserIdentitySourceDto> IdentitySources);
 
@@ -92,6 +99,7 @@ public sealed record ImportUserItem(
     string Locale = "en-US",
     bool EmailVerified = false,
     bool PhoneVerified = false,
+    int? PasswordMaxAgeDays = null,
     IReadOnlyCollection<ImportUserWorkspaceItem>? Workspaces = null,
     IReadOnlyCollection<ImportUserIdentitySourceItem>? IdentitySources = null);
 public sealed record ImportUserWorkspaceItem(string WorkspaceCode, IReadOnlyCollection<string> RoleCodes);

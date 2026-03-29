@@ -25,14 +25,14 @@ internal sealed class RegisterCommandHandler(
             Username = command.Username,
             FullName = command.FullName,
             Email = command.Email,
-            PasswordHash = passwordHasher.Hash(command.Password),
             IsActive = true,
             IsInternalAuthEnabled = true
         };
+        user.SetPassword(passwordHasher.Hash(command.Password));
 
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone, user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel, user.Locale, user.EmailVerified, user.PhoneVerified);
+        var dto = new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone, user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel, user.Locale, user.EmailVerified, user.PhoneVerified, user.PasswordMaxAgeDays, user.PasswordChangedAt);
         await searchIndexService.IndexUserAsync(dto, cancellationToken);
         return dto;
     }

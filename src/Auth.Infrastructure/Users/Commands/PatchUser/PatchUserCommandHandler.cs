@@ -60,6 +60,9 @@ internal sealed class PatchUserCommandHandler(
         if (command.PhoneVerified.HasValue)
             user.PhoneVerified = command.PhoneVerified.Value;
 
+        if (command.PasswordMaxAgeDays.HasValue)
+            user.PasswordMaxAgeDays = command.PasswordMaxAgeDays.Value;
+
         var changes = AuditDiff.CaptureChanges(dbContext.Entry(user));
         if (changes.Count > 0)
             auditContext.Details = changes;
@@ -68,7 +71,7 @@ internal sealed class PatchUserCommandHandler(
 
         var dto = new UserDto(user.Id, user.Username, user.FullName, user.Email, user.Phone,
             user.IsActive, user.IsInternalAuthEnabled, user.MustChangePassword, user.TwoFactorEnabled, user.TwoFactorChannel,
-            user.Locale, user.EmailVerified, user.PhoneVerified);
+            user.Locale, user.EmailVerified, user.PhoneVerified, user.PasswordMaxAgeDays, user.PasswordChangedAt);
 
         await searchIndexService.IndexUserAsync(dto, cancellationToken);
         return dto;

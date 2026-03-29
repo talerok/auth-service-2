@@ -113,7 +113,7 @@ public sealed class OpenSearchMaintenanceService(
     {
         await ClearIndexAsync(indexNames.Users, cancellationToken);
         var users = await dbContext.Users.AsNoTracking()
-            .Select(x => new UserDto(x.Id, x.Username, x.FullName, x.Email, x.Phone, x.IsActive, x.IsInternalAuthEnabled, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel, x.Locale, x.EmailVerified, x.PhoneVerified))
+            .Select(x => new UserDto(x.Id, x.Username, x.FullName, x.Email, x.Phone, x.IsActive, x.IsInternalAuthEnabled, x.MustChangePassword, x.TwoFactorEnabled, x.TwoFactorChannel, x.Locale, x.EmailVerified, x.PhoneVerified, x.PasswordMaxAgeDays, x.PasswordChangedAt))
             .ToListAsync(cancellationToken);
         await searchIndexService.BulkIndexUsersAsync(users, cancellationToken);
     }

@@ -21,6 +21,7 @@ using Auth.Infrastructure.Oidc.Queries.BuildPrincipal;
 using FluentAssertions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Moq;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -58,7 +59,7 @@ public sealed class OidcGrantServiceTests
                     && q.AuthMethods != null && q.AuthMethods.SequenceEqual(new[] { "pwd" })),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedPrincipal);
-        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object);
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var result = await handler.Handle(
             new ValidateCredentialsForLoginCommand("testuser", "password", ["openid", "profile"]), CancellationToken.None);
@@ -87,12 +88,73 @@ public sealed class OidcGrantServiceTests
                 It.Is<CreatePasswordChangeChallengeCommand>(c => c.UserId == user.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(PasswordChangeChallenge.Create(user.Id, DateTime.UtcNow.AddMinutes(15)));
-        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object);
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var result = await handler.Handle(
             new ValidateCredentialsForLoginCommand("mcp", "pwd", ["openid"]), CancellationToken.None);
 
         result.Should().BeOfType<CredentialValidationResult.PasswordChangeRequired>();
+    }
+
+    [Fact]
+    public async Task ValidateCredentialsForLogin_WhenPasswordExpired_ReturnsPasswordChangeRequired()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(), Username = "expired", FullName = "Expired", Email = "expired@test.com",
+            PasswordHash = "hash", IsActive = true
+        };
+        user.SetPassword("hash");
+        // Simulate password changed 100 days ago via EF-style approach
+        typeof(User).GetProperty("PasswordChangedAt")!.SetValue(user, DateTime.UtcNow.AddDays(-100));
+
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(
+                It.Is<ValidateCredentialsCommand>(c => c.Username == "expired" && c.Password == "pwd"),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        sender.Setup(x => x.Send(
+                It.Is<CreatePasswordChangeChallengeCommand>(c => c.UserId == user.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PasswordChangeChallenge.Create(user.Id, DateTime.UtcNow.AddMinutes(15)));
+        var options = Options.Create(new PasswordExpirationOptions { DefaultMaxAgeDays = 90 });
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, options);
+
+        var result = await handler.Handle(
+            new ValidateCredentialsForLoginCommand("expired", "pwd", ["openid"]), CancellationToken.None);
+
+        result.Should().BeOfType<CredentialValidationResult.PasswordChangeRequired>();
+    }
+
+    [Fact]
+    public async Task ValidateCredentialsForLogin_WhenExpirationDisabled_ReturnsSuccess()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(), Username = "noexp", FullName = "NoExp", Email = "noexp@test.com",
+            PasswordHash = "hash", IsActive = true
+        };
+        user.SetPassword("hash");
+        // Password changed 200 days ago, but expiration is disabled (0)
+        typeof(User).GetProperty("PasswordChangedAt")!.SetValue(user, DateTime.UtcNow.AddDays(-200));
+
+        var expectedPrincipal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(Claims.Subject, user.Id.ToString())]));
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(
+                It.Is<ValidateCredentialsCommand>(c => c.Username == "noexp"),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        sender.Setup(x => x.Send(
+                It.Is<BuildPrincipalQuery>(q => q.UserId == user.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedPrincipal);
+        var options = Options.Create(new PasswordExpirationOptions { DefaultMaxAgeDays = 0 });
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, options);
+
+        var result = await handler.Handle(
+            new ValidateCredentialsForLoginCommand("noexp", "pwd", ["openid"]), CancellationToken.None);
+
+        result.Should().BeOfType<CredentialValidationResult.Success>();
     }
 
     [Fact]
@@ -118,7 +180,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<CreateLoginChallengeCommand>(c => c.UserId == user.Id && c.Channel == TwoFactorChannel.Email),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(challenge);
-        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object);
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var result = await handler.Handle(
             new ValidateCredentialsForLoginCommand("mfa", "pwd", ["openid"]), CancellationToken.None);
@@ -136,7 +198,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<ValidateCredentialsCommand>(c => c.Username == "bad" && c.Password == "bad"),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new AuthException(AuthErrorCatalog.InvalidCredentials));
-        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object);
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var act = () => handler.Handle(
             new ValidateCredentialsForLoginCommand("bad", "bad", ["openid"]), CancellationToken.None);
@@ -200,7 +262,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"]), CancellationToken.None);
@@ -220,7 +282,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "email"]), CancellationToken.None);
@@ -236,7 +298,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "phone"]), CancellationToken.None);
@@ -257,7 +319,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == userNoPhone.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(userNoPhone);
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(userNoPhone.Id, ["openid", "phone"]), CancellationToken.None);
@@ -277,7 +339,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<BuildWorkspaceMasksQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>> { ["system"] = new() { ["system"] = [0b_0000_0101] } });
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:system"]), CancellationToken.None);
@@ -305,7 +367,7 @@ public sealed class OidcGrantServiceTests
                 ["dev"] = new() { ["system"] = [0x02] },
                 ["other"] = new() { ["system"] = [0x04] }
             });
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:system", "ws:dev"]), CancellationToken.None);
@@ -327,7 +389,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<BuildWorkspaceMasksQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>>());
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:unknown"]), CancellationToken.None);
@@ -343,7 +405,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"]), CancellationToken.None);
@@ -360,7 +422,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "profile", "email"]), CancellationToken.None);
@@ -386,7 +448,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"], AuthMethods: ["pwd", "otp"]), CancellationToken.None);
@@ -403,7 +465,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"]), CancellationToken.None);
@@ -419,7 +481,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"], AuthMethods: ["pwd"]), CancellationToken.None);
@@ -427,6 +489,73 @@ public sealed class OidcGrantServiceTests
         var amrClaim = principal.FindFirst(Claims.AuthenticationMethodReference)!;
         amrClaim.GetDestinations().Should().Contain(Destinations.IdentityToken);
         amrClaim.GetDestinations().Should().NotContain(Destinations.AccessToken);
+    }
+
+    [Fact]
+    public async Task BuildPrincipal_WhenExpirationActive_IncludesPwdExpClaim()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(), Username = "expuser", FullName = "Exp User",
+            Email = "exp@test.com", IsActive = true
+        };
+        user.SetPassword("hash");
+
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(
+                It.Is<GetActiveUserQuery>(q => q.UserId == user.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions { DefaultMaxAgeDays = 90 }));
+
+        var principal = await handler.Handle(
+            new BuildPrincipalQuery(user.Id, ["openid", "profile"]), CancellationToken.None);
+
+        var pwdExpClaim = principal.FindFirst("pwd_exp");
+        pwdExpClaim.Should().NotBeNull();
+        var expected = new DateTimeOffset(user.PasswordChangedAt!.Value.AddDays(90), TimeSpan.Zero).ToUnixTimeSeconds();
+        long.Parse(pwdExpClaim!.Value).Should().Be(expected);
+    }
+
+    [Fact]
+    public async Task BuildPrincipal_WhenExpirationDisabled_NoPwdExpClaim()
+    {
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(
+                It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestUser);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions { DefaultMaxAgeDays = 0 }));
+
+        var principal = await handler.Handle(
+            new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"]), CancellationToken.None);
+
+        principal.FindFirst("pwd_exp").Should().BeNull();
+    }
+
+    [Fact]
+    public async Task BuildPrincipal_PwdExpClaim_GoesToBothTokens()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(), Username = "destuser", FullName = "Dest User",
+            Email = "dest@test.com", IsActive = true
+        };
+        user.SetPassword("hash");
+
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(
+                It.Is<GetActiveUserQuery>(q => q.UserId == user.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions { DefaultMaxAgeDays = 90 }));
+
+        var principal = await handler.Handle(
+            new BuildPrincipalQuery(user.Id, ["openid", "profile"]), CancellationToken.None);
+
+        var pwdExpClaim = principal.FindFirst("pwd_exp")!;
+        pwdExpClaim.GetDestinations().Should().Contain(Destinations.AccessToken);
+        pwdExpClaim.GetDestinations().Should().Contain(Destinations.IdentityToken);
     }
 
     // HandleClientCredentialsGrantCommandHandler tests
@@ -509,7 +638,7 @@ public sealed class OidcGrantServiceTests
                 ["dev"] = new() { ["system"] = [0x02] },
                 ["staging"] = new() { ["system"] = [0x04] }
             });
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:*"]), CancellationToken.None);
@@ -531,7 +660,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<BuildWorkspaceMasksQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>>());
-        var handler = new BuildPrincipalQueryHandler(sender.Object);
+        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:*"]), CancellationToken.None);

@@ -27,6 +27,9 @@ internal sealed class ImportUserValidator(
         if (string.IsNullOrWhiteSpace(item.Email) || !EmailRegex.IsMatch(item.Email))
             return AuthErrorCatalog.ImportUserInvalidEmail;
 
+        if (item.PasswordMaxAgeDays < 0)
+            return AuthErrorCatalog.ImportUserInvalidPasswordMaxAgeDays;
+
         if (!_seenUsernames.Add(item.Username))
             return AuthErrorCatalog.ImportUserDuplicateUsername;
 

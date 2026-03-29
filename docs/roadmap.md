@@ -7,8 +7,8 @@
 ### ~~Refresh Token Rotation~~ ✅
 Реализовано через встроенный механизм OpenIddict (rolling refresh tokens). Новый refresh token выдаётся при каждом использовании, старый инвалидируется. Replay detection — при повторном использовании отозванного токена вся цепочка (authorization family) инвалидируется. Настраиваемый reuse leeway (`Integration__Oidc__RefreshTokenReuseLeewaySeconds`, default 30s).
 
-### Password Expiration
-Настраиваемый max password age. При истечении — forced password change при следующем входе. Опционально: предупреждение за N дней до истечения (claim в токене или отдельный endpoint).
+### ~~Password Expiration~~ ✅
+Per-user `PasswordMaxAgeDays` (nullable → fallback на глобальный `DefaultMaxAgeDays`, default 0 = отключено). При истечении — forced password change через существующий `PasswordChangeRequired` flow. Claim `pwd_exp` (unix timestamp) в access + id token для предупреждения на клиенте. Конфигурация: `Integration__PasswordExpiration__DefaultMaxAgeDays`.
 
 ### Session Management
 - Хранение истории сессий (device, IP, user agent, время создания, последняя активность)
