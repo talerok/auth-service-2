@@ -806,6 +806,72 @@ namespace Auth.Infrastructure.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("Auth.Domain.UserSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApplicationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AuthMethod")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<bool>("IsRevoked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime>("LastActivityAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RevokedReason")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("UserAgent")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationId")
+                        .HasDatabaseName("IX_user_sessions_ApplicationId");
+
+                    b.HasIndex("CreatedAt")
+                        .IsDescending();
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_user_sessions_UserId");
+
+                    b.HasIndex("UserId", "ExpiresAt")
+                        .HasDatabaseName("IX_user_sessions_UserId_Active")
+                        .HasFilter("\"IsRevoked\" = false");
+
+                    b.ToTable("user_sessions", (string)null);
+                });
+
             modelBuilder.Entity("Auth.Domain.UserWorkspace", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1382,6 +1448,22 @@ namespace Auth.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Auth.Domain.UserSession", b =>
+                {
+                    b.HasOne("Auth.Domain.Application", "Application")
+                        .WithMany()
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Auth.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Application");
                 });
 
             modelBuilder.Entity("Auth.Domain.UserWorkspace", b =>

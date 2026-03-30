@@ -2,8 +2,10 @@ using Auth.Application;
 using Auth.Application.Auth.Commands.CreateLoginChallenge;
 using Auth.Application.Oidc.Commands.HandleLdapGrant;
 using Auth.Application.Oidc.Queries.BuildPrincipal;
+using Auth.Application.Sessions.Commands.CreateSession;
 using Auth.Domain;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -13,6 +15,7 @@ internal sealed class HandleLdapGrantCommandHandler(
     AuthDbContext dbContext,
     ISender sender,
     ILdapAuthenticator ldapAuthenticator,
+    IHttpContextAccessor httpContextAccessor,
     IOptions<IntegrationOptions> options) : IRequestHandler<HandleLdapGrantCommand, CredentialValidationResult>
 {
     public async Task<CredentialValidationResult> Handle(HandleLdapGrantCommand command, CancellationToken cancellationToken)
@@ -55,7 +58,10 @@ internal sealed class HandleLdapGrantCommandHandler(
             return new CredentialValidationResult.MfaRequired(mfaChallenge.Id, mfaChallenge.Channel);
         }
 
-        var principal = await sender.Send(new BuildPrincipalQuery(user.Id, command.Scopes, command.ClientId, ["pwd"]), cancellationToken);
+        var (ip, ua) = httpContextAccessor.GetClientInfo();
+        var sessionId = await sender.Send(
+            new CreateSessionCommand(user.Id, command.ClientId, "ldap", ip, ua), cancellationToken);
+        var principal = await sender.Send(new BuildPrincipalQuery(user.Id, command.Scopes, command.ClientId, ["ldap"], sessionId), cancellationToken);
         return new CredentialValidationResult.Success(principal);
     }
 }

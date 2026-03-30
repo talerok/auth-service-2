@@ -6,6 +6,7 @@ using Auth.Application.Oidc.Commands.HandleLdapGrant;
 using Auth.Application.Oidc.Commands.HandleMfaOtpGrant;
 using Auth.Application.Oidc.Commands.ValidateCredentialsForLogin;
 using Auth.Application.Oidc.Queries.BuildPrincipal;
+using Auth.Application.Sessions.Commands.TouchSession;
 using MediatR;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
@@ -72,8 +73,23 @@ public sealed class TokenController(ISender sender) : ControllerBase
             .FindAll(Claims.AuthenticationMethodReference)
             .Select(c => c.Value).ToList();
 
+        Guid? sessionId = null;
+        var sidClaim = authResult.Principal.FindFirst("sid")?.Value;
+        if (Guid.TryParse(sidClaim, out var parsedSid))
+        {
+            sessionId = parsedSid;
+            try
+            {
+                await sender.Send(new TouchSessionCommand(parsedSid, userId), cancellationToken);
+            }
+            catch (AuthException)
+            {
+                return OidcForbid(Errors.InvalidGrant, "The session has been revoked.");
+            }
+        }
+
         var principal = await sender.Send(new BuildPrincipalQuery(
-            userId, authResult.Principal.GetScopes().ToList(), clientId, authMethods), cancellationToken);
+            userId, authResult.Principal.GetScopes().ToList(), clientId, authMethods, sessionId), cancellationToken);
 
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }

@@ -57,6 +57,9 @@ public static class AuthProblemDetailsMapper
             VerificationErrorCatalog.UserNotFound => new AuthProblemDescriptor(StatusCodes.Status404NotFound, "Resource not found", "User not found"),
             VerificationErrorCatalog.NoEmailConfigured => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Validation error", "No email configured for user"),
             VerificationErrorCatalog.NoPhoneConfigured => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Validation error", "No phone configured for user"),
+            AuthErrorCatalog.SessionNotFound => new AuthProblemDescriptor(StatusCodes.Status404NotFound, "Resource not found", "Session not found"),
+            AuthErrorCatalog.SessionAlreadyRevoked => new AuthProblemDescriptor(StatusCodes.Status409Conflict, "Conflict", "Session is already revoked"),
+            AuthErrorCatalog.SessionRevoked => new AuthProblemDescriptor(StatusCodes.Status403Forbidden, "Forbidden", "Session has been revoked"),
             _ => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, "Business rule violation", "Business rule violation")
         };
     }

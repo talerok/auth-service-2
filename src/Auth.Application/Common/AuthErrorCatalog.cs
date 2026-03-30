@@ -48,4 +48,8 @@ public static class AuthErrorCatalog
     public const string ImportUserIdentitySourceNotFound = "IMPORT_USER_IDENTITY_SOURCE_NOT_FOUND";
     public const string ImportUserIdentitySourceLinkConflict = "IMPORT_USER_IDENTITY_SOURCE_LINK_CONFLICT";
     public const string ImportUserInvalidPasswordMaxAgeDays = "IMPORT_USER_INVALID_PASSWORD_MAX_AGE_DAYS";
+
+    public const string SessionNotFound = "AUTH_SESSION_NOT_FOUND";
+    public const string SessionAlreadyRevoked = "AUTH_SESSION_ALREADY_REVOKED";
+    public const string SessionRevoked = "AUTH_SESSION_REVOKED";
 }

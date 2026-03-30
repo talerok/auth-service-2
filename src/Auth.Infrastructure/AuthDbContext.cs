@@ -13,7 +13,7 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options) : DbC
     public DbSet<UserWorkspace> UserWorkspaces => Set<UserWorkspace>();
     public DbSet<UserWorkspaceRole> UserWorkspaceRoles => Set<UserWorkspaceRole>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
-public DbSet<TwoFactorChallenge> TwoFactorChallenges => Set<TwoFactorChallenge>();
+    public DbSet<TwoFactorChallenge> TwoFactorChallenges => Set<TwoFactorChallenge>();
     public DbSet<PasswordChangeChallenge> PasswordChangeChallenges => Set<PasswordChangeChallenge>();
     public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
     public DbSet<IdentitySource> IdentitySources => Set<IdentitySource>();
@@ -25,6 +25,7 @@ public DbSet<TwoFactorChallenge> TwoFactorChallenges => Set<TwoFactorChallenge>(
     public DbSet<ServiceAccountWorkspace> ServiceAccountWorkspaces => Set<ServiceAccountWorkspace>();
     public DbSet<ServiceAccountWorkspaceRole> ServiceAccountWorkspaceRoles => Set<ServiceAccountWorkspaceRole>();
     public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
+    public DbSet<UserSession> UserSessions => Set<UserSession>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {

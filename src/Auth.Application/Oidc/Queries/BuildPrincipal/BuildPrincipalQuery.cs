@@ -5,4 +5,5 @@ namespace Auth.Application.Oidc.Queries.BuildPrincipal;
 
 public sealed record BuildPrincipalQuery(
     Guid UserId, IReadOnlyCollection<string> Scopes, string? ClientId = null,
-    IReadOnlyList<string>? AuthMethods = null) : IRequest<ClaimsPrincipal>;
+    IReadOnlyList<string>? AuthMethods = null,
+    Guid? SessionId = null) : IRequest<ClaimsPrincipal>;

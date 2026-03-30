@@ -6,6 +6,7 @@ using Auth.Api.HealthChecks;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Integration;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 using OpenIddict.Validation.AspNetCore;
 using Serilog;
@@ -43,6 +44,13 @@ builder.Services.AddHealthChecks()
     .AddCheck<OpenSearchHealthCheck>("opensearch")
     .AddCheck<RedisHealthCheck>("redis")
     .AddCheck<RabbitMqHealthCheck>("rabbitmq");
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddInfrastructureIntegration(builder.Configuration);
@@ -103,6 +111,9 @@ builder.Services.AddOpenIddict()
 
         if (isDev)
             aspNetCoreBuilder.DisableTransportSecurityRequirement();
+
+        options.AddEventHandler<OpenIddict.Server.OpenIddictServerEvents.HandleIntrospectionRequestContext>(builder =>
+            builder.UseScopedHandler<Auth.Api.Handlers.ValidateSessionOnIntrospection>());
     })
     .AddValidation(options =>
     {
@@ -164,6 +175,7 @@ if (!app.Environment.IsDevelopment()
 
 await app.Services.SeedAsync(CancellationToken.None);
 
+app.UseForwardedHeaders();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ProblemDetailsMiddleware>();
 

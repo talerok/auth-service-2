@@ -7,6 +7,10 @@ using Auth.Application.Verification;
 using Auth.Application.Verification.Commands.ConfirmEmailVerification;
 using Auth.Application.Verification.Commands.ConfirmPhoneVerification;
 using Auth.Application.Verification.Commands.SendEmailVerification;
+using Auth.Application.Sessions;
+using Auth.Application.Sessions.Commands.RevokeOwnSession;
+using Auth.Application.Sessions.Commands.RevokeUserSessions;
+using Auth.Application.Sessions.Queries.GetUserSessions;
 using Auth.Application.Verification.Commands.SendPhoneVerification;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -90,6 +94,38 @@ public sealed class AccountController(ISender sender, IOptions<PasswordRequireme
         CancellationToken cancellationToken)
     {
         await sender.Send(new ConfirmPhoneVerificationCommand(request.ChallengeId, request.Otp), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpGet("sessions")]
+    [Authorize]
+    [ProducesResponseType(typeof(IReadOnlyCollection<UserSessionResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<IReadOnlyCollection<UserSessionResponse>>> GetSessions(CancellationToken ct)
+    {
+        var currentSid = User.FindFirst("sid")?.Value;
+        Guid? currentSessionId = Guid.TryParse(currentSid, out var parsed) ? parsed : null;
+        return Ok(await sender.Send(new GetUserSessionsQuery(GetUserId(), currentSessionId), ct));
+    }
+
+    [HttpDelete("sessions/{id:guid}")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RevokeSession(Guid id, CancellationToken ct)
+    {
+        await sender.Send(new RevokeOwnSessionCommand(id, GetUserId()), ct);
+        return NoContent();
+    }
+
+    [HttpDelete("sessions")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RevokeAllSessions(CancellationToken ct)
+    {
+        await sender.Send(new RevokeUserSessionsCommand(GetUserId(), "logout-all"), ct);
         return NoContent();
     }
 

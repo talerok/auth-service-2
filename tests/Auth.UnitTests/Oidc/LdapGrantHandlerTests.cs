@@ -3,11 +3,13 @@ using Auth.Application;
 using Auth.Application.Auth.Commands.CreateLoginChallenge;
 using Auth.Application.Oidc.Commands.HandleLdapGrant;
 using Auth.Application.Oidc.Queries.BuildPrincipal;
+using Auth.Application.Sessions.Commands.CreateSession;
 using Auth.Domain;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Oidc.Commands.HandleLdapGrant;
 using FluentAssertions;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -241,10 +243,10 @@ public sealed class LdapGrantHandlerTests
         var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim("sub", user.Id.ToString())]));
         var senderMock = new Mock<ISender>();
         senderMock
-            .Setup(x => x.Send(
-                It.Is<BuildPrincipalQuery>(q => q.UserId == user.Id
-                    && q.AuthMethods != null && q.AuthMethods.SequenceEqual(new[] { "pwd" })),
-                It.IsAny<CancellationToken>()))
+            .Setup(x => x.Send(It.IsAny<CreateSessionCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+        senderMock
+            .Setup(x => x.Send(It.IsAny<BuildPrincipalQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(principal);
 
         var handler = CreateHandler(dbContext, sender: senderMock, ldapAuthenticator: ldapAuthenticator);
@@ -352,10 +354,17 @@ public sealed class LdapGrantHandlerTests
         sender ??= new Mock<ISender>();
         ldapAuthenticator ??= new Mock<ILdapAuthenticator>();
 
+        var httpContext = new DefaultHttpContext();
+        httpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("127.0.0.1");
+        httpContext.Request.Headers["User-Agent"] = "TestAgent/1.0";
+        var httpContextAccessor = new Mock<IHttpContextAccessor>();
+        httpContextAccessor.Setup(x => x.HttpContext).Returns(httpContext);
+
         return new HandleLdapGrantCommandHandler(
             dbContext,
             sender.Object,
             ldapAuthenticator.Object,
+            httpContextAccessor.Object,
             CreateOptions());
     }
 

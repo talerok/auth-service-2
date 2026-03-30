@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Auth.UnitTests" />
+    <InternalsVisibleTo Include="Auth.IntegrationTests" />
+  </ItemGroup>
+
 </Project>

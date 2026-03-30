@@ -4,13 +4,16 @@ using Auth.Application.Auth.Commands.CreatePasswordChangeChallenge;
 using Auth.Application.Auth.Commands.ValidateCredentials;
 using Auth.Application.Oidc.Commands.ValidateCredentialsForLogin;
 using Auth.Application.Oidc.Queries.BuildPrincipal;
+using Auth.Application.Sessions.Commands.CreateSession;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
 namespace Auth.Infrastructure.Oidc.Commands.ValidateCredentialsForLogin;
 
 internal sealed class ValidateCredentialsForLoginCommandHandler(
     ISender sender,
+    IHttpContextAccessor httpContextAccessor,
     IOptions<PasswordExpirationOptions> passwordExpirationOptions) : IRequestHandler<ValidateCredentialsForLoginCommand, CredentialValidationResult>
 {
     public async Task<CredentialValidationResult> Handle(ValidateCredentialsForLoginCommand command, CancellationToken cancellationToken)
@@ -36,8 +39,11 @@ internal sealed class ValidateCredentialsForLoginCommandHandler(
             return new CredentialValidationResult.MfaRequired(mfaChallenge.Id, mfaChallenge.Channel);
         }
 
+        var (ip, ua) = httpContextAccessor.GetClientInfo();
+        var sessionId = await sender.Send(
+            new CreateSessionCommand(user.Id, command.ClientId, "pwd", ip, ua), cancellationToken);
         var principal = await sender.Send(
-            new BuildPrincipalQuery(user.Id, command.Scopes, command.ClientId, ["pwd"]), cancellationToken);
+            new BuildPrincipalQuery(user.Id, command.Scopes, command.ClientId, ["pwd"], sessionId), cancellationToken);
         return new CredentialValidationResult.Success(principal);
     }
 }

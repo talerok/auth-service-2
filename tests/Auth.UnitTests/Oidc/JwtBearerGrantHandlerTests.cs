@@ -4,6 +4,7 @@ using Auth.Application;
 using Auth.Application.Auth.Commands.CreateLoginChallenge;
 using Auth.Application.Oidc.Commands.HandleJwtBearerGrant;
 using Auth.Application.Oidc.Queries.BuildPrincipal;
+using Auth.Application.Sessions.Commands.CreateSession;
 using Auth.Domain;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Oidc.Commands.HandleJwtBearerGrant;
@@ -11,6 +12,7 @@ using FluentAssertions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using static Auth.UnitTests.TestDbContextFactory;
@@ -177,10 +179,10 @@ public sealed class JwtBearerGrantHandlerTests
         var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim("sub", user.Id.ToString())]));
         var senderMock = new Mock<ISender>();
         senderMock
-            .Setup(x => x.Send(
-                It.Is<BuildPrincipalQuery>(q => q.UserId == user.Id
-                    && q.AuthMethods != null && q.AuthMethods.SequenceEqual(new[] { "fed" })),
-                It.IsAny<CancellationToken>()))
+            .Setup(x => x.Send(It.IsAny<CreateSessionCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+        senderMock
+            .Setup(x => x.Send(It.IsAny<BuildPrincipalQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(principal);
 
         var handler = CreateHandler(dbContext, sender: senderMock, tokenValidator: tokenValidator);
@@ -271,10 +273,10 @@ public sealed class JwtBearerGrantHandlerTests
         var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim("sub", user.Id.ToString())]));
         var senderMock = new Mock<ISender>();
         senderMock
-            .Setup(x => x.Send(
-                It.Is<BuildPrincipalQuery>(q => q.UserId == user.Id
-                    && q.AuthMethods != null && q.AuthMethods.SequenceEqual(new[] { "fed" })),
-                It.IsAny<CancellationToken>()))
+            .Setup(x => x.Send(It.IsAny<CreateSessionCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+        senderMock
+            .Setup(x => x.Send(It.IsAny<BuildPrincipalQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(principal);
 
         var handler = CreateHandler(dbContext, sender: senderMock, tokenValidator: tokenValidator);
@@ -309,10 +311,17 @@ public sealed class JwtBearerGrantHandlerTests
         sender ??= new Mock<ISender>();
         tokenValidator ??= new Mock<IOidcTokenValidator>();
 
+        var httpContext = new DefaultHttpContext();
+        httpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("127.0.0.1");
+        httpContext.Request.Headers["User-Agent"] = "TestAgent/1.0";
+        var httpContextAccessor = new Mock<IHttpContextAccessor>();
+        httpContextAccessor.Setup(x => x.HttpContext).Returns(httpContext);
+
         return new HandleJwtBearerGrantCommandHandler(
             dbContext,
             sender.Object,
             tokenValidator.Object,
+            httpContextAccessor.Object,
             NullLogger<HandleJwtBearerGrantCommandHandler>.Instance);
     }
 

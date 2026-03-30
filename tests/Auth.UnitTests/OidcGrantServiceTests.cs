@@ -9,6 +9,7 @@ using Auth.Application.Oidc.Commands.HandleClientCredentialsGrant;
 using Auth.Application.Oidc.Commands.HandleMfaOtpGrant;
 using Auth.Application.Oidc.Commands.ValidateCredentialsForLogin;
 using Auth.Application.Oidc.Queries.BuildPrincipal;
+using Auth.Application.Sessions.Commands.CreateSession;
 using Auth.Application.TwoFactor.Commands.ValidateLoginOtp;
 using Auth.Application.Workspaces.Queries.BuildServiceAccountWorkspaceMasks;
 using Auth.Application.Workspaces.Queries.BuildWorkspaceMasks;
@@ -20,6 +21,7 @@ using Auth.Infrastructure.Oidc.Commands.ValidateCredentialsForLogin;
 using Auth.Infrastructure.Oidc.Queries.BuildPrincipal;
 using FluentAssertions;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -43,6 +45,16 @@ public sealed class OidcGrantServiceTests
         IsInternalAuthEnabled = true
     };
 
+    private static Mock<IHttpContextAccessor> CreateHttpContextAccessor()
+    {
+        var httpContext = new DefaultHttpContext();
+        httpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("127.0.0.1");
+        httpContext.Request.Headers["User-Agent"] = "TestAgent/1.0";
+        var mock = new Mock<IHttpContextAccessor>();
+        mock.Setup(x => x.HttpContext).Returns(httpContext);
+        return mock;
+    }
+
     // ValidateCredentialsForLoginCommandHandler tests
 
     [Fact]
@@ -54,12 +66,11 @@ public sealed class OidcGrantServiceTests
                 It.Is<ValidateCredentialsCommand>(c => c.Username == "testuser" && c.Password == "password"),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        sender.Setup(x => x.Send(
-                It.Is<BuildPrincipalQuery>(q => q.UserId == TestUser.Id
-                    && q.AuthMethods != null && q.AuthMethods.SequenceEqual(new[] { "pwd" })),
-                It.IsAny<CancellationToken>()))
+        sender.Setup(x => x.Send(It.IsAny<CreateSessionCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+        sender.Setup(x => x.Send(It.IsAny<BuildPrincipalQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedPrincipal);
-        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, CreateHttpContextAccessor().Object, Options.Create(new PasswordExpirationOptions()));
 
         var result = await handler.Handle(
             new ValidateCredentialsForLoginCommand("testuser", "password", ["openid", "profile"]), CancellationToken.None);
@@ -88,7 +99,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<CreatePasswordChangeChallengeCommand>(c => c.UserId == user.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(PasswordChangeChallenge.Create(user.Id, DateTime.UtcNow.AddMinutes(15)));
-        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, CreateHttpContextAccessor().Object, Options.Create(new PasswordExpirationOptions()));
 
         var result = await handler.Handle(
             new ValidateCredentialsForLoginCommand("mcp", "pwd", ["openid"]), CancellationToken.None);
@@ -118,7 +129,7 @@ public sealed class OidcGrantServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(PasswordChangeChallenge.Create(user.Id, DateTime.UtcNow.AddMinutes(15)));
         var options = Options.Create(new PasswordExpirationOptions { DefaultMaxAgeDays = 90 });
-        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, options);
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, CreateHttpContextAccessor().Object, options);
 
         var result = await handler.Handle(
             new ValidateCredentialsForLoginCommand("expired", "pwd", ["openid"]), CancellationToken.None);
@@ -144,12 +155,12 @@ public sealed class OidcGrantServiceTests
                 It.Is<ValidateCredentialsCommand>(c => c.Username == "noexp"),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
-        sender.Setup(x => x.Send(
-                It.Is<BuildPrincipalQuery>(q => q.UserId == user.Id),
-                It.IsAny<CancellationToken>()))
+        sender.Setup(x => x.Send(It.IsAny<CreateSessionCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+        sender.Setup(x => x.Send(It.IsAny<BuildPrincipalQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedPrincipal);
         var options = Options.Create(new PasswordExpirationOptions { DefaultMaxAgeDays = 0 });
-        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, options);
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, CreateHttpContextAccessor().Object, options);
 
         var result = await handler.Handle(
             new ValidateCredentialsForLoginCommand("noexp", "pwd", ["openid"]), CancellationToken.None);
@@ -180,7 +191,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<CreateLoginChallengeCommand>(c => c.UserId == user.Id && c.Channel == TwoFactorChannel.Email),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(challenge);
-        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, CreateHttpContextAccessor().Object, Options.Create(new PasswordExpirationOptions()));
 
         var result = await handler.Handle(
             new ValidateCredentialsForLoginCommand("mfa", "pwd", ["openid"]), CancellationToken.None);
@@ -198,7 +209,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<ValidateCredentialsCommand>(c => c.Username == "bad" && c.Password == "bad"),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new AuthException(AuthErrorCatalog.InvalidCredentials));
-        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new ValidateCredentialsForLoginCommandHandler(sender.Object, CreateHttpContextAccessor().Object, Options.Create(new PasswordExpirationOptions()));
 
         var act = () => handler.Handle(
             new ValidateCredentialsForLoginCommand("bad", "bad", ["openid"]), CancellationToken.None);
@@ -219,12 +230,11 @@ public sealed class OidcGrantServiceTests
                 It.Is<ValidateLoginOtpCommand>(c => c.ChallengeId == challengeId && c.Channel == TwoFactorChannel.Email && c.Otp == "123456"),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        sender.Setup(x => x.Send(
-                It.Is<BuildPrincipalQuery>(q => q.UserId == TestUser.Id
-                    && q.AuthMethods != null && q.AuthMethods.SequenceEqual(new[] { "pwd", "otp" })),
-                It.IsAny<CancellationToken>()))
+        sender.Setup(x => x.Send(It.IsAny<CreateSessionCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+        sender.Setup(x => x.Send(It.IsAny<BuildPrincipalQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedPrincipal);
-        var handler = new HandleMfaOtpGrantCommandHandler(sender.Object);
+        var handler = new HandleMfaOtpGrantCommandHandler(sender.Object, CreateHttpContextAccessor().Object);
 
         var principal = await handler.Handle(
             new HandleMfaOtpGrantCommand(challengeId.ToString(), TwoFactorChannel.Email.ToString(), "123456", ["openid", "profile"]),
@@ -242,7 +252,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<ValidateLoginOtpCommand>(c => c.ChallengeId == challengeId && c.Channel == TwoFactorChannel.Email && c.Otp == "000000"),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new AuthException(TwoFactorErrorCatalog.VerificationFailed));
-        var handler = new HandleMfaOtpGrantCommandHandler(sender.Object);
+        var handler = new HandleMfaOtpGrantCommandHandler(sender.Object, CreateHttpContextAccessor().Object);
 
         var act = () => handler.Handle(
             new HandleMfaOtpGrantCommand(challengeId.ToString(), TwoFactorChannel.Email.ToString(), "000000", ["openid"]),

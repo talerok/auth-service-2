@@ -65,6 +65,11 @@ public static class SystemPermissionCatalog
         ("system", 41, "system.service-accounts.delete", "Delete service accounts"),
 
         // system.audit-logs
-        ("system", 42, "system.audit-logs.view", "View audit logs")
+        ("system", 42, "system.audit-logs.view", "View audit logs"),
+
+        // system.sessions
+        ("system", 43, "system.sessions.view", "View sessions"),
+        ("system", 44, "system.sessions.revoke", "Revoke sessions"),
+        ("system", 45, "system.sessions.revoke-all", "Revoke all user sessions")
     ];
 }

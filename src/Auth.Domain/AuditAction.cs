@@ -8,5 +8,6 @@ public enum AuditAction
     Login, MfaVerify, EnableTwoFactor,
     ConfirmTwoFactorActivation, DisableTwoFactor, PasswordChange,
     SendEmailVerification, ConfirmEmailVerification,
-    SendPhoneVerification, ConfirmPhoneVerification
+    SendPhoneVerification, ConfirmPhoneVerification,
+    CreateSession, RevokeSession, RevokeAllSessions
 }

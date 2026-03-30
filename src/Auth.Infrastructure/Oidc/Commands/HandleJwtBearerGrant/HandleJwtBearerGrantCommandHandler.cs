@@ -3,8 +3,10 @@ using Auth.Application;
 using Auth.Application.Auth.Commands.CreateLoginChallenge;
 using Auth.Application.Oidc.Commands.HandleJwtBearerGrant;
 using Auth.Application.Oidc.Queries.BuildPrincipal;
+using Auth.Application.Sessions.Commands.CreateSession;
 using Auth.Domain;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -14,6 +16,7 @@ internal sealed class HandleJwtBearerGrantCommandHandler(
     AuthDbContext dbContext,
     ISender sender,
     IOidcTokenValidator tokenValidator,
+    IHttpContextAccessor httpContextAccessor,
     ILogger<HandleJwtBearerGrantCommandHandler> logger) : IRequestHandler<HandleJwtBearerGrantCommand, CredentialValidationResult>
 {
     public async Task<CredentialValidationResult> Handle(HandleJwtBearerGrantCommand command, CancellationToken cancellationToken)
@@ -56,7 +59,10 @@ internal sealed class HandleJwtBearerGrantCommandHandler(
             return new CredentialValidationResult.MfaRequired(mfaChallenge.Id, mfaChallenge.Channel);
         }
 
-        var principal = await sender.Send(new BuildPrincipalQuery(user.Id, command.Scopes, command.ClientId, ["fed"]), cancellationToken);
+        var (ip, ua) = httpContextAccessor.GetClientInfo();
+        var sessionId = await sender.Send(
+            new CreateSessionCommand(user.Id, command.ClientId, "fed", ip, ua), cancellationToken);
+        var principal = await sender.Send(new BuildPrincipalQuery(user.Id, command.Scopes, command.ClientId, ["fed"], sessionId), cancellationToken);
         return new CredentialValidationResult.Success(principal);
     }
 

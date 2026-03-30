@@ -74,4 +74,5 @@ public sealed class User : EntityBase
 
     public void VerifyEmail() => EmailVerified = true;
     public void VerifyPhone() => PhoneVerified = true;
+
 }

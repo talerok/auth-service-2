@@ -69,6 +69,10 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
                     // Remove hosted services (OpenSearch init, MassTransit bus)
                     services.RemoveAll<Microsoft.Extensions.Hosting.IHostedService>();
 
+                    // Replace Redis-based distributed cache with in-memory (Redis not available in tests)
+                    services.RemoveAll<Microsoft.Extensions.Caching.Distributed.IDistributedCache>();
+                    services.AddDistributedMemoryCache();
+
                     // Remove health checks not available in tests (OpenSearch, Redis, RabbitMQ)
                     services.Configure<Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckServiceOptions>(
                         options =>
@@ -335,4 +339,5 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
         await action(db);
     }
+
 }
