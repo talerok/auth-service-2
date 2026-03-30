@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Events;
 using Auth.Application.Sessions.Commands.RevokeUserSessions;
 using Auth.Domain;
 using MediatR;
@@ -8,6 +9,7 @@ namespace Auth.Infrastructure.Sessions.Commands.RevokeUserSessions;
 
 internal sealed class RevokeUserSessionsCommandHandler(
     AuthDbContext dbContext,
+    IEventBus eventBus,
     IAuditService auditService) : IRequestHandler<RevokeUserSessionsCommand>
 {
     public async Task Handle(RevokeUserSessionsCommand command, CancellationToken ct)
@@ -20,7 +22,13 @@ internal sealed class RevokeUserSessionsCommandHandler(
             .ToListAsync(ct);
 
         foreach (var session in sessions)
+        {
             session.Revoke(command.Reason);
+            await eventBus.PublishAsync(new SessionRevokedEvent
+            {
+                SessionId = session.Id, UserId = command.UserId, Reason = command.Reason
+            }, ct);
+        }
 
         await dbContext.SaveChangesAsync(ct);
 

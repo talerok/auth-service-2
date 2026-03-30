@@ -79,5 +79,5 @@ public sealed class RevokeOwnSessionCommandHandlerTests
     }
 
     private static RevokeOwnSessionCommandHandler CreateHandler(AuthDbContext dbContext) =>
-        new(dbContext, new Mock<IAuditService>().Object);
+        new(dbContext, new Mock<IEventBus>().Object, new Mock<IAuditService>().Object);
 }

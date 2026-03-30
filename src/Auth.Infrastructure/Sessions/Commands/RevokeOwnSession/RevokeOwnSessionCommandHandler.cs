@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Events;
 using Auth.Application.Sessions.Commands.RevokeOwnSession;
 using Auth.Domain;
 using MediatR;
@@ -8,6 +9,7 @@ namespace Auth.Infrastructure.Sessions.Commands.RevokeOwnSession;
 
 internal sealed class RevokeOwnSessionCommandHandler(
     AuthDbContext dbContext,
+    IEventBus eventBus,
     IAuditService auditService) : IRequestHandler<RevokeOwnSessionCommand>
 {
     public async Task Handle(RevokeOwnSessionCommand command, CancellationToken ct)
@@ -22,6 +24,10 @@ internal sealed class RevokeOwnSessionCommandHandler(
             throw new AuthException(AuthErrorCatalog.SessionAlreadyRevoked);
 
         session.Revoke("logout");
+        await eventBus.PublishAsync(new SessionRevokedEvent
+        {
+            SessionId = session.Id, UserId = session.UserId, Reason = "logout"
+        }, ct);
         await dbContext.SaveChangesAsync(ct);
 
         await auditService.LogAsync(

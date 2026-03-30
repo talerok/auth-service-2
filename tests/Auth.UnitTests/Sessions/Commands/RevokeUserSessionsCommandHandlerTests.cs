@@ -62,7 +62,7 @@ public sealed class RevokeUserSessionsCommandHandlerTests
     }
 
     private static RevokeUserSessionsCommandHandler CreateHandler(AuthDbContext dbContext) =>
-        new(dbContext, new Mock<IAuditService>().Object);
+        new(dbContext, new Mock<IEventBus>().Object, new Mock<IAuditService>().Object);
 
     private static User SeedUserWithSessions(AuthDbContext dbContext, out List<UserSession> sessions)
     {
