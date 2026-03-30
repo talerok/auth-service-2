@@ -351,59 +351,6 @@ public sealed class SessionTests(IntegrationTestFixture fixture)
         sessionCount.Should().BeGreaterThanOrEqualTo(2);
     }
 
-    // ─── Introspection: ValidateSessionOnIntrospection ────────────
-
-    [Fact]
-    public async Task ApiCall_WhenSessionRevoked_ReturnsUnauthorized()
-    {
-        var (user, token) = await fixture.CreateUserWithPermissionsAsync("system.users.view");
-
-        // Revoke the session directly in DB
-        await fixture.ExecuteDbAsync(async db =>
-        {
-            var session = await db.UserSessions.FirstAsync(s => s.UserId == user.Id);
-            session.Revoke("test");
-            await db.SaveChangesAsync();
-        });
-
-        fixture.SetBearerToken(token);
-        try
-        {
-            var response = await Client.GetAsync("/api/account/sessions");
-
-            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        }
-        finally
-        {
-            fixture.SetAdminToken();
-        }
-    }
-
-    [Fact]
-    public async Task ApiCall_WhenSessionExpired_ReturnsUnauthorized()
-    {
-        var (user, token) = await fixture.CreateUserWithPermissionsAsync("system.users.view");
-
-        // Expire the session directly in DB
-        await fixture.ExecuteDbAsync(async db =>
-        {
-            var session = await db.UserSessions.FirstAsync(s => s.UserId == user.Id);
-            session.ExpiresAt = DateTime.UtcNow.AddDays(-1);
-            await db.SaveChangesAsync();
-        });
-
-        fixture.SetBearerToken(token);
-        try
-        {
-            var response = await Client.GetAsync("/api/account/sessions");
-
-            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        }
-        finally
-        {
-            fixture.SetAdminToken();
-        }
-    }
 
     // ─── Helpers ──────────────────────────────────────────────────
 

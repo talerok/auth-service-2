@@ -61,7 +61,9 @@ internal sealed class CorsOriginService(
         var dbOrigins = dbContext.Applications
             .AsNoTracking()
             .Where(a => a.IsActive)
-            .SelectMany(a => a.AllowedOrigins)
+            .Select(a => a.AllowedOrigins)
+            .ToList()
+            .SelectMany(o => o)
             .Distinct()
             .ToList();
 

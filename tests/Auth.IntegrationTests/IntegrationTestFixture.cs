@@ -66,6 +66,10 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
                     services.RemoveAll<ISearchMaintenanceService>();
                     services.AddScoped<ISearchMaintenanceService, StubSearchMaintenanceService>();
 
+                    // Replace MassTransit event bus with stub (RabbitMQ not available in tests)
+                    services.RemoveAll<IEventBus>();
+                    services.AddScoped<IEventBus, StubEventBus>();
+
                     // Remove hosted services (OpenSearch init, MassTransit bus)
                     services.RemoveAll<Microsoft.Extensions.Hosting.IHostedService>();
 
