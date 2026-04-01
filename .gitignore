@@ -34,6 +34,8 @@ logs/
 *.pfx
 *.snk
 secrets.json
+.mcp.json
+!.mcp.json.example
 
 # Docker overrides (local only)
 docker-compose.override.yml
@@ -41,3 +43,4 @@ docker-compose.override.yml
 # Python leftovers (if used by scripts)
 __pycache__/
 *.py[cod]
+.sonarqube

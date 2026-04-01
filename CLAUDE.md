@@ -33,6 +33,10 @@ python3 run-tests.py --target unit
 python3 run-tests.py --target integration
 python3 run-tests.py --target all
 python3 run-docker.py --env-file .env --profile local-opensearch
+python3 run-sonar.py server           # запустить SonarQube в Docker
+python3 run-sonar.py scan             # запустить анализ кода
+python3 run-sonar.py scan --skip-tests
+python3 run-sonar.py stop             # остановить SonarQube
 ```
 
 ## Docs

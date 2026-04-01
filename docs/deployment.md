@@ -125,6 +125,57 @@ COMPOSE_PROFILES=mailhog docker compose up -d mailhog
 COMPOSE_PROFILES=local-opensearch,mailhog docker compose up --build -d
 ```
 
+## SonarQube (static analysis)
+
+SonarQube запускается как отдельный Docker-контейнер (не в docker-compose проекта).
+
+### Запуск сервера
+
+```bash
+python3 run-sonar.py server
+```
+
+Создаёт контейнер `sonarqube` с persistent volumes и ждёт готовности.
+
+- UI: `http://localhost:9000`
+- Credentials по умолчанию: `admin` / `admin`
+
+### Настройка
+
+1. Скопируйте шаблон MCP-конфигурации:
+
+```bash
+cp .mcp.json.example .mcp.json
+```
+
+2. Откройте `http://localhost:9000`, войдите как admin (пароль по умолчанию: `admin`)
+3. **My Account > Security > Generate Tokens** — создайте токен типа "User Token"
+4. Впишите токен в оба файла:
+
+```bash
+# .env
+SONAR_TOKEN=sqa_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# .mcp.json → mcpServers.sonarqube.env.SONARQUBE_TOKEN
+```
+
+> `.env` и `.mcp.json` в `.gitignore` — токены в репу не попадают.
+
+### Запуск анализа
+
+```bash
+python3 run-sonar.py scan             # build + tests with coverage + analysis
+python3 run-sonar.py scan --skip-tests # build + analysis (без тестов)
+```
+
+Результаты: `http://localhost:9000/dashboard?id=auth-service`
+
+### Остановка
+
+```bash
+python3 run-sonar.py stop
+```
+
 ## Environment variables
 
 ### Ports
@@ -227,3 +278,11 @@ COMPOSE_PROFILES=local-opensearch,mailhog docker compose up --build -d
 | Variable | Default | Description |
 |---|---|---|
 | `Integration__PasswordExpiration__DefaultMaxAgeDays` | 0 | Глобальный срок действия пароля (0 = отключено) |
+
+### SonarQube
+
+| Variable | Default | Description |
+|---|---|---|
+| `SONAR_HOST_URL` | http://localhost:9000 | URL SonarQube сервера |
+| `SONAR_TOKEN` | — | User token для аутентификации |
+| `SONAR_PROJECT_KEY` | auth-service | Ключ проекта в SonarQube |
