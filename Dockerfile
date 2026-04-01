@@ -14,6 +14,7 @@ RUN dotnet publish "src/Auth.Api/Auth.Api.csproj" -c Release -o /app/publish /p:
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
+USER $APP_UID
 
 COPY --from=build /app/publish .
 EXPOSE 8080
