@@ -46,6 +46,7 @@ await dbContext.SaveChangesAsync(cancellationToken);  // outbox delivers atomica
 | `WorkspaceCreatedEvent` | WorkspaceId, Code | CreateWorkspace |
 | `WorkspaceUpdatedEvent` | WorkspaceId | UpdateWorkspace, PatchWorkspace |
 | `WorkspaceDeletedEvent` | WorkspaceId | SoftDeleteWorkspace |
+| `SessionRevokedEvent` | SessionId, UserId, Reason | RevokeSession, RevokeOwnSession, RevokeUserSessions |
 
 Все события наследуют `IntegrationEventBase` (EventId, Timestamp, CorrelationId).
 
@@ -57,6 +58,7 @@ await dbContext.SaveChangesAsync(cancellationToken);  // outbox delivers atomica
 | Role | Created, Updated, Deleted | RBAC — внешние системы синхронизируют роли |
 | Permission | Created, Updated, Deleted | Bitmask cache invalidation + внешние системы |
 | Workspace | Created, Updated, Deleted | Multi-tenancy — внешние системы создают matching структуры |
+| UserSession | Revoked | Внешние системы реагируют на отзыв сессии (logout, блокировка) |
 | Application | — | Внутренняя сущность OAuth, внешним потребителям не нужна |
 | ServiceAccount | — | Внутренняя сущность OAuth |
 | NotificationTemplate | — | Внутренняя сущность |

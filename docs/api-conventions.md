@@ -107,3 +107,6 @@ Batch-операции выделяем как подресурсы: `PUT /api/r
 | `AUTH_INVALID_PASSWORD_CHANGE_CHALLENGE`  | 401         |
 | `AUTH_INTERNAL_AUTH_DISABLED`             | 403         |
 | `AUTH_SYSTEM_PERMISSION_DELETE_FORBIDDEN` | 400         |
+| `AUTH_SESSION_NOT_FOUND`                 | 404         |
+| `AUTH_SESSION_ALREADY_REVOKED`           | 409         |
+| `AUTH_SESSION_REVOKED`                   | 403         |

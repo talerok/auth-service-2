@@ -410,7 +410,10 @@ sequenceDiagram
 | `auth_time` | id_token |
 | `amr` | id_token |
 | `pwd_exp` | access_token, id_token |
+| `sid` | access_token, id_token |
 | `ws:{code}` | access_token |
+
+`sid` — ID сессии (UUID). Создаётся при каждом логине, привязывает токен к записи в `user_sessions`. Используется для server-side session validation (introspection проверяет `IsRevoked`, `ExpiresAt`, `user.IsActive`).
 
 `pwd_exp` — unix timestamp истечения пароля. Присутствует только если настроен password expiration (глобально или per-user).
 

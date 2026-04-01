@@ -21,6 +21,7 @@
 - `identity_source_links`
 - `notification_templates`
 - `audit_log_entries`
+- `user_sessions`
 
 Принципы:
 
@@ -371,3 +372,29 @@ OAuth2-приложения (authorization code flow). Могут быть publi
 - `IX_audit_log_entries_EntityType_EntityId` ON (`EntityType`, `EntityId`)
 - `IX_audit_log_entries_ActorId` ON (`ActorId`)
 - `IX_audit_log_entries_Timestamp` DESC ON (`Timestamp`)
+
+### Таблица `user_sessions`
+
+Активные и отозванные сессии пользователей. Создаётся при каждом логине, привязывается к токену через claim `sid`.
+
+| Колонка          | Тип          | Nullable | Описание                                |
+| ---------------- | ------------ | -------- | --------------------------------------- |
+| `id`             | uuid         | NO       | PK                                      |
+| `user_id`        | uuid         | NO       | FK → users(id) CASCADE                  |
+| `application_id` | uuid         | YES      | FK → applications(id) SET NULL          |
+| `ip_address`     | varchar(45)  | NO       | IP-адрес клиента при создании           |
+| `user_agent`     | varchar(500) | NO       | User-Agent клиента при создании         |
+| `auth_method`    | varchar(32)  | NO       | Метод аутентификации (pwd, pwd+otp, ldap, fed) |
+| `is_revoked`     | boolean      | NO       | Признак отзыва (DEFAULT false)          |
+| `created_at`     | timestamptz  | NO       | Время создания сессии                   |
+| `expires_at`     | timestamptz  | NO       | Время истечения сессии                  |
+| `last_activity_at` | timestamptz | NO      | Время последней активности (refresh)    |
+| `revoked_at`     | timestamptz  | YES      | Время отзыва                            |
+| `revoked_reason` | varchar(100) | YES      | Причина отзыва                          |
+
+Индексы:
+
+- `IX_user_sessions_UserId` ON (`UserId`)
+- `IX_user_sessions_UserId_Active` ON (`UserId`) WHERE `"IsRevoked" = false`
+- `IX_user_sessions_ApplicationId` ON (`ApplicationId`)
+- `IX_user_sessions_CreatedAt` DESC ON (`CreatedAt`)

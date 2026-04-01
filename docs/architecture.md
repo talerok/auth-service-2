@@ -10,6 +10,10 @@
 
 JWT содержит per-workspace claims `ws:<code>` с bitmask-полномочиями. Скоупы запрашиваются в формате `ws:<workspaceCode>`.
 
+## Sessions
+
+Server-side session management. Каждый логин создаёт `UserSession`, привязанную к токену через claim `sid`. Introspection проверяет статус сессии и активность пользователя на каждом запросе. Подробнее: [docs/sessions.md](sessions.md).
+
 ## Messaging
 
 Асинхронная обработка через MassTransit + RabbitMQ с transactional outbox (EF Core). Domain events для внешних потребителей, internal commands для OpenSearch индексации и OTP delivery.

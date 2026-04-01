@@ -53,6 +53,9 @@
 | 40  | `system.service-accounts.update`       | Update service accounts       |
 | 41  | `system.service-accounts.delete`       | Delete service accounts       |
 | 42  | `system.audit-logs.view`               | View audit logs               |
+| 43  | `system.sessions.view`                 | View sessions                 |
+| 44  | `system.sessions.revoke`               | Revoke sessions               |
+| 45  | `system.sessions.revoke-all`           | Revoke all user sessions      |
 
 ## Упаковка в байты
 
