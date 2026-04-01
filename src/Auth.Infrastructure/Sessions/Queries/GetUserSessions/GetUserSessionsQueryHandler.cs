@@ -8,7 +8,7 @@ namespace Auth.Infrastructure.Sessions.Queries.GetUserSessions;
 internal sealed class GetUserSessionsQueryHandler(
     AuthDbContext dbContext) : IRequestHandler<GetUserSessionsQuery, IReadOnlyCollection<UserSessionResponse>>
 {
-    public async Task<IReadOnlyCollection<UserSessionResponse>> Handle(GetUserSessionsQuery query, CancellationToken ct)
+    public async Task<IReadOnlyCollection<UserSessionResponse>> Handle(GetUserSessionsQuery query, CancellationToken cancellationToken)
     {
         var sessions = await dbContext.UserSessions
             .AsNoTracking()
@@ -29,7 +29,7 @@ internal sealed class GetUserSessionsQueryHandler(
                 s.LastActivityAt,
                 s.RevokedAt,
                 s.RevokedReason))
-            .ToListAsync(ct);
+            .ToListAsync(cancellationToken);
 
         return sessions;
     }

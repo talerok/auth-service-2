@@ -35,12 +35,10 @@ public sealed class PermissionInHandler(
         }
 
         if (permissionBitCache.TryGetBit(requirement.Domain, requirement.Permission, out var bit)
-            && domainMasks.TryGetValue(requirement.Domain, out var encoded))
+            && domainMasks.TryGetValue(requirement.Domain, out var encoded)
+            && PermissionBitmask.HasBit(Convert.FromBase64String(encoded), bit))
         {
-            if (PermissionBitmask.HasBit(Convert.FromBase64String(encoded), bit))
-            {
-                context.Succeed(requirement);
-            }
+            context.Succeed(requirement);
         }
 
         return Task.CompletedTask;

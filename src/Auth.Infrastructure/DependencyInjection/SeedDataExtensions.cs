@@ -10,6 +10,9 @@ namespace Auth.Infrastructure;
 
 public static class SeedDataExtensions
 {
+    private const string AdminUsername = "admin";
+    private const string DefaultLocale = "en-US";
+    private const string SystemAppClientId = "system-app";
     public static async Task SeedAsync(this IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         var distributedLock = serviceProvider.GetRequiredService<IDistributedLock>();
@@ -52,10 +55,10 @@ public static class SeedDataExtensions
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        var role = await db.Roles.FirstOrDefaultAsync(x => x.Name == "admin", cancellationToken);
+        var role = await db.Roles.FirstOrDefaultAsync(x => x.Name == AdminUsername, cancellationToken);
         if (role is null)
         {
-            role = new Role { Name = "admin", Code = "admin", Description = "System administrator" };
+            role = new Role { Name = AdminUsername, Code = AdminUsername, Description = "System administrator" };
             db.Roles.Add(role);
             await db.SaveChangesAsync(cancellationToken);
         }
@@ -75,14 +78,14 @@ public static class SeedDataExtensions
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        var admin = await db.Users.FirstOrDefaultAsync(x => x.Username == "admin", cancellationToken);
+        var admin = await db.Users.FirstOrDefaultAsync(x => x.Username == AdminUsername, cancellationToken);
         if (admin is null)
         {
             admin = new User
             {
-                Username = "admin",
+                Username = AdminUsername,
                 Email = "admin@local",
-                PasswordHash = hasher.Hash("admin"),
+                PasswordHash = hasher.Hash(AdminUsername),
                 IsActive = true,
                 IsInternalAuthEnabled = true
             };
@@ -119,7 +122,7 @@ public static class SeedDataExtensions
     private static async Task SeedNotificationTemplatesAsync(AuthDbContext db, CancellationToken cancellationToken)
     {
         var existingTypes = await db.NotificationTemplates
-            .Where(x => x.Locale == "en-US")
+            .Where(x => x.Locale == DefaultLocale)
             .Select(x => x.Type)
             .ToListAsync(cancellationToken);
         var existingTypeSet = existingTypes.ToHashSet();
@@ -140,7 +143,7 @@ public static class SeedDataExtensions
         new NotificationTemplate
         {
             Type = NotificationTemplateType.TwoFactorEmail,
-            Locale = "en-US",
+            Locale = DefaultLocale,
             Subject = "Your verification code",
             Body = """
                 <html>
@@ -159,13 +162,13 @@ public static class SeedDataExtensions
         new NotificationTemplate
         {
             Type = NotificationTemplateType.TwoFactorSms,
-            Locale = "en-US",
+            Locale = DefaultLocale,
             Body = "Your code: {{otp}}"
         },
         new NotificationTemplate
         {
             Type = NotificationTemplateType.EmailVerification,
-            Locale = "en-US",
+            Locale = DefaultLocale,
             Subject = "Verify your email address",
             Body = """
                 <html>
@@ -184,18 +187,18 @@ public static class SeedDataExtensions
         new NotificationTemplate
         {
             Type = NotificationTemplateType.PhoneVerification,
-            Locale = "en-US",
+            Locale = DefaultLocale,
             Body = "Your verification code: {{otp}}"
         }
     ];
 
     private static async Task SeedApplicationsAsync(AuthDbContext db, CancellationToken cancellationToken)
     {
-        if (!await db.Applications.AnyAsync(x => x.ClientId == "system-app", cancellationToken))
+        if (!await db.Applications.AnyAsync(x => x.ClientId == SystemAppClientId, cancellationToken))
         {
             var app = new Domain.Application
             {
-                ClientId = "system-app",
+                ClientId = SystemAppClientId,
                 Name = "System Application",
                 Description = "System Application",
                 IsActive = true,
@@ -233,11 +236,11 @@ public static class SeedDataExtensions
 
     private static async Task SeedOidcClientsAsync(IOpenIddictApplicationManager appManager, CancellationToken cancellationToken)
     {
-        if (await appManager.FindByClientIdAsync("system-app", cancellationToken) is null)
+        if (await appManager.FindByClientIdAsync(SystemAppClientId, cancellationToken) is null)
         {
             var descriptor = new OpenIddictApplicationDescriptor
             {
-                ClientId = "system-app",
+                ClientId = SystemAppClientId,
                 DisplayName = "System Application",
                 ClientType = ClientTypes.Public,
                 ConsentType = ConsentTypes.Implicit

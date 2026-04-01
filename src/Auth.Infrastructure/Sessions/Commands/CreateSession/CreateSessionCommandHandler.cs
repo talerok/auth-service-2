@@ -12,7 +12,7 @@ internal sealed class CreateSessionCommandHandler(
     IOptions<IntegrationOptions> options,
     IAuditService auditService) : IRequestHandler<CreateSessionCommand, Guid>
 {
-    public async Task<Guid> Handle(CreateSessionCommand command, CancellationToken ct)
+    public async Task<Guid> Handle(CreateSessionCommand command, CancellationToken cancellationToken)
     {
         Guid? applicationId = null;
         if (!string.IsNullOrWhiteSpace(command.ClientId))
@@ -20,7 +20,7 @@ internal sealed class CreateSessionCommandHandler(
             applicationId = await dbContext.Applications
                 .Where(a => a.ClientId == command.ClientId)
                 .Select(a => (Guid?)a.Id)
-                .FirstOrDefaultAsync(ct)
+                .FirstOrDefaultAsync(cancellationToken)
                 ?? throw new AuthException(AuthErrorCatalog.ApplicationNotFound);
         }
 
@@ -33,7 +33,7 @@ internal sealed class CreateSessionCommandHandler(
             options.Value.Oidc.RefreshTokenLifetimeDays);
 
         dbContext.UserSessions.Add(session);
-        await dbContext.SaveChangesAsync(ct);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditService.LogAsync(
             AuditEntityType.Session, session.Id, AuditAction.CreateSession,
@@ -44,7 +44,7 @@ internal sealed class CreateSessionCommandHandler(
                 ["clientId"] = command.ClientId,
                 ["ipAddress"] = command.IpAddress
             },
-            cancellationToken: ct);
+            cancellationToken: cancellationToken);
 
         return session.Id;
     }

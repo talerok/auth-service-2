@@ -34,16 +34,16 @@ internal sealed class GrantConsentCommandHandler(
         var scopesArray = command.Scopes.ToImmutableArray();
 
         // Return existing authorization if one already covers the requested scopes
-        await foreach (var existing in authorizationManager.FindAsync(
+        await using var enumerator = authorizationManager.FindAsync(
             subject: subject,
             client: applicationId,
             status: Statuses.Valid,
             type: AuthorizationTypes.Permanent,
             scopes: scopesArray,
-            cancellationToken: cancellationToken))
-        {
-            return (await authorizationManager.GetIdAsync(existing, cancellationToken))!;
-        }
+            cancellationToken: cancellationToken).GetAsyncEnumerator(cancellationToken);
+
+        if (await enumerator.MoveNextAsync())
+            return (await authorizationManager.GetIdAsync(enumerator.Current, cancellationToken))!;
 
         var descriptor = new OpenIddictAuthorizationDescriptor
         {

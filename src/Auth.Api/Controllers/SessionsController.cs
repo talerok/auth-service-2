@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Auth.Api.Controllers;
 
 [ApiController]
+[Route("")]
 public sealed class SessionsController(ISender sender) : ControllerBase
 {
     [HttpGet("api/users/{userId:guid}/sessions")]

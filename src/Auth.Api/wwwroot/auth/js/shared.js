@@ -1,6 +1,6 @@
 import { t } from './i18n.js';
 
-export async function api(url, method = 'GET', body) {
+export async function api(url, method = 'GET', body = undefined) {
   try {
     const options = { method, headers: {} };
     if (body !== undefined) {

@@ -73,17 +73,14 @@ internal sealed class ResolveAuthorizeRequestQueryHandler(
         string subject, string applicationId,
         ImmutableArray<string> scopes, CancellationToken cancellationToken)
     {
-        await foreach (var auth in authorizationManager.FindAsync(
+        await using var enumerator = authorizationManager.FindAsync(
             subject: subject,
             client: applicationId,
             status: Statuses.Valid,
             type: AuthorizationTypes.Permanent,
             scopes: scopes,
-            cancellationToken: cancellationToken))
-        {
-            return auth;
-        }
+            cancellationToken: cancellationToken).GetAsyncEnumerator(cancellationToken);
 
-        return null;
+        return await enumerator.MoveNextAsync() ? enumerator.Current : null;
     }
 }

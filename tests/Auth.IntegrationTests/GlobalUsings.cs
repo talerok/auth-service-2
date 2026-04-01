@@ -3,6 +3,7 @@ global using System.Net.Http.Json;
 global using System.Net.Http.Headers;
 global using System.Text.Json;
 global using System.Text.Json.Serialization;
+global using Auth.Api;
 global using Auth.Application;
 global using Auth.Infrastructure;
 global using Microsoft.AspNetCore.Mvc;

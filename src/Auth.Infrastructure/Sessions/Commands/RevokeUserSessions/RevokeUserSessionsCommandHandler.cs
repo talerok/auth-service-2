@@ -12,14 +12,14 @@ internal sealed class RevokeUserSessionsCommandHandler(
     IEventBus eventBus,
     IAuditService auditService) : IRequestHandler<RevokeUserSessionsCommand>
 {
-    public async Task Handle(RevokeUserSessionsCommand command, CancellationToken ct)
+    public async Task Handle(RevokeUserSessionsCommand command, CancellationToken cancellationToken)
     {
-        if (!await dbContext.Users.AnyAsync(u => u.Id == command.UserId, ct))
+        if (!await dbContext.Users.AnyAsync(u => u.Id == command.UserId, cancellationToken))
             throw new AuthException(AuthErrorCatalog.UserNotFound);
 
         var sessions = await dbContext.UserSessions
             .Where(s => s.UserId == command.UserId && !s.IsRevoked)
-            .ToListAsync(ct);
+            .ToListAsync(cancellationToken);
 
         foreach (var session in sessions)
         {
@@ -27,13 +27,13 @@ internal sealed class RevokeUserSessionsCommandHandler(
             await eventBus.PublishAsync(new SessionRevokedEvent
             {
                 SessionId = session.Id, UserId = command.UserId, Reason = command.Reason
-            }, ct);
+            }, cancellationToken);
         }
 
-        await dbContext.SaveChangesAsync(ct);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditService.LogAsync(
             AuditEntityType.User, command.UserId, AuditAction.RevokeAllSessions,
-            cancellationToken: ct);
+            cancellationToken: cancellationToken);
     }
 }

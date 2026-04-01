@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace Auth.Application;
 
 public static class OidcConstants
@@ -9,8 +11,8 @@ public static class OidcConstants
     public const string WorkspaceScopePrefix = "ws:";
     public const string WorkspaceWildcardScope = "ws:*";
 
-    public static readonly HashSet<string> AllowedGrantTypes = new(StringComparer.Ordinal)
-    {
+    public static readonly FrozenSet<string> AllowedGrantTypes = ((string[])
+    [
         "authorization_code",
         "client_credentials",
         "refresh_token",
@@ -18,7 +20,7 @@ public static class OidcConstants
         "jwt-bearer",
         "ldap",
         "mfa_otp"
-    };
+    ]).ToFrozenSet(StringComparer.Ordinal);
 
     public static bool IsWildcardWorkspaceScope(IEnumerable<string> scopes)
         => scopes.Contains(WorkspaceWildcardScope);

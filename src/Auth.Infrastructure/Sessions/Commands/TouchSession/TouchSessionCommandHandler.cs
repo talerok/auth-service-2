@@ -10,15 +10,15 @@ internal sealed class TouchSessionCommandHandler(
     AuthDbContext dbContext,
     IOptions<IntegrationOptions> options) : IRequestHandler<TouchSessionCommand>
 {
-    public async Task Handle(TouchSessionCommand command, CancellationToken ct)
+    public async Task Handle(TouchSessionCommand command, CancellationToken cancellationToken)
     {
         var session = await dbContext.UserSessions
-            .FirstOrDefaultAsync(s => s.Id == command.SessionId && s.UserId == command.UserId, ct);
+            .FirstOrDefaultAsync(s => s.Id == command.SessionId && s.UserId == command.UserId, cancellationToken);
 
         if (session is null || !session.IsActive)
             throw new AuthException(AuthErrorCatalog.SessionRevoked);
 
         session.TouchActivity(options.Value.Oidc.RefreshTokenLifetimeDays);
-        await dbContext.SaveChangesAsync(ct);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

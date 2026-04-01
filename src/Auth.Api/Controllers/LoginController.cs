@@ -14,6 +14,7 @@ namespace Auth.Api.Controllers;
 
 [ApiController]
 [EnableCors("Oidc")]
+[Route("")]
 public sealed class LoginController(ISender sender) : ControllerBase
 {
     private const string CookieScheme = "Identity.External";

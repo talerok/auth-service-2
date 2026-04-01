@@ -23,52 +23,7 @@ internal sealed class PatchApplicationCommandHandler(
         if (application is null)
             return null;
 
-        if (command.Name.HasValue)
-            application.Name = command.Name.Value!;
-
-        if (command.Description.HasValue)
-            application.Description = command.Description.Value!;
-
-        if (command.IsActive.HasValue)
-            application.IsActive = command.IsActive.Value;
-
-        if (command.LogoUrl.HasValue)
-            application.LogoUrl = command.LogoUrl.Value;
-
-        if (command.HomepageUrl.HasValue)
-            application.HomepageUrl = command.HomepageUrl.Value;
-
-        if (command.RedirectUris.HasValue)
-            application.SetRedirectUris(command.RedirectUris.Value!);
-
-        if (command.PostLogoutRedirectUris.HasValue)
-            application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris.Value!);
-
-        if (command.AllowedOrigins.HasValue)
-            application.SetAllowedOrigins(command.AllowedOrigins.Value!);
-
-        if (command.Scopes.HasValue)
-            application.SetScopes(command.Scopes.Value!);
-
-        if (command.GrantTypes.HasValue)
-            application.SetGrantTypes(command.GrantTypes.Value!);
-
-        if (command.Audiences.HasValue)
-            application.SetAudiences(command.Audiences.Value!);
-
-        if (command.AccessTokenLifetimeMinutes.HasValue)
-            application.AccessTokenLifetimeMinutes =
-                command.AccessTokenLifetimeMinutes.Value == 0 ? null : command.AccessTokenLifetimeMinutes.Value;
-
-        if (command.RefreshTokenLifetimeMinutes.HasValue)
-            application.RefreshTokenLifetimeMinutes =
-                command.RefreshTokenLifetimeMinutes.Value == 0 ? null : command.RefreshTokenLifetimeMinutes.Value;
-
-        if (command.RequireEmailVerified.HasValue)
-            application.RequireEmailVerified = command.RequireEmailVerified.Value;
-
-        if (command.RequirePhoneVerified.HasValue)
-            application.RequirePhoneVerified = command.RequirePhoneVerified.Value;
+        ApplyPatchFields(application, command);
 
         var changes = AuditDiff.CaptureChanges(dbContext.Entry(application));
         if (changes.Count > 0)
@@ -110,19 +65,9 @@ internal sealed class PatchApplicationCommandHandler(
         if (command.Name.HasValue)
             descriptor.DisplayName = application.Name;
 
-        if (command.RedirectUris.HasValue)
-        {
-            descriptor.RedirectUris.Clear();
-            foreach (var uri in application.RedirectUris)
-                descriptor.RedirectUris.Add(new Uri(uri));
-        }
-
-        if (command.PostLogoutRedirectUris.HasValue)
-        {
-            descriptor.PostLogoutRedirectUris.Clear();
-            foreach (var uri in application.PostLogoutRedirectUris)
-                descriptor.PostLogoutRedirectUris.Add(new Uri(uri));
-        }
+        SyncRedirectUris(descriptor, application, command);
+        SyncPostLogoutRedirectUris(descriptor, application, command);
+        SyncPermissions(descriptor, command, application);
 
         if (command.ConsentType.HasValue)
         {
@@ -133,6 +78,99 @@ internal sealed class PatchApplicationCommandHandler(
             };
         }
 
+        if (command.AccessTokenLifetimeMinutes.HasValue || command.RefreshTokenLifetimeMinutes.HasValue)
+        {
+            GrantTypeMapper.ApplyTokenLifetimes(descriptor,
+                application.AccessTokenLifetimeMinutes, application.RefreshTokenLifetimeMinutes);
+        }
+
+        await appManager.UpdateAsync(oidcApp, descriptor, cancellationToken);
+    }
+
+    private static void ApplyPatchFields(Domain.Application application, PatchApplicationCommand command)
+    {
+        ApplyBasicFields(application, command);
+        ApplyCollectionFields(application, command);
+    }
+
+    private static void ApplyBasicFields(Domain.Application application, PatchApplicationCommand command)
+    {
+        if (command.Name.HasValue)
+            application.Name = command.Name.Value!;
+
+        if (command.Description.HasValue)
+            application.Description = command.Description.Value!;
+
+        if (command.IsActive.HasValue)
+            application.IsActive = command.IsActive.Value;
+
+        if (command.LogoUrl.HasValue)
+            application.LogoUrl = command.LogoUrl.Value;
+
+        if (command.HomepageUrl.HasValue)
+            application.HomepageUrl = command.HomepageUrl.Value;
+
+        if (command.RequireEmailVerified.HasValue)
+            application.RequireEmailVerified = command.RequireEmailVerified.Value;
+
+        if (command.RequirePhoneVerified.HasValue)
+            application.RequirePhoneVerified = command.RequirePhoneVerified.Value;
+
+        if (command.AccessTokenLifetimeMinutes.HasValue)
+            application.AccessTokenLifetimeMinutes =
+                command.AccessTokenLifetimeMinutes.Value == 0 ? null : command.AccessTokenLifetimeMinutes.Value;
+
+        if (command.RefreshTokenLifetimeMinutes.HasValue)
+            application.RefreshTokenLifetimeMinutes =
+                command.RefreshTokenLifetimeMinutes.Value == 0 ? null : command.RefreshTokenLifetimeMinutes.Value;
+    }
+
+    private static void ApplyCollectionFields(Domain.Application application, PatchApplicationCommand command)
+    {
+        if (command.RedirectUris.HasValue)
+            application.SetRedirectUris(command.RedirectUris.Value!);
+
+        if (command.PostLogoutRedirectUris.HasValue)
+            application.SetPostLogoutRedirectUris(command.PostLogoutRedirectUris.Value!);
+
+        if (command.AllowedOrigins.HasValue)
+            application.SetAllowedOrigins(command.AllowedOrigins.Value!);
+
+        if (command.Scopes.HasValue)
+            application.SetScopes(command.Scopes.Value!);
+
+        if (command.GrantTypes.HasValue)
+            application.SetGrantTypes(command.GrantTypes.Value!);
+
+        if (command.Audiences.HasValue)
+            application.SetAudiences(command.Audiences.Value!);
+    }
+
+    private static void SyncRedirectUris(
+        OpenIddictApplicationDescriptor descriptor, Domain.Application application, PatchApplicationCommand command)
+    {
+        if (!command.RedirectUris.HasValue)
+            return;
+
+        descriptor.RedirectUris.Clear();
+        foreach (var uri in application.RedirectUris)
+            descriptor.RedirectUris.Add(new Uri(uri));
+    }
+
+    private static void SyncPostLogoutRedirectUris(
+        OpenIddictApplicationDescriptor descriptor, Domain.Application application, PatchApplicationCommand command)
+    {
+        if (!command.PostLogoutRedirectUris.HasValue)
+            return;
+
+        descriptor.PostLogoutRedirectUris.Clear();
+        foreach (var uri in application.PostLogoutRedirectUris)
+            descriptor.PostLogoutRedirectUris.Add(new Uri(uri));
+    }
+
+    private static void SyncPermissions(
+        OpenIddictApplicationDescriptor descriptor, PatchApplicationCommand command, Domain.Application application)
+    {
         if (command.GrantTypes.HasValue)
         {
             descriptor.Permissions.RemoveWhere(p =>
@@ -151,14 +189,6 @@ internal sealed class PatchApplicationCommandHandler(
             foreach (var scope in application.Scopes)
                 descriptor.Permissions.Add(scopePrefix + scope);
         }
-
-        if (command.AccessTokenLifetimeMinutes.HasValue || command.RefreshTokenLifetimeMinutes.HasValue)
-        {
-            GrantTypeMapper.ApplyTokenLifetimes(descriptor,
-                application.AccessTokenLifetimeMinutes, application.RefreshTokenLifetimeMinutes);
-        }
-
-        await appManager.UpdateAsync(oidcApp, descriptor, cancellationToken);
     }
 
     private static ApplicationDto MapToDto(Domain.Application c) =>

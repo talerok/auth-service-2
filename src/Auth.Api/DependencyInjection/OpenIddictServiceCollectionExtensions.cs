@@ -45,31 +45,8 @@ public static class OpenIddictServiceCollectionExtensions
 
                 options.DisableAccessTokenEncryption();
 
-                if (!string.IsNullOrWhiteSpace(oidc.SigningKeyPath))
-                    options.AddSigningCertificate(new X509Certificate2(oidc.SigningKeyPath, oidc.SigningKeyPassword));
-                else if (isDev)
-                {
-                    var signingCertPath = Path.Combine(oidc.DevCertDirectory, "dev-signing.pfx");
-                    if (!File.Exists(signingCertPath))
-                        throw new InvalidOperationException(
-                            $"Dev signing certificate not found at '{signingCertPath}'. Run: python3 generate-dev-certs.py");
-                    options.AddSigningCertificate(new X509Certificate2(signingCertPath));
-                }
-                else
-                    throw new InvalidOperationException("OIDC signing key is required in non-development environments.");
-
-                if (!string.IsNullOrWhiteSpace(oidc.EncryptionKeyPath))
-                    options.AddEncryptionCertificate(new X509Certificate2(oidc.EncryptionKeyPath, oidc.EncryptionKeyPassword));
-                else if (isDev)
-                {
-                    var encryptionCertPath = Path.Combine(oidc.DevCertDirectory, "dev-encryption.pfx");
-                    if (!File.Exists(encryptionCertPath))
-                        throw new InvalidOperationException(
-                            $"Dev encryption certificate not found at '{encryptionCertPath}'. Run: python3 generate-dev-certs.py");
-                    options.AddEncryptionCertificate(new X509Certificate2(encryptionCertPath));
-                }
-                else
-                    throw new InvalidOperationException("OIDC encryption key is required in non-development environments.");
+                ConfigureSigningCertificate(options, oidc, isDev);
+                ConfigureEncryptionCertificate(options, oidc, isDev);
 
                 var aspNetCoreBuilder = options.UseAspNetCore()
                       .EnableTokenEndpointPassthrough()
@@ -91,5 +68,45 @@ public static class OpenIddictServiceCollectionExtensions
             });
 
         return services;
+    }
+
+    private static void ConfigureSigningCertificate(
+        OpenIddictServerBuilder options, OidcOptions oidc, bool isDev)
+    {
+        if (!string.IsNullOrWhiteSpace(oidc.SigningKeyPath))
+        {
+            options.AddSigningCertificate(new X509Certificate2(oidc.SigningKeyPath, oidc.SigningKeyPassword));
+            return;
+        }
+
+        if (!isDev)
+            throw new InvalidOperationException("OIDC signing key is required in non-development environments.");
+
+        var certPath = Path.Combine(oidc.DevCertDirectory, "dev-signing.pfx");
+        if (!File.Exists(certPath))
+            throw new InvalidOperationException(
+                $"Dev signing certificate not found at '{certPath}'. Run: python3 generate-dev-certs.py");
+
+        options.AddSigningCertificate(new X509Certificate2(certPath));
+    }
+
+    private static void ConfigureEncryptionCertificate(
+        OpenIddictServerBuilder options, OidcOptions oidc, bool isDev)
+    {
+        if (!string.IsNullOrWhiteSpace(oidc.EncryptionKeyPath))
+        {
+            options.AddEncryptionCertificate(new X509Certificate2(oidc.EncryptionKeyPath, oidc.EncryptionKeyPassword));
+            return;
+        }
+
+        if (!isDev)
+            throw new InvalidOperationException("OIDC encryption key is required in non-development environments.");
+
+        var certPath = Path.Combine(oidc.DevCertDirectory, "dev-encryption.pfx");
+        if (!File.Exists(certPath))
+            throw new InvalidOperationException(
+                $"Dev encryption certificate not found at '{certPath}'. Run: python3 generate-dev-certs.py");
+
+        options.AddEncryptionCertificate(new X509Certificate2(certPath));
     }
 }

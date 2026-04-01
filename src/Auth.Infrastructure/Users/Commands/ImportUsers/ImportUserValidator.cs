@@ -18,17 +18,8 @@ internal sealed class ImportUserValidator(
 
     public string? Validate(ImportUserItem item)
     {
-        if (string.IsNullOrWhiteSpace(item.Username) || item.Username.Length > 100)
-            return AuthErrorCatalog.ImportUserInvalidUsername;
-
-        if (string.IsNullOrWhiteSpace(item.FullName) || item.FullName.Length > 200)
-            return AuthErrorCatalog.ImportUserInvalidFullName;
-
-        if (string.IsNullOrWhiteSpace(item.Email) || !EmailRegex.IsMatch(item.Email))
-            return AuthErrorCatalog.ImportUserInvalidEmail;
-
-        if (item.PasswordMaxAgeDays < 0)
-            return AuthErrorCatalog.ImportUserInvalidPasswordMaxAgeDays;
+        var error = ValidateBasicFields(item);
+        if (error is not null) return error;
 
         if (!_seenUsernames.Add(item.Username))
             return AuthErrorCatalog.ImportUserDuplicateUsername;
@@ -46,29 +37,59 @@ internal sealed class ImportUserValidator(
 
         if (item.Workspaces is not null)
         {
-            foreach (var ws in item.Workspaces)
-            {
-                if (!workspacesByCode.ContainsKey(ws.WorkspaceCode))
-                    return AuthErrorCatalog.ImportUserWorkspaceNotFound;
-
-                foreach (var roleCode in ws.RoleCodes)
-                {
-                    if (!rolesByCode.ContainsKey(roleCode))
-                        return AuthErrorCatalog.ImportUserRoleNotFound;
-                }
-            }
+            error = ValidateWorkspaces(item.Workspaces);
+            if (error is not null) return error;
         }
 
         if (item.IdentitySources is not null)
         {
-            foreach (var src in item.IdentitySources)
-            {
-                if (!identitySourcesByCode.TryGetValue(src.IdentitySourceCode, out var idSource))
-                    return AuthErrorCatalog.ImportUserIdentitySourceNotFound;
+            error = ValidateIdentitySources(item.IdentitySources);
+            if (error is not null) return error;
+        }
 
-                if (takenIdentityLinks.Contains((idSource.Id, src.ExternalIdentity)))
-                    return AuthErrorCatalog.ImportUserIdentitySourceLinkConflict;
-            }
+        return null;
+    }
+
+    private static string? ValidateBasicFields(ImportUserItem item)
+    {
+        if (string.IsNullOrWhiteSpace(item.Username) || item.Username.Length > 100)
+            return AuthErrorCatalog.ImportUserInvalidUsername;
+
+        if (string.IsNullOrWhiteSpace(item.FullName) || item.FullName.Length > 200)
+            return AuthErrorCatalog.ImportUserInvalidFullName;
+
+        if (string.IsNullOrWhiteSpace(item.Email) || !EmailRegex.IsMatch(item.Email))
+            return AuthErrorCatalog.ImportUserInvalidEmail;
+
+        if (item.PasswordMaxAgeDays < 0)
+            return AuthErrorCatalog.ImportUserInvalidPasswordMaxAgeDays;
+
+        return null;
+    }
+
+    private string? ValidateWorkspaces(IReadOnlyCollection<ImportUserWorkspaceItem> workspaces)
+    {
+        foreach (var ws in workspaces)
+        {
+            if (!workspacesByCode.ContainsKey(ws.WorkspaceCode))
+                return AuthErrorCatalog.ImportUserWorkspaceNotFound;
+
+            if (ws.RoleCodes.Any(roleCode => !rolesByCode.ContainsKey(roleCode)))
+                return AuthErrorCatalog.ImportUserRoleNotFound;
+        }
+
+        return null;
+    }
+
+    private string? ValidateIdentitySources(IReadOnlyCollection<ImportUserIdentitySourceItem> identitySources)
+    {
+        foreach (var src in identitySources)
+        {
+            if (!identitySourcesByCode.TryGetValue(src.IdentitySourceCode, out var idSource))
+                return AuthErrorCatalog.ImportUserIdentitySourceNotFound;
+
+            if (takenIdentityLinks.Contains((idSource.Id, src.ExternalIdentity)))
+                return AuthErrorCatalog.ImportUserIdentitySourceLinkConflict;
         }
 
         return null;

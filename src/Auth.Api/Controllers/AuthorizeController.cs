@@ -16,6 +16,7 @@ namespace Auth.Api.Controllers;
 
 [ApiController]
 [EnableCors("Oidc")]
+[Route("")]
 public sealed class AuthorizeController(
     ISender sender,
     IOptions<IntegrationOptions> integrationOptions) : ControllerBase

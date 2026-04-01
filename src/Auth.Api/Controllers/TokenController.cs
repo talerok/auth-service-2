@@ -20,6 +20,7 @@ namespace Auth.Api.Controllers;
 
 [ApiController]
 [EnableCors("Oidc")]
+[Route("")]
 public sealed class TokenController(ISender sender) : ControllerBase
 {
     // ─── Token Exchange ──────────────────────────────────────────────

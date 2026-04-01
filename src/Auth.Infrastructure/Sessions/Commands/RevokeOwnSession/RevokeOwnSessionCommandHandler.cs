@@ -12,10 +12,10 @@ internal sealed class RevokeOwnSessionCommandHandler(
     IEventBus eventBus,
     IAuditService auditService) : IRequestHandler<RevokeOwnSessionCommand>
 {
-    public async Task Handle(RevokeOwnSessionCommand command, CancellationToken ct)
+    public async Task Handle(RevokeOwnSessionCommand command, CancellationToken cancellationToken)
     {
         var session = await dbContext.UserSessions
-            .FirstOrDefaultAsync(s => s.Id == command.SessionId, ct);
+            .FirstOrDefaultAsync(s => s.Id == command.SessionId, cancellationToken);
 
         if (session is null || session.UserId != command.UserId)
             throw new AuthException(AuthErrorCatalog.SessionNotFound);
@@ -27,11 +27,11 @@ internal sealed class RevokeOwnSessionCommandHandler(
         await eventBus.PublishAsync(new SessionRevokedEvent
         {
             SessionId = session.Id, UserId = session.UserId, Reason = "logout"
-        }, ct);
-        await dbContext.SaveChangesAsync(ct);
+        }, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditService.LogAsync(
             AuditEntityType.Session, session.Id, AuditAction.RevokeSession,
-            cancellationToken: ct);
+            cancellationToken: cancellationToken);
     }
 }

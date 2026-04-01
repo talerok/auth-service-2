@@ -28,58 +28,10 @@ internal sealed class UpdateIdentitySourceCommandHandler(
         source.IsEnabled = command.IsEnabled;
 
         if (command.OidcConfig is not null)
-        {
-            if (source.OidcConfig is not null)
-            {
-                source.OidcConfig.Authority = command.OidcConfig.Authority;
-                source.OidcConfig.ClientId = command.OidcConfig.ClientId;
-                if (command.OidcConfig.ClientSecret is not null)
-                    source.OidcConfig.ClientSecret = FieldEncryption.Encrypt(command.OidcConfig.ClientSecret, encryptionKey);
-            }
-            else
-            {
-                source.OidcConfig = new IdentitySourceOidcConfig
-                {
-                    IdentitySourceId = source.Id,
-                    Authority = command.OidcConfig.Authority,
-                    ClientId = command.OidcConfig.ClientId,
-                    ClientSecret = command.OidcConfig.ClientSecret is not null
-                        ? FieldEncryption.Encrypt(command.OidcConfig.ClientSecret, encryptionKey)
-                        : null
-                };
-            }
-        }
+            UpdateOidcConfig(source, command.OidcConfig, encryptionKey);
 
         if (command.LdapConfig is not null)
-        {
-            if (source.LdapConfig is not null)
-            {
-                source.LdapConfig.Host = command.LdapConfig.Host;
-                source.LdapConfig.Port = command.LdapConfig.Port;
-                source.LdapConfig.BaseDn = command.LdapConfig.BaseDn;
-                source.LdapConfig.BindDn = command.LdapConfig.BindDn;
-                source.LdapConfig.UseSsl = command.LdapConfig.UseSsl;
-                source.LdapConfig.SearchFilter = command.LdapConfig.SearchFilter;
-                if (command.LdapConfig.BindPassword is not null)
-                    source.LdapConfig.BindPassword = FieldEncryption.Encrypt(command.LdapConfig.BindPassword, encryptionKey);
-            }
-            else
-            {
-                source.LdapConfig = new IdentitySourceLdapConfig
-                {
-                    IdentitySourceId = source.Id,
-                    Host = command.LdapConfig.Host,
-                    Port = command.LdapConfig.Port,
-                    BaseDn = command.LdapConfig.BaseDn,
-                    BindDn = command.LdapConfig.BindDn,
-                    BindPassword = command.LdapConfig.BindPassword is not null
-                        ? FieldEncryption.Encrypt(command.LdapConfig.BindPassword, encryptionKey)
-                        : null,
-                    UseSsl = command.LdapConfig.UseSsl,
-                    SearchFilter = command.LdapConfig.SearchFilter
-                };
-            }
-        }
+            UpdateLdapConfig(source, command.LdapConfig, encryptionKey);
 
         var changes = AuditDiff.CaptureChanges(dbContext.Entry(source));
         if (changes.Count > 0)
@@ -88,5 +40,59 @@ internal sealed class UpdateIdentitySourceCommandHandler(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return IdentitySourceMapper.ToDetailDto(source);
+    }
+
+    private static void UpdateOidcConfig(IdentitySource source, CreateOidcConfigRequest config, string encryptionKey)
+    {
+        if (source.OidcConfig is not null)
+        {
+            source.OidcConfig.Authority = config.Authority;
+            source.OidcConfig.ClientId = config.ClientId;
+            if (config.ClientSecret is not null)
+                source.OidcConfig.ClientSecret = FieldEncryption.Encrypt(config.ClientSecret, encryptionKey);
+        }
+        else
+        {
+            source.OidcConfig = new IdentitySourceOidcConfig
+            {
+                IdentitySourceId = source.Id,
+                Authority = config.Authority,
+                ClientId = config.ClientId,
+                ClientSecret = config.ClientSecret is not null
+                    ? FieldEncryption.Encrypt(config.ClientSecret, encryptionKey)
+                    : null
+            };
+        }
+    }
+
+    private static void UpdateLdapConfig(IdentitySource source, CreateLdapConfigRequest config, string encryptionKey)
+    {
+        if (source.LdapConfig is not null)
+        {
+            source.LdapConfig.Host = config.Host;
+            source.LdapConfig.Port = config.Port;
+            source.LdapConfig.BaseDn = config.BaseDn;
+            source.LdapConfig.BindDn = config.BindDn;
+            source.LdapConfig.UseSsl = config.UseSsl;
+            source.LdapConfig.SearchFilter = config.SearchFilter;
+            if (config.BindPassword is not null)
+                source.LdapConfig.BindPassword = FieldEncryption.Encrypt(config.BindPassword, encryptionKey);
+        }
+        else
+        {
+            source.LdapConfig = new IdentitySourceLdapConfig
+            {
+                IdentitySourceId = source.Id,
+                Host = config.Host,
+                Port = config.Port,
+                BaseDn = config.BaseDn,
+                BindDn = config.BindDn,
+                BindPassword = config.BindPassword is not null
+                    ? FieldEncryption.Encrypt(config.BindPassword, encryptionKey)
+                    : null,
+                UseSsl = config.UseSsl,
+                SearchFilter = config.SearchFilter
+            };
+        }
     }
 }

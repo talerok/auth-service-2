@@ -65,15 +65,19 @@ public sealed class AuditLogEntryConfiguration : IEntityTypeConfiguration<AuditL
         var result = new Dictionary<string, object?>(raw.Count);
         foreach (var (key, value) in raw)
         {
-            result[key] = value is JsonElement el ? el.ValueKind switch
-            {
-                JsonValueKind.String => el.GetString(),
-                JsonValueKind.Number => el.TryGetInt64(out var l) ? (object)l : el.GetDouble(),
-                JsonValueKind.True => true,
-                JsonValueKind.False => false,
-                _ => null
-            } : value;
+            result[key] = value is JsonElement el
+                ? ConvertJsonElement(el)
+                : value;
         }
         return result;
     }
+
+    private static object? ConvertJsonElement(JsonElement el) => el.ValueKind switch
+    {
+        JsonValueKind.String => el.GetString(),
+        JsonValueKind.Number => el.TryGetInt64(out var l) ? (object)l : el.GetDouble(),
+        JsonValueKind.True => true,
+        JsonValueKind.False => false,
+        _ => null
+    };
 }

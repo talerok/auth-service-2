@@ -63,7 +63,7 @@ def wait_for_sonarqube(url: str, timeout: int = 120) -> bool:
             if '"status":"UP"' in data:
                 print("SonarQube is ready.")
                 return True
-        except (urllib.error.URLError, OSError):
+        except OSError:
             pass
         time.sleep(3)
     print("Timeout waiting for SonarQube.")
@@ -92,22 +92,21 @@ def cmd_server(args: argparse.Namespace) -> int:
             IMAGE,
         ])
 
-    if not args.no_wait:
-        if not wait_for_sonarqube(f"http://localhost:{PORT}"):
-            return 1
+    if not args.no_wait and not wait_for_sonarqube(f"http://localhost:{PORT}"):
+        return 1
 
     print(f"\n  UI: http://localhost:{PORT}")
     print("  Default credentials: admin / admin")
     return 0
 
 
-def cmd_stop(args: argparse.Namespace) -> int:
+def cmd_stop(_args: argparse.Namespace) -> int:
     if not is_container_running():
         print(f"Container '{CONTAINER_NAME}' is not running.")
         return 0
     run(["docker", "stop", CONTAINER_NAME])
     print("SonarQube stopped.")
-    return 0
+    return 1
 
 
 def cmd_scan(args: argparse.Namespace) -> int:

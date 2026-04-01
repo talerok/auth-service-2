@@ -89,7 +89,7 @@ internal sealed class CorsOriginService(
             .AsNoTracking()
             .Where(a => a.IsActive)
             .Select(a => a.AllowedOrigins)
-            .ToList()
+            .AsEnumerable()
             .SelectMany(o => o)
             .Distinct()
             .ToList();

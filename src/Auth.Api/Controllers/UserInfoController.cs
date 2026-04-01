@@ -11,6 +11,7 @@ namespace Auth.Api.Controllers;
 
 [ApiController]
 [EnableCors("Oidc")]
+[Route("")]
 public sealed class UserInfoController(ISender sender) : ControllerBase
 {
     [Authorize(AuthenticationSchemes = OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)]
