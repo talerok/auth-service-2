@@ -85,7 +85,7 @@ public static class OpenIddictServiceCollectionExtensions
         var certPath = Path.Combine(oidc.DevCertDirectory, "dev-signing.pfx");
         if (!File.Exists(certPath))
             throw new InvalidOperationException(
-                $"Dev signing certificate not found at '{certPath}'. Run: python3 generate-dev-certs.py");
+                $"Dev signing certificate not found at '{certPath}'. Run: python3 dev-certs.py");
 
         options.AddSigningCertificate(new X509Certificate2(certPath));
     }
@@ -105,7 +105,7 @@ public static class OpenIddictServiceCollectionExtensions
         var certPath = Path.Combine(oidc.DevCertDirectory, "dev-encryption.pfx");
         if (!File.Exists(certPath))
             throw new InvalidOperationException(
-                $"Dev encryption certificate not found at '{certPath}'. Run: python3 generate-dev-certs.py");
+                $"Dev encryption certificate not found at '{certPath}'. Run: python3 dev-certs.py");
 
         options.AddEncryptionCertificate(new X509Certificate2(certPath));
     }
