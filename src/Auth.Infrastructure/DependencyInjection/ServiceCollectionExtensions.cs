@@ -1,14 +1,17 @@
 using Auth.Application;
 using Auth.Infrastructure.Cors;
+using Auth.Infrastructure.Locking;
 using Auth.Infrastructure.Messaging;
 using Auth.Infrastructure.Messaging.Consumers;
 using FluentValidation;
 using MassTransit;
 using MediatR;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using StackExchange.Redis;
 
 namespace Auth.Infrastructure;
 
@@ -31,6 +34,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuditLogs.AuditBehavior<,>));
 
+        services.AddSingleton<IDistributedLock, PgDistributedLock>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<IOidcTokenValidator, OidcTokenValidator>();
         services.AddScoped<ILdapAuthenticator, LdapAuthenticator>();
@@ -72,6 +76,8 @@ public static class ServiceCollectionExtensions
             x.AddConsumer<IndexAuditLogConsumer, IndexAuditLogConsumerDefinition>();
             x.AddConsumer<PermissionCacheInvalidationConsumer>()
                 .Endpoint(e => e.Temporary = true);
+            x.AddConsumer<CorsOriginCacheInvalidationConsumer>()
+                .Endpoint(e => e.Temporary = true);
 
             x.AddEntityFrameworkOutbox<AuthDbContext>(o =>
             {
@@ -92,11 +98,19 @@ public static class ServiceCollectionExtensions
             });
         });
 
+        var redisConnectionString = integration.Redis.ConnectionString;
+        var redis = ConnectionMultiplexer.Connect(redisConnectionString);
+        services.AddSingleton<IConnectionMultiplexer>(redis);
+
         services.AddStackExchangeRedisCache(options =>
         {
-            options.Configuration = integration.Redis.ConnectionString;
+            options.Configuration = redisConnectionString;
             options.InstanceName = "auth:";
         });
+
+        services.AddDataProtection()
+            .SetApplicationName("auth-service")
+            .PersistKeysToStackExchangeRedis(redis, "auth:dataprotection-keys");
 
         services.AddOpenIddict()
             .AddCore(options =>

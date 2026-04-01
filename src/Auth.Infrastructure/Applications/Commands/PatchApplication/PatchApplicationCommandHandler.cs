@@ -1,6 +1,7 @@
 using Auth.Application;
 using Auth.Application.Applications.Commands.PatchApplication;
 using Auth.Application.Messaging.Commands;
+using Auth.Application.Messaging.Events;
 using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,6 @@ namespace Auth.Infrastructure.Applications.Commands.PatchApplication;
 internal sealed class PatchApplicationCommandHandler(
     AuthDbContext dbContext,
     IEventBus eventBus,
-    ICorsOriginService corsOriginService,
     IOpenIddictApplicationManager appManager,
     IAuditContext auditContext) : IRequestHandler<PatchApplicationCommand, ApplicationDto?>
 {
@@ -75,8 +75,9 @@ internal sealed class PatchApplicationCommandHandler(
             auditContext.Details = changes;
 
         await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Application, EntityId = application.Id, Operation = IndexOperation.Index }, cancellationToken);
+        if (command.AllowedOrigins.HasValue)
+            await eventBus.PublishAsync(new CorsOriginsChangedEvent(), cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        corsOriginService.InvalidateCache();
 
         // Audiences are not synced to OpenIddict — stored only in our DB
         // and applied at token issuance time via OidcPrincipalFactory.

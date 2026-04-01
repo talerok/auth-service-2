@@ -21,9 +21,9 @@ public sealed class UpdateApplicationCommandHandlerTests
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync();
         var eventBus = new Mock<IEventBus>();
-        var corsOriginService = new Mock<ICorsOriginService>();
+
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateApplicationCommandHandler(dbContext, eventBus.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new UpdateApplicationCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateApplicationCommand(application.Id, "New", "New desc", false,
@@ -41,9 +41,9 @@ public sealed class UpdateApplicationCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var eventBus = new Mock<IEventBus>();
-        var corsOriginService = new Mock<ICorsOriginService>();
+
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateApplicationCommandHandler(dbContext, eventBus.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new UpdateApplicationCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateApplicationCommand(Guid.NewGuid(), "Name", "Desc", true,
@@ -61,9 +61,9 @@ public sealed class UpdateApplicationCommandHandlerTests
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync();
         var eventBus = new Mock<IEventBus>();
-        var corsOriginService = new Mock<ICorsOriginService>();
+
         var appManager = new Mock<IOpenIddictApplicationManager>();
-        var handler = new UpdateApplicationCommandHandler(dbContext, eventBus.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
+        var handler = new UpdateApplicationCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         var result = await handler.Handle(
             new UpdateApplicationCommand(application.Id, "OAuth App", "updated", true,
@@ -103,8 +103,8 @@ public sealed class UpdateApplicationCommandHandlerTests
             .Callback<object, OpenIddictApplicationDescriptor, CancellationToken>((_, d, _) => capturedDescriptor = d)
             .Returns(ValueTask.CompletedTask);
 
-        var corsOriginService = new Mock<ICorsOriginService>();
-        var handler = new UpdateApplicationCommandHandler(dbContext, eventBus.Object, corsOriginService.Object, appManager.Object, new Mock<IAuditContext>().Object);
+
+        var handler = new UpdateApplicationCommandHandler(dbContext, eventBus.Object, appManager.Object, new Mock<IAuditContext>().Object);
 
         await handler.Handle(
             new UpdateApplicationCommand(application.Id, "OAuth App", "desc", true,

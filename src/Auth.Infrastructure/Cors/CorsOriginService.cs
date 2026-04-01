@@ -23,9 +23,36 @@ internal sealed class CorsOriginService(
         return origins.Contains(origin);
     }
 
-    public void InvalidateCache()
+    public async Task WarmupAsync(CancellationToken cancellationToken)
     {
-        _local = LoadFromDatabase();
+        using var scope = scopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+
+        var dbOrigins = await dbContext.Applications
+            .AsNoTracking()
+            .Where(a => a.IsActive)
+            .Select(a => a.AllowedOrigins)
+            .ToListAsync(cancellationToken);
+
+        var origins = dbOrigins
+            .SelectMany(o => o)
+            .Distinct()
+            .ToList();
+
+        var set = new HashSet<string>(origins, StringComparer.OrdinalIgnoreCase);
+        _local = set;
+
+        try
+        {
+            await distributedCache.SetStringAsync(CacheKey,
+                JsonSerializer.Serialize(origins),
+                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = CacheDuration },
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to write CORS origin cache to Redis");
+        }
     }
 
     private HashSet<string> GetAllowedOrigins()
@@ -50,10 +77,10 @@ internal sealed class CorsOriginService(
             logger.LogWarning(ex, "Failed to read CORS origin cache from Redis");
         }
 
-        return LoadFromDatabase();
+        return LoadFromDatabaseSync();
     }
 
-    private HashSet<string> LoadFromDatabase()
+    private HashSet<string> LoadFromDatabaseSync()
     {
         using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();

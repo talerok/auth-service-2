@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using Auth.Application;
 using Auth.Application.Applications.Commands.CreateApplication;
 using Auth.Application.Messaging.Commands;
+using Auth.Application.Messaging.Events;
 using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using OpenIddict.Abstractions;
@@ -13,7 +14,6 @@ namespace Auth.Infrastructure.Applications.Commands.CreateApplication;
 internal sealed class CreateApplicationCommandHandler(
     AuthDbContext dbContext,
     IEventBus eventBus,
-    ICorsOriginService corsOriginService,
     IOpenIddictApplicationManager appManager,
     IAuditContext auditContext) : IRequestHandler<CreateApplicationCommand, CreateApplicationResponse>
 {
@@ -54,8 +54,8 @@ internal sealed class CreateApplicationCommandHandler(
         dbContext.Applications.Add(application);
         auditContext.Details = AuditDiff.CaptureState(dbContext.Entry(application));
         await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Application, EntityId = application.Id, Operation = IndexOperation.Index }, cancellationToken);
+        await eventBus.PublishAsync(new CorsOriginsChangedEvent(), cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        corsOriginService.InvalidateCache();
 
         var descriptor = BuildDescriptor(command, clientId, clientSecret, scopes, grantTypes);
         await appManager.CreateAsync(descriptor, cancellationToken);

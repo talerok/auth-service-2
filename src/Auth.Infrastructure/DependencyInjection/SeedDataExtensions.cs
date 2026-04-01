@@ -12,10 +12,14 @@ public static class SeedDataExtensions
 {
     public static async Task SeedAsync(this IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
+        var distributedLock = serviceProvider.GetRequiredService<IDistributedLock>();
+        await using var handle = await distributedLock.AcquireAsync("seed-data", cancellationToken);
+
         using var scope = serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         var permissionCache = scope.ServiceProvider.GetRequiredService<IPermissionBitCache>();
+        var corsOriginService = scope.ServiceProvider.GetRequiredService<ICorsOriginService>();
         var appManager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
         var scopeManager = scope.ServiceProvider.GetRequiredService<IOpenIddictScopeManager>();
         await db.Database.MigrateAsync(cancellationToken);
@@ -108,6 +112,7 @@ public static class SeedDataExtensions
         await SeedWorkspaceScopesAsync(scopeManager, db, cancellationToken);
 
         await permissionCache.WarmupAsync(cancellationToken);
+        await corsOriginService.WarmupAsync(cancellationToken);
         await SeedOidcClientsAsync(appManager, cancellationToken);
     }
 

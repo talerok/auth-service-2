@@ -1,6 +1,7 @@
 using Auth.Application;
 using Auth.Application.Applications.Commands.SoftDeleteApplication;
 using Auth.Application.Messaging.Commands;
+using Auth.Application.Messaging.Events;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
@@ -10,7 +11,6 @@ namespace Auth.Infrastructure.Applications.Commands.SoftDeleteApplication;
 internal sealed class SoftDeleteApplicationCommandHandler(
     AuthDbContext dbContext,
     IEventBus eventBus,
-    ICorsOriginService corsOriginService,
     IOpenIddictApplicationManager appManager,
     IAuditContext auditContext) : IRequestHandler<SoftDeleteApplicationCommand, bool>
 {
@@ -23,8 +23,8 @@ internal sealed class SoftDeleteApplicationCommandHandler(
         auditContext.Details = new Dictionary<string, object?> { ["name"] = application.Name, ["clientId"] = application.ClientId };
         application.SoftDelete();
         await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Application, EntityId = application.Id, Operation = IndexOperation.Delete }, cancellationToken);
+        await eventBus.PublishAsync(new CorsOriginsChangedEvent(), cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        corsOriginService.InvalidateCache();
 
         var oidcApp = await appManager.FindByClientIdAsync(application.ClientId, cancellationToken);
         if (oidcApp is not null)

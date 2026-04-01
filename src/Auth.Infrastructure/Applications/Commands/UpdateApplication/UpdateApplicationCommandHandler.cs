@@ -1,6 +1,7 @@
 using Auth.Application;
 using Auth.Application.Applications.Commands.UpdateApplication;
 using Auth.Application.Messaging.Commands;
+using Auth.Application.Messaging.Events;
 using Auth.Infrastructure.AuditLogs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,6 @@ namespace Auth.Infrastructure.Applications.Commands.UpdateApplication;
 internal sealed class UpdateApplicationCommandHandler(
     AuthDbContext dbContext,
     IEventBus eventBus,
-    ICorsOriginService corsOriginService,
     IOpenIddictApplicationManager appManager,
     IAuditContext auditContext) : IRequestHandler<UpdateApplicationCommand, ApplicationDto?>
 {
@@ -44,8 +44,8 @@ internal sealed class UpdateApplicationCommandHandler(
             auditContext.Details = changes;
 
         await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Application, EntityId = application.Id, Operation = IndexOperation.Index }, cancellationToken);
+        await eventBus.PublishAsync(new CorsOriginsChangedEvent(), cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        corsOriginService.InvalidateCache();
 
         await SyncOpenIddictApplication(application, command, cancellationToken);
 

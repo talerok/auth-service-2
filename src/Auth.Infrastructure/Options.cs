@@ -109,6 +109,7 @@ public sealed class OidcOptions
     public string SigningKeyPassword { get; set; } = string.Empty;
     public string EncryptionKeyPath { get; set; } = string.Empty;
     public string EncryptionKeyPassword { get; set; } = string.Empty;
+    public string DevCertDirectory { get; set; } = "./certs";
     public int AccessTokenLifetimeMinutes { get; set; } = 15;
     public int RefreshTokenLifetimeDays { get; set; } = 7;
     public int RefreshTokenReuseLeewaySeconds { get; set; } = 30;

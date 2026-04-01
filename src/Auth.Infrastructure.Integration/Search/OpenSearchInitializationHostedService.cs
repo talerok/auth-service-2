@@ -10,6 +10,7 @@ namespace Auth.Infrastructure.Integration.Search;
 public sealed class OpenSearchInitializationHostedService(
     IServiceProvider serviceProvider,
     IOptions<IntegrationOptions> options,
+    IDistributedLock distributedLock,
     ILogger<OpenSearchInitializationHostedService> logger) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -28,6 +29,12 @@ public sealed class OpenSearchInitializationHostedService(
 
             if (openSearchOptions.ReindexOnStartup)
             {
+                await using var handle = await distributedLock.TryAcquireAsync("opensearch-reindex", cancellationToken);
+                if (handle is null)
+                {
+                    logger.LogInformation("OpenSearch reindex skipped, another instance is handling it");
+                    return;
+                }
                 await maintenanceService.ReindexAllAsync(cancellationToken);
             }
         }
