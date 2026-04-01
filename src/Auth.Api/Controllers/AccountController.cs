@@ -1,7 +1,7 @@
 using Auth.Application;
 using Auth.Application.Auth.Commands.ValidateForcedPasswordChange;
 using Auth.Application.TwoFactor.Commands.ConfirmTwoFactorActivation;
-using Auth.Application.TwoFactor.Commands.DisableTwoFactor;
+
 using Auth.Application.TwoFactor.Commands.EnableTwoFactor;
 using Auth.Application.Verification;
 using Auth.Application.Verification.Commands.ConfirmEmailVerification;
@@ -46,14 +46,6 @@ public sealed class AccountController(ISender sender, IOptions<PasswordRequireme
         CancellationToken cancellationToken)
     {
         await sender.Send(new ConfirmTwoFactorActivationCommand(GetUserId(), request.ChallengeId, request.Channel, request.Otp), cancellationToken);
-        return NoContent();
-    }
-
-    [HttpPost("2fa/disable")]
-    [Authorize]
-    public async Task<IActionResult> DisableTwoFactor(CancellationToken cancellationToken)
-    {
-        await sender.Send(new DisableTwoFactorCommand(GetUserId()), cancellationToken);
         return NoContent();
     }
 
