@@ -272,7 +272,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"]), CancellationToken.None);
@@ -292,7 +292,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "email"]), CancellationToken.None);
@@ -308,7 +308,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "phone"]), CancellationToken.None);
@@ -329,7 +329,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == userNoPhone.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(userNoPhone);
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(userNoPhone.Id, ["openid", "phone"]), CancellationToken.None);
@@ -349,7 +349,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<BuildWorkspaceMasksQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>> { ["system"] = new() { ["system"] = [0b_0000_0101] } });
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:system"]), CancellationToken.None);
@@ -377,7 +377,7 @@ public sealed class OidcGrantServiceTests
                 ["dev"] = new() { ["system"] = [0x02] },
                 ["other"] = new() { ["system"] = [0x04] }
             });
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:system", "ws:dev"]), CancellationToken.None);
@@ -399,7 +399,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<BuildWorkspaceMasksQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>>());
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:unknown"]), CancellationToken.None);
@@ -415,7 +415,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"]), CancellationToken.None);
@@ -432,7 +432,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "profile", "email"]), CancellationToken.None);
@@ -458,7 +458,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"], AuthMethods: ["pwd", "otp"]), CancellationToken.None);
@@ -475,7 +475,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"]), CancellationToken.None);
@@ -491,7 +491,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"], AuthMethods: ["pwd"]), CancellationToken.None);
@@ -516,7 +516,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == user.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions { DefaultMaxAgeDays = 90 }));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions { DefaultMaxAgeDays = 90 }));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(user.Id, ["openid", "profile"]), CancellationToken.None);
@@ -535,7 +535,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestUser);
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions { DefaultMaxAgeDays = 0 }));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions { DefaultMaxAgeDays = 0 }));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "profile"]), CancellationToken.None);
@@ -558,7 +558,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<GetActiveUserQuery>(q => q.UserId == user.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions { DefaultMaxAgeDays = 90 }));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions { DefaultMaxAgeDays = 90 }));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(user.Id, ["openid", "profile"]), CancellationToken.None);
@@ -648,7 +648,7 @@ public sealed class OidcGrantServiceTests
                 ["dev"] = new() { ["system"] = [0x02] },
                 ["staging"] = new() { ["system"] = [0x04] }
             });
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:*"]), CancellationToken.None);
@@ -670,7 +670,7 @@ public sealed class OidcGrantServiceTests
                 It.Is<BuildWorkspaceMasksQuery>(q => q.UserId == TestUser.Id),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>>());
-        var handler = new BuildPrincipalQueryHandler(sender.Object, Options.Create(new PasswordExpirationOptions()));
+        var handler = new BuildPrincipalQueryHandler(sender.Object, CreateDbContext(), Options.Create(new PasswordExpirationOptions()));
 
         var principal = await handler.Handle(
             new BuildPrincipalQuery(TestUser.Id, ["openid", "ws:*"]), CancellationToken.None);
@@ -741,4 +741,114 @@ public sealed class OidcGrantServiceTests
         wsClaim!.Value.Should().Contain("system");
     }
 
+    // BuildPrincipalQueryHandler scope filtering tests
+
+    [Fact]
+    public async Task BuildPrincipal_WhenClientId_FiltersScopesToApplicationAllowed()
+    {
+        var dbContext = CreateDbContext();
+        var app = new Domain.Application
+        {
+            Name = "Test App", ClientId = "test-app", IsActive = true
+        };
+        app.SetScopes(["email", "profile"]);
+        dbContext.Applications.Add(app);
+        await dbContext.SaveChangesAsync();
+
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(It.IsAny<GetActiveUserQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestUser);
+        sender.Setup(x => x.Send(It.IsAny<GetApplicationAudiencesQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
+        var handler = new BuildPrincipalQueryHandler(sender.Object, dbContext, Options.Create(new PasswordExpirationOptions()));
+
+        var principal = await handler.Handle(
+            new BuildPrincipalQuery(TestUser.Id, ["openid", "email", "phone"], ClientId: "test-app"), CancellationToken.None);
+
+        principal.FindFirst(Claims.Email)!.Value.Should().Be("test@example.com");
+        principal.FindFirst(Claims.PhoneNumber).Should().BeNull("phone is not in application's allowed scopes");
+    }
+
+    [Fact]
+    public async Task BuildPrincipal_WhenClientId_PassthroughScopesAlwaysPresent()
+    {
+        var dbContext = CreateDbContext();
+        var app = new Domain.Application
+        {
+            Name = "Minimal App", ClientId = "minimal-app", IsActive = true
+        };
+        app.SetScopes(["profile"]);
+        dbContext.Applications.Add(app);
+        await dbContext.SaveChangesAsync();
+
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(It.IsAny<GetActiveUserQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestUser);
+        sender.Setup(x => x.Send(It.IsAny<GetApplicationAudiencesQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
+        var handler = new BuildPrincipalQueryHandler(sender.Object, dbContext, Options.Create(new PasswordExpirationOptions()));
+
+        var principal = await handler.Handle(
+            new BuildPrincipalQuery(TestUser.Id, ["openid", "offline_access", "profile", "email"], ClientId: "minimal-app"), CancellationToken.None);
+
+        principal.FindFirst(Claims.Subject).Should().NotBeNull("openid is passthrough");
+        principal.FindFirst(Claims.Name)!.Value.Should().Be("Test User", "profile is allowed");
+        principal.FindFirst(Claims.Email).Should().BeNull("email is not in application's allowed scopes");
+    }
+
+    [Fact]
+    public async Task BuildPrincipal_WhenClientIdWithWsWildcard_AllowsWorkspaceScopes()
+    {
+        var dbContext = CreateDbContext();
+        var app = new Domain.Application
+        {
+            Name = "WS App", ClientId = "ws-app", IsActive = true
+        };
+        app.SetScopes(["email", "ws:*"]);
+        dbContext.Applications.Add(app);
+        await dbContext.SaveChangesAsync();
+
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(
+                It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestUser);
+        sender.Setup(x => x.Send(
+                It.Is<BuildWorkspaceMasksQuery>(q => q.UserId == TestUser.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, Dictionary<string, byte[]>>
+            {
+                ["finance"] = new() { ["system"] = [0x01] }
+            });
+        sender.Setup(x => x.Send(It.IsAny<GetApplicationAudiencesQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
+        var handler = new BuildPrincipalQueryHandler(sender.Object, dbContext, Options.Create(new PasswordExpirationOptions()));
+
+        var principal = await handler.Handle(
+            new BuildPrincipalQuery(TestUser.Id, ["openid", "email", "phone", "ws:finance"], ClientId: "ws-app"), CancellationToken.None);
+
+        principal.FindFirst(Claims.Email).Should().NotBeNull("email is allowed");
+        principal.FindFirst(Claims.PhoneNumber).Should().BeNull("phone is not allowed");
+        principal.FindFirst("ws:finance").Should().NotBeNull("ws:* allows any ws: scope");
+    }
+
+    [Fact]
+    public async Task BuildPrincipal_WhenApplicationNotFound_ReturnsScopesAsIs()
+    {
+        var dbContext = CreateDbContext();
+        var sender = new Mock<ISender>();
+        sender.Setup(x => x.Send(
+                It.Is<GetActiveUserQuery>(q => q.UserId == TestUser.Id),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestUser);
+        sender.Setup(x => x.Send(It.IsAny<GetApplicationAudiencesQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
+        var handler = new BuildPrincipalQueryHandler(sender.Object, dbContext, Options.Create(new PasswordExpirationOptions()));
+
+        var principal = await handler.Handle(
+            new BuildPrincipalQuery(TestUser.Id, ["openid", "email", "phone"], ClientId: "nonexistent"), CancellationToken.None);
+
+        principal.FindFirst(Claims.Email).Should().NotBeNull("no app found — scopes pass through");
+        principal.FindFirst(Claims.PhoneNumber).Should().NotBeNull("no app found — scopes pass through");
+    }
 }
