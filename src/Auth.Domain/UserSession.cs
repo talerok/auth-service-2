@@ -43,7 +43,12 @@ public sealed class UserSession
 
     public bool IsActive => !IsRevoked && ExpiresAt > DateTime.UtcNow;
 
-    public void TouchActivity() => LastActivityAt = DateTime.UtcNow;
+    public void TouchActivity(int refreshTokenLifetimeDays)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(refreshTokenLifetimeDays);
+        ExpiresAt = DateTime.UtcNow.AddDays(refreshTokenLifetimeDays);
+        LastActivityAt = DateTime.UtcNow;
+    }
 
     public void Revoke(string reason)
     {

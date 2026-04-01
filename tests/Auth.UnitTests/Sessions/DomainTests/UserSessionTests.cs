@@ -111,14 +111,16 @@ public sealed class UserSessionTests
     }
 
     [Fact]
-    public void TouchActivity_UpdatesLastActivityAt()
+    public void TouchActivity_UpdatesLastActivityAtAndExpiresAt()
     {
         var session = UserSession.Create(Guid.NewGuid(), "127.0.0.1", "UA", null, "pwd", 7);
         var before = session.LastActivityAt;
+        var oldExpiry = session.ExpiresAt;
 
-        session.TouchActivity();
+        session.TouchActivity(7);
 
         session.LastActivityAt.Should().BeOnOrAfter(before);
+        session.ExpiresAt.Should().BeOnOrAfter(oldExpiry);
     }
 
     [Fact]
@@ -187,5 +189,37 @@ public sealed class UserSessionTests
         session.Revoke(longReason);
 
         session.RevokedReason.Should().HaveLength(100);
+    }
+
+    [Fact]
+    public void IsActive_WhenExpired_ReturnsFalse()
+    {
+        var session = UserSession.Create(Guid.NewGuid(), "127.0.0.1", "UA", null, "pwd", 7);
+        session.ExpiresAt = DateTime.UtcNow.AddDays(-1);
+
+        session.IsActive.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void TouchActivity_WithZeroOrNegativeDays_Throws(int days)
+    {
+        var session = UserSession.Create(Guid.NewGuid(), "127.0.0.1", "UA", null, "pwd", 7);
+
+        var act = () => session.TouchActivity(days);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void TouchActivity_ExtendsExpiresAtByLifetime()
+    {
+        var session = UserSession.Create(Guid.NewGuid(), "127.0.0.1", "UA", null, "pwd", 1);
+        session.ExpiresAt = DateTime.UtcNow.AddMinutes(5);
+
+        session.TouchActivity(7);
+
+        session.ExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddDays(7), TimeSpan.FromSeconds(2));
     }
 }

@@ -73,19 +73,17 @@ public sealed class TokenController(ISender sender) : ControllerBase
             .FindAll(Claims.AuthenticationMethodReference)
             .Select(c => c.Value).ToList();
 
-        Guid? sessionId = null;
         var sidClaim = authResult.Principal.FindFirst("sid")?.Value;
-        if (Guid.TryParse(sidClaim, out var parsedSid))
+        if (!Guid.TryParse(sidClaim, out var sessionId))
+            return OidcForbid(Errors.InvalidGrant, "The session identifier is missing.");
+
+        try
         {
-            sessionId = parsedSid;
-            try
-            {
-                await sender.Send(new TouchSessionCommand(parsedSid, userId), cancellationToken);
-            }
-            catch (AuthException)
-            {
-                return OidcForbid(Errors.InvalidGrant, "The session has been revoked.");
-            }
+            await sender.Send(new TouchSessionCommand(sessionId, userId), cancellationToken);
+        }
+        catch (AuthException)
+        {
+            return OidcForbid(Errors.InvalidGrant, "The session has been revoked.");
         }
 
         var principal = await sender.Send(new BuildPrincipalQuery(

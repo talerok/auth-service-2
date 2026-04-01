@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Events;
 using Auth.Application.Sessions.Commands.RevokeUserSessions;
 using Auth.Domain;
 using Auth.Infrastructure;
@@ -16,7 +17,8 @@ public sealed class RevokeUserSessionsCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var user = SeedUserWithSessions(dbContext, out var sessions);
-        var handler = CreateHandler(dbContext);
+        var eventBus = new Mock<IEventBus>();
+        var handler = CreateHandler(dbContext, eventBus);
 
         await handler.Handle(
             new RevokeUserSessionsCommand(user.Id, "revoke-all"), CancellationToken.None);
@@ -26,6 +28,9 @@ public sealed class RevokeUserSessionsCommandHandlerTests
             s.IsRevoked.Should().BeTrue();
             s.RevokedReason.Should().Be("revoke-all");
         });
+        eventBus.Verify(
+            x => x.PublishAsync(It.IsAny<SessionRevokedEvent>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(sessions.Count));
     }
 
     [Fact]
@@ -39,7 +44,8 @@ public sealed class RevokeUserSessionsCommandHandlerTests
         revoked.Revoke("old");
         dbContext.UserSessions.AddRange(active, revoked);
         await dbContext.SaveChangesAsync();
-        var handler = CreateHandler(dbContext);
+        var eventBus = new Mock<IEventBus>();
+        var handler = CreateHandler(dbContext, eventBus);
 
         await handler.Handle(
             new RevokeUserSessionsCommand(user.Id, "revoke-all"), CancellationToken.None);
@@ -47,6 +53,9 @@ public sealed class RevokeUserSessionsCommandHandlerTests
         active.IsRevoked.Should().BeTrue();
         active.RevokedReason.Should().Be("revoke-all");
         revoked.RevokedReason.Should().Be("old");
+        eventBus.Verify(
+            x => x.PublishAsync(It.IsAny<SessionRevokedEvent>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -61,8 +70,9 @@ public sealed class RevokeUserSessionsCommandHandlerTests
         await act.Should().ThrowAsync<AuthException>();
     }
 
-    private static RevokeUserSessionsCommandHandler CreateHandler(AuthDbContext dbContext) =>
-        new(dbContext, new Mock<IEventBus>().Object, new Mock<IAuditService>().Object);
+    private static RevokeUserSessionsCommandHandler CreateHandler(
+        AuthDbContext dbContext, Mock<IEventBus>? eventBus = null) =>
+        new(dbContext, (eventBus ?? new Mock<IEventBus>()).Object, new Mock<IAuditService>().Object);
 
     private static User SeedUserWithSessions(AuthDbContext dbContext, out List<UserSession> sessions)
     {
