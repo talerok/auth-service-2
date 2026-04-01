@@ -1,8 +1,7 @@
-using System.Security.Cryptography.X509Certificates;
 using Auth.Api;
 using Auth.Api.Cors;
-using Auth.Application;
 using Auth.Api.HealthChecks;
+using Auth.Application.Common;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Integration;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +9,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 using OpenIddict.Validation.AspNetCore;
 using Serilog;
-using Auth.Application.Common;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
@@ -58,96 +56,24 @@ builder.Services.AddInfrastructureIntegration(builder.Configuration);
 var integration = builder.Configuration.GetSection("Integration").Get<IntegrationOptions>() ?? new IntegrationOptions();
 var oidc = integration.Oidc;
 
-builder.Services.AddOpenIddict()
-    .AddServer(options =>
-    {
-        options.SetTokenEndpointUris("/connect/token")
-              .SetUserInfoEndpointUris("/connect/userinfo")
-              .SetAuthorizationEndpointUris("/connect/authorize")
-              .SetEndSessionEndpointUris("/connect/logout")
-              .SetRevocationEndpointUris("/connect/revocation")
-              .SetIntrospectionEndpointUris("/connect/introspect");
-
-        options.RequireProofKeyForCodeExchange();
-
-        options.AllowRefreshTokenFlow()
-              .AllowClientCredentialsFlow()
-              .AllowAuthorizationCodeFlow()
-              .AllowPasswordFlow()
-              .AllowCustomFlow(OidcConstants.MfaOtpGrantType)
-              .AllowCustomFlow(OidcConstants.JwtBearerGrantType)
-              .AllowCustomFlow(OidcConstants.LdapGrantType);
-
-        options.RegisterScopes("openid", "profile", "email", "phone", "offline_access", "ws:*");
-
-        options.SetAccessTokenLifetime(TimeSpan.FromMinutes(oidc.AccessTokenLifetimeMinutes));
-        options.SetRefreshTokenLifetime(TimeSpan.FromDays(oidc.RefreshTokenLifetimeDays));
-        options.SetRefreshTokenReuseLeeway(TimeSpan.FromSeconds(oidc.RefreshTokenReuseLeewaySeconds));
-
-        options.DisableAccessTokenEncryption();
-
-        var isDev = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing");
-
-        if (!string.IsNullOrWhiteSpace(oidc.SigningKeyPath))
-            options.AddSigningCertificate(new X509Certificate2(oidc.SigningKeyPath, oidc.SigningKeyPassword));
-        else if (isDev)
-        {
-            var signingCertPath = Path.Combine(oidc.DevCertDirectory, "dev-signing.pfx");
-            if (!File.Exists(signingCertPath))
-                throw new InvalidOperationException(
-                    $"Dev signing certificate not found at '{signingCertPath}'. Run: python3 generate-dev-certs.py");
-            options.AddSigningCertificate(new X509Certificate2(signingCertPath));
-        }
-        else
-            throw new InvalidOperationException("OIDC signing key is required in non-development environments.");
-
-        if (!string.IsNullOrWhiteSpace(oidc.EncryptionKeyPath))
-            options.AddEncryptionCertificate(new X509Certificate2(oidc.EncryptionKeyPath, oidc.EncryptionKeyPassword));
-        else if (isDev)
-        {
-            var encryptionCertPath = Path.Combine(oidc.DevCertDirectory, "dev-encryption.pfx");
-            if (!File.Exists(encryptionCertPath))
-                throw new InvalidOperationException(
-                    $"Dev encryption certificate not found at '{encryptionCertPath}'. Run: python3 generate-dev-certs.py");
-            options.AddEncryptionCertificate(new X509Certificate2(encryptionCertPath));
-        }
-        else
-            throw new InvalidOperationException("OIDC encryption key is required in non-development environments.");
-
-        var aspNetCoreBuilder = options.UseAspNetCore()
-              .EnableTokenEndpointPassthrough()
-              .EnableUserInfoEndpointPassthrough()
-              .EnableAuthorizationEndpointPassthrough()
-              .EnableEndSessionEndpointPassthrough()
-              .EnableStatusCodePagesIntegration();
-
-        if (isDev)
-            aspNetCoreBuilder.DisableTransportSecurityRequirement();
-
-        options.AddEventHandler<OpenIddict.Server.OpenIddictServerEvents.HandleIntrospectionRequestContext>(builder =>
-            builder.UseScopedHandler<Auth.Api.Handlers.ValidateSessionOnIntrospection>());
-    })
-    .AddValidation(options =>
-    {
-        options.UseLocalServer();
-        options.UseAspNetCore();
-    });
+builder.Services.AddOpenIddictServer(builder.Configuration, builder.Environment);
 
 var corsOrigins = integration.Cors.GetParsedOrigins();
 builder.Services.AddCors(options =>
 {
-    if (corsOrigins.Length > 0)
-    {
-        options.AddDefaultPolicy(policy =>
-        {
-            policy
-                .WithOrigins(corsOrigins)
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
-        });
-    }
+    if (corsOrigins.Length == 0)
+        return;
+
+    options.AddDefaultPolicy(policy =>
+       {
+           policy
+               .WithOrigins(corsOrigins)
+               .AllowAnyHeader()
+               .AllowAnyMethod()
+               .AllowCredentials();
+       });
 });
+
 builder.Services.AddSingleton<IConfigureOptions<Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions>, ConfigureOidcCorsOptions>();
 
 builder.Services.AddAuthentication(options =>
