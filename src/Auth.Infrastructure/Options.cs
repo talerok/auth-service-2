@@ -19,6 +19,7 @@ public sealed class IntegrationOptions
     public PasswordExpirationOptions PasswordExpiration { get; set; } = new();
     public RabbitMqOptions RabbitMq { get; set; } = new();
     public RedisOptions Redis { get; set; } = new();
+    public CleanupOptions Cleanup { get; set; } = new();
 }
 
 public sealed class PostgreSqlOptions
@@ -101,6 +102,42 @@ public sealed class RabbitMqOptions
 public sealed class RedisOptions
 {
     public string ConnectionString { get; set; } = "localhost:6379";
+}
+
+public sealed class CleanupOptions
+{
+    public SessionCleanupOptions Sessions { get; set; } = new();
+    public TwoFactorCleanupOptions TwoFactorChallenges { get; set; } = new();
+    public PasswordChallengeCleanupOptions PasswordChangeChallenges { get; set; } = new();
+    public AuditLogCleanupOptions AuditLog { get; set; } = new();
+}
+
+public sealed class SessionCleanupOptions
+{
+    public int IntervalMinutes { get; set; } = 60;
+    public int RetentionDays { get; set; } = 7;
+    public int BatchSize { get; set; } = 1000;
+}
+
+public sealed class TwoFactorCleanupOptions
+{
+    public int IntervalMinutes { get; set; } = 30;
+    public int RetentionHours { get; set; } = 24;
+    public int BatchSize { get; set; } = 1000;
+}
+
+public sealed class PasswordChallengeCleanupOptions
+{
+    public int IntervalMinutes { get; set; } = 30;
+    public int RetentionHours { get; set; } = 24;
+    public int BatchSize { get; set; } = 1000;
+}
+
+public sealed class AuditLogCleanupOptions
+{
+    public int IntervalMinutes { get; set; } = 1440;
+    public int RetentionDays { get; set; } = 365;
+    public int BatchSize { get; set; } = 1000;
 }
 
 public sealed class OidcOptions

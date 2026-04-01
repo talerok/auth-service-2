@@ -24,7 +24,9 @@ public sealed class IndexEntityConsumerTests
         var context = new Mock<ConsumeContext<IndexEntityRequested>>();
         context.Setup(x => x.Message).Returns(new IndexEntityRequested
         {
-            EntityType = entityType, EntityId = entityId, Operation = operation
+            EntityType = entityType,
+            EntityId = entityId,
+            Operation = operation
         });
         context.Setup(x => x.CancellationToken).Returns(CancellationToken.None);
         return context;

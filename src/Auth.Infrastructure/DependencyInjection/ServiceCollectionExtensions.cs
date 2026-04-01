@@ -1,5 +1,7 @@
 using Auth.Application;
 using Auth.Infrastructure.Cors;
+using Auth.Infrastructure.DistributedJobs;
+using Auth.Infrastructure.DistributedJobs.Cleanup;
 using Auth.Infrastructure.Locking;
 using Auth.Infrastructure.Messaging;
 using Auth.Infrastructure.Messaging.Consumers;
@@ -118,6 +120,11 @@ public static class ServiceCollectionExtensions
                 options.UseEntityFrameworkCore()
                       .UseDbContext<AuthDbContext>();
             });
+
+        services.AddDistributedJob<SessionCleanupJob>();
+        services.AddDistributedJob<TwoFactorChallengeCleanupJob>();
+        services.AddDistributedJob<PasswordChallengeCleanupJob>();
+        services.AddDistributedJob<AuditLogCleanupJob>();
 
         return services;
     }
