@@ -44,6 +44,13 @@ services:
       Integration__RabbitMq__Username: ${RABBITMQ_USER:-guest}
       Integration__RabbitMq__Password: ${RABBITMQ_PASSWORD:-guest}
       Integration__Redis__ConnectionString: ${REDIS_CONNECTION_STRING:-redis:6379}
+
+      Integration__RateLimit__Auth__PermitLimit: ${INTEGRATION__RATELIMIT__AUTH__PERMITLIMIT:-10}
+      Integration__RateLimit__Auth__WindowSeconds: ${INTEGRATION__RATELIMIT__AUTH__WINDOWSECONDS:-900}
+      Integration__RateLimit__TwoFactor__PermitLimit: ${INTEGRATION__RATELIMIT__TWOFACTOR__PERMITLIMIT:-5}
+      Integration__RateLimit__TwoFactor__WindowSeconds: ${INTEGRATION__RATELIMIT__TWOFACTOR__WINDOWSECONDS:-3600}
+      Integration__RateLimit__Global__PermitLimit: ${INTEGRATION__RATELIMIT__GLOBAL__PERMITLIMIT:-0}
+      Integration__RateLimit__Global__WindowSeconds: ${INTEGRATION__RATELIMIT__GLOBAL__WINDOWSECONDS:-60}
     volumes:
       - ./certs:/app/certs:ro
     ports:

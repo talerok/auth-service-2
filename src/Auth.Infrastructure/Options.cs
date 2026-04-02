@@ -21,6 +21,7 @@ public sealed class IntegrationOptions
     public RedisOptions Redis { get; set; } = new();
     public CleanupOptions Cleanup { get; set; } = new();
     public AccountLockoutOptions AccountLockout { get; set; } = new();
+    public RateLimitOptions RateLimit { get; set; } = new();
 }
 
 public sealed class PostgreSqlOptions
@@ -145,6 +146,19 @@ public sealed class AccountLockoutOptions
 {
     public int MaxFailedAttempts { get; set; } = 5;
     public int LockoutDurationMinutes { get; set; } = 15;
+}
+
+public sealed class RateLimitOptions
+{
+    public RateLimitPolicyOptions Global { get; set; } = new();
+    public RateLimitPolicyOptions Auth { get; set; } = new();
+    public RateLimitPolicyOptions TwoFactor { get; set; } = new();
+}
+
+public sealed class RateLimitPolicyOptions
+{
+    public int PermitLimit { get; set; }
+    public int WindowSeconds { get; set; } = 60;
 }
 
 public sealed class OidcOptions

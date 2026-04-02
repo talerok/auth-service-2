@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Auth.Api.RateLimit;
 using Auth.Application;
 using Auth.Application.Oidc.Commands.GrantConsent;
 using Auth.Application.Oidc.Commands.HandleMfaOtpGrant;
@@ -15,6 +16,7 @@ namespace Auth.Api.Controllers;
 [ApiController]
 [EnableCors("Oidc")]
 [Route("")]
+[RateLimit(RateLimitPolicies.Auth)]
 public sealed class LoginController(ISender sender) : ControllerBase
 {
     private const string CookieScheme = "Identity.External";

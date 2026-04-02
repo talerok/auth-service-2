@@ -1,6 +1,7 @@
 using Auth.Api;
 using Auth.Api.Cors;
 using Auth.Api.HealthChecks;
+using Auth.Api.RateLimit;
 using Auth.Application.Common;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Integration;
@@ -137,6 +138,7 @@ app.Use(async (context, next) =>
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseStaticFiles();
+app.UseMiddleware<RateLimitMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 

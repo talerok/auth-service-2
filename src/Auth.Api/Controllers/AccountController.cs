@@ -1,3 +1,4 @@
+using Auth.Api.RateLimit;
 using Auth.Application;
 using Auth.Application.Auth.Commands.ValidateForcedPasswordChange;
 using Auth.Application.TwoFactor.Commands.ConfirmTwoFactorActivation;
@@ -32,6 +33,7 @@ public sealed class AccountController(ISender sender, IOptions<PasswordRequireme
 
     [HttpPost("2fa/enable")]
     [Authorize]
+    [RateLimit(RateLimitPolicies.TwoFactor)]
     [ProducesResponseType(typeof(EnableTwoFactorResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<EnableTwoFactorResponse>> EnableTwoFactor(
@@ -51,6 +53,7 @@ public sealed class AccountController(ISender sender, IOptions<PasswordRequireme
 
     [HttpPost("password/forced-change")]
     [AllowAnonymous]
+    [RateLimit(RateLimitPolicies.Auth)]
     public async Task<IActionResult> ForcedPasswordChange(
         [FromBody] ForcedPasswordChangeRequest request,
         CancellationToken cancellationToken)
@@ -61,6 +64,7 @@ public sealed class AccountController(ISender sender, IOptions<PasswordRequireme
 
     [HttpPost("verify-email/send")]
     [Authorize]
+    [RateLimit(RateLimitPolicies.TwoFactor)]
     public async Task<ActionResult<SendVerificationResponse>> SendEmailVerification(CancellationToken cancellationToken) =>
         Ok(await sender.Send(new SendEmailVerificationCommand(GetUserId()), cancellationToken));
 
@@ -76,6 +80,7 @@ public sealed class AccountController(ISender sender, IOptions<PasswordRequireme
 
     [HttpPost("verify-phone/send")]
     [Authorize]
+    [RateLimit(RateLimitPolicies.TwoFactor)]
     public async Task<ActionResult<SendVerificationResponse>> SendPhoneVerification(CancellationToken cancellationToken) =>
         Ok(await sender.Send(new SendPhoneVerificationCommand(GetUserId()), cancellationToken));
 

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Auth.Api.RateLimit;
 using Auth.Application;
 using Auth.Application.Oidc.Commands.HandleClientCredentialsGrant;
 using Auth.Application.Oidc.Commands.HandleJwtBearerGrant;
@@ -21,6 +22,7 @@ namespace Auth.Api.Controllers;
 [ApiController]
 [EnableCors("Oidc")]
 [Route("")]
+[RateLimit(RateLimitPolicies.Auth)]
 public sealed class TokenController(ISender sender) : ControllerBase
 {
     // ─── Token Exchange ──────────────────────────────────────────────
