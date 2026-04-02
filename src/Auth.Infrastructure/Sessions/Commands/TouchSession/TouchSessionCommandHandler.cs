@@ -1,4 +1,6 @@
 using Auth.Application;
+using Auth.Application.Messaging;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.Sessions.Commands.TouchSession;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +10,8 @@ namespace Auth.Infrastructure.Sessions.Commands.TouchSession;
 
 internal sealed class TouchSessionCommandHandler(
     AuthDbContext dbContext,
-    IOptions<IntegrationOptions> options) : IRequestHandler<TouchSessionCommand>
+    IOptions<IntegrationOptions> options,
+    IEventBus eventBus) : IRequestHandler<TouchSessionCommand>
 {
     public async Task Handle(TouchSessionCommand command, CancellationToken cancellationToken)
     {
@@ -19,6 +22,7 @@ internal sealed class TouchSessionCommandHandler(
             throw new AuthException(AuthErrorCatalog.SessionRevoked);
 
         session.TouchActivity(options.Value.Oidc.RefreshTokenLifetimeDays);
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Session, EntityId = session.Id, Operation = IndexOperation.Index }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

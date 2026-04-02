@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.Messaging.Events;
 using Auth.Application.Sessions.Commands.RevokeUserSessions;
 using Auth.Domain;
@@ -28,6 +29,7 @@ internal sealed class RevokeUserSessionsCommandHandler(
             {
                 SessionId = session.Id, UserId = command.UserId, Reason = command.Reason
             }, cancellationToken);
+            await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Session, EntityId = session.Id, Operation = IndexOperation.Index }, cancellationToken);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

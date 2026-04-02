@@ -22,7 +22,7 @@ internal static class OidcTestHelpers
     {
         var httpContext = new DefaultHttpContext();
         httpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("127.0.0.1");
-        httpContext.Request.Headers["User-Agent"] = "TestAgent/1.0";
+        httpContext.Request.Headers.UserAgent = "TestAgent/1.0";
         var mock = new Mock<IHttpContextAccessor>();
         mock.Setup(x => x.HttpContext).Returns(httpContext);
         return mock;

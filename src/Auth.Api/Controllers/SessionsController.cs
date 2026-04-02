@@ -1,7 +1,9 @@
+using Auth.Application;
 using Auth.Application.Sessions;
 using Auth.Application.Sessions.Commands.RevokeSession;
 using Auth.Application.Sessions.Commands.RevokeUserSessions;
 using Auth.Application.Sessions.Queries.GetUserSessions;
+using Auth.Application.Sessions.Queries.SearchSessions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,6 +13,11 @@ namespace Auth.Api.Controllers;
 [Route("")]
 public sealed class SessionsController(ISender sender) : ControllerBase
 {
+    [HttpPost("api/sessions/search")]
+    [HasSystemPermission("system.sessions.view")]
+    public Task<SearchResponse<UserSessionSearchDto>> Search([FromBody] SearchRequest request, CancellationToken ct) =>
+        sender.Send(new SearchSessionsQuery(request), ct);
+
     [HttpGet("api/users/{userId:guid}/sessions")]
     [HasSystemPermission("system.sessions.view")]
     [ProducesResponseType(typeof(IReadOnlyCollection<UserSessionResponse>), StatusCodes.Status200OK)]

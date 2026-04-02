@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Sessions;
 
 namespace Auth.Infrastructure;
 
@@ -40,4 +41,8 @@ public sealed class NullSearchIndexService : ISearchIndexService
     public Task IndexNotificationTemplateAsync(NotificationTemplateDto template, CancellationToken cancellationToken) => Task.CompletedTask;
     public Task DeleteNotificationTemplateAsync(Guid id, CancellationToken cancellationToken) => Task.CompletedTask;
     public Task BulkIndexNotificationTemplatesAsync(IReadOnlyCollection<NotificationTemplateDto> templates, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task IndexSessionAsync(UserSessionSearchDto session, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task DeleteSessionAsync(Guid id, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task BulkIndexSessionsAsync(IReadOnlyCollection<UserSessionSearchDto> sessions, CancellationToken cancellationToken) => Task.CompletedTask;
 }

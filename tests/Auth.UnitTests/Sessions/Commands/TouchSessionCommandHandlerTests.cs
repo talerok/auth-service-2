@@ -1,10 +1,12 @@
 using Auth.Application;
+using Auth.Application.Messaging;
 using Auth.Application.Sessions.Commands.TouchSession;
 using Auth.Domain;
 using Auth.Infrastructure;
 using Auth.Infrastructure.Sessions.Commands.TouchSession;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using Moq;
 using static Auth.UnitTests.TestDbContextFactory;
 
 namespace Auth.UnitTests.Sessions.Commands;
@@ -19,7 +21,7 @@ public sealed class TouchSessionCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var session = SeedActiveSession(dbContext);
-        var handler = new TouchSessionCommandHandler(dbContext, CreateOptions());
+        var handler = new TouchSessionCommandHandler(dbContext, CreateOptions(), new Mock<IEventBus>().Object);
 
         await handler.Handle(new TouchSessionCommand(session.Id, session.UserId), CancellationToken.None);
 
@@ -31,7 +33,7 @@ public sealed class TouchSessionCommandHandlerTests
     public async Task Handle_WhenSessionNotFound_ThrowsSessionRevoked()
     {
         await using var dbContext = CreateDbContext();
-        var handler = new TouchSessionCommandHandler(dbContext, CreateOptions());
+        var handler = new TouchSessionCommandHandler(dbContext, CreateOptions(), new Mock<IEventBus>().Object);
 
         var act = () => handler.Handle(
             new TouchSessionCommand(Guid.NewGuid(), Guid.NewGuid()), CancellationToken.None);
@@ -45,7 +47,7 @@ public sealed class TouchSessionCommandHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var session = SeedActiveSession(dbContext);
-        var handler = new TouchSessionCommandHandler(dbContext, CreateOptions());
+        var handler = new TouchSessionCommandHandler(dbContext, CreateOptions(), new Mock<IEventBus>().Object);
 
         var act = () => handler.Handle(
             new TouchSessionCommand(session.Id, Guid.NewGuid()), CancellationToken.None);
@@ -61,7 +63,7 @@ public sealed class TouchSessionCommandHandlerTests
         var session = SeedActiveSession(dbContext);
         session.Revoke("test");
         await dbContext.SaveChangesAsync();
-        var handler = new TouchSessionCommandHandler(dbContext, CreateOptions());
+        var handler = new TouchSessionCommandHandler(dbContext, CreateOptions(), new Mock<IEventBus>().Object);
 
         var act = () => handler.Handle(
             new TouchSessionCommand(session.Id, session.UserId), CancellationToken.None);
@@ -79,7 +81,7 @@ public sealed class TouchSessionCommandHandlerTests
         session.ExpiresAt = DateTime.UtcNow.AddDays(-1);
         dbContext.UserSessions.Add(session);
         await dbContext.SaveChangesAsync();
-        var handler = new TouchSessionCommandHandler(dbContext, CreateOptions());
+        var handler = new TouchSessionCommandHandler(dbContext, CreateOptions(), new Mock<IEventBus>().Object);
 
         var act = () => handler.Handle(
             new TouchSessionCommand(session.Id, userId), CancellationToken.None);

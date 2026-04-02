@@ -1,3 +1,5 @@
+using Auth.Application.Sessions;
+
 namespace Auth.Application;
 
 public interface ISearchService
@@ -10,6 +12,7 @@ public interface ISearchService
     Task<SearchResponse<ServiceAccountDto>> SearchServiceAccountsAsync(SearchRequest request, CancellationToken cancellationToken);
     Task<SearchResponse<AuditLogDto>> SearchAuditLogsAsync(SearchRequest request, CancellationToken cancellationToken);
     Task<SearchResponse<NotificationTemplateDto>> SearchNotificationTemplatesAsync(SearchRequest request, CancellationToken cancellationToken);
+    Task<SearchResponse<UserSessionSearchDto>> SearchSessionsAsync(SearchRequest request, CancellationToken cancellationToken);
 }
 
 public interface ISearchIndexService
@@ -45,6 +48,10 @@ public interface ISearchIndexService
     Task IndexNotificationTemplateAsync(NotificationTemplateDto template, CancellationToken cancellationToken);
     Task DeleteNotificationTemplateAsync(Guid id, CancellationToken cancellationToken);
     Task BulkIndexNotificationTemplatesAsync(IReadOnlyCollection<NotificationTemplateDto> templates, CancellationToken cancellationToken);
+
+    Task IndexSessionAsync(UserSessionSearchDto session, CancellationToken cancellationToken);
+    Task DeleteSessionAsync(Guid id, CancellationToken cancellationToken);
+    Task BulkIndexSessionsAsync(IReadOnlyCollection<UserSessionSearchDto> sessions, CancellationToken cancellationToken);
 }
 
 public interface ISearchMaintenanceService
@@ -59,4 +66,5 @@ public interface ISearchMaintenanceService
     Task ReindexServiceAccountsAsync(CancellationToken cancellationToken);
     Task ReindexAuditLogsAsync(CancellationToken cancellationToken);
     Task ReindexNotificationTemplatesAsync(CancellationToken cancellationToken);
+    Task ReindexSessionsAsync(CancellationToken cancellationToken);
 }

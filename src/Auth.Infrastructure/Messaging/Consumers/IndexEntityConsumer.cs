@@ -1,5 +1,6 @@
 using Auth.Application;
 using Auth.Application.Messaging.Commands;
+using Auth.Application.Sessions;
 using Auth.Domain;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -79,6 +80,33 @@ internal sealed class IndexEntityConsumer(
                     t => new NotificationTemplateDto(t.Id, t.Type.ToString(), t.Locale, t.Subject, t.Body),
                     (dto, c) => searchIndexService.IndexNotificationTemplateAsync(dto, c),
                     c => searchIndexService.DeleteNotificationTemplateAsync(msg.EntityId, c));
+                break;
+
+            case IndexEntityType.Session:
+                if (msg.Operation == IndexOperation.Delete)
+                {
+                    await searchIndexService.DeleteSessionAsync(msg.EntityId, ct);
+                    break;
+                }
+                var sessionDto = await (
+                    from s in dbContext.UserSessions.AsNoTracking()
+                    join u in dbContext.Users.AsNoTracking() on s.UserId equals u.Id
+                    join a in dbContext.Applications.AsNoTracking() on s.ApplicationId equals a.Id into apps
+                    from a in apps.DefaultIfEmpty()
+                    where s.Id == msg.EntityId
+                    select new UserSessionSearchDto(
+                        s.Id, s.UserId, u.Username,
+                        s.ApplicationId, a != null ? a.Name : null,
+                        s.IpAddress, s.UserAgent, s.AuthMethod,
+                        s.IsRevoked, s.CreatedAt, s.ExpiresAt, s.LastActivityAt,
+                        s.RevokedAt, s.RevokedReason)
+                ).FirstOrDefaultAsync(ct);
+                if (sessionDto is null)
+                {
+                    logger.LogWarning("Entity {EntityType}/{EntityId} not found, skipping indexing", msg.EntityType, msg.EntityId);
+                    break;
+                }
+                await searchIndexService.IndexSessionAsync(sessionDto, ct);
                 break;
 
             default:

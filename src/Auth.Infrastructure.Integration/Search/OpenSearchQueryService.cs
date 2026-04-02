@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Sessions;
 using OpenSearch.Client;
 using AppSearchRequest = Auth.Application.SearchRequest;
 
@@ -32,6 +33,9 @@ public sealed class OpenSearchQueryService(
 
     public Task<Auth.Application.SearchResponse<NotificationTemplateDto>> SearchNotificationTemplatesAsync(AppSearchRequest request, CancellationToken cancellationToken) =>
         SearchAsync<NotificationTemplateDto>(indexNames.NotificationTemplates, request, cancellationToken);
+
+    public Task<Auth.Application.SearchResponse<UserSessionSearchDto>> SearchSessionsAsync(AppSearchRequest request, CancellationToken cancellationToken) =>
+        SearchAsync<UserSessionSearchDto>(indexNames.Sessions, request, cancellationToken);
 
     private async Task<Auth.Application.SearchResponse<TDocument>> SearchAsync<TDocument>(string indexName, AppSearchRequest request, CancellationToken cancellationToken)
         where TDocument : class

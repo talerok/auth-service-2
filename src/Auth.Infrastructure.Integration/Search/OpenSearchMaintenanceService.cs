@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Sessions;
 using Auth.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using OpenSearch.Client;
@@ -101,6 +102,25 @@ public sealed class OpenSearchMaintenanceService(
         {
             await ReindexNotificationTemplatesAsync(cancellationToken);
         }
+
+        if (await EnsureIndexExistsAsync<UserSessionSearchDto>(indexNames.Sessions, p => p
+                .Keyword(k => k.Name(n => n.Id))
+                .Keyword(k => k.Name(n => n.UserId))
+                .Keyword(k => k.Name(n => n.Username))
+                .Keyword(k => k.Name(n => n.ApplicationId))
+                .Keyword(k => k.Name(n => n.ApplicationName))
+                .Keyword(k => k.Name(n => n.IpAddress))
+                .Keyword(k => k.Name(n => n.UserAgent))
+                .Keyword(k => k.Name(n => n.AuthMethod))
+                .Boolean(b => b.Name(n => n.IsRevoked))
+                .Date(d => d.Name(n => n.CreatedAt))
+                .Date(d => d.Name(n => n.ExpiresAt))
+                .Date(d => d.Name(n => n.LastActivityAt))
+                .Date(d => d.Name(n => n.RevokedAt))
+                .Keyword(k => k.Name(n => n.RevokedReason)), cancellationToken))
+        {
+            await ReindexSessionsAsync(cancellationToken);
+        }
     }
 
     public async Task ReindexAllAsync(CancellationToken cancellationToken)
@@ -190,6 +210,40 @@ public sealed class OpenSearchMaintenanceService(
         await searchIndexService.BulkIndexNotificationTemplatesAsync(templates, cancellationToken);
     }
 
+    public async Task ReindexSessionsAsync(CancellationToken cancellationToken)
+    {
+        await ClearIndexAsync(indexNames.Sessions, cancellationToken);
+
+        const int batchSize = 5000;
+        var batch = new List<UserSessionSearchDto>(batchSize);
+
+        var query = (
+            from s in dbContext.UserSessions.AsNoTracking()
+            join u in dbContext.Users.AsNoTracking() on s.UserId equals u.Id
+            join a in dbContext.Applications.AsNoTracking() on s.ApplicationId equals a.Id into apps
+            from a in apps.DefaultIfEmpty()
+            select new UserSessionSearchDto(
+                s.Id, s.UserId, u.Username,
+                s.ApplicationId, a != null ? a.Name : null,
+                s.IpAddress, s.UserAgent, s.AuthMethod,
+                s.IsRevoked, s.CreatedAt, s.ExpiresAt, s.LastActivityAt,
+                s.RevokedAt, s.RevokedReason)
+        ).AsAsyncEnumerable();
+
+        await foreach (var dto in query.WithCancellation(cancellationToken))
+        {
+            batch.Add(dto);
+            if (batch.Count >= batchSize)
+            {
+                await searchIndexService.BulkIndexSessionsAsync(batch, cancellationToken);
+                batch.Clear();
+            }
+        }
+
+        if (batch.Count > 0)
+            await searchIndexService.BulkIndexSessionsAsync(batch, cancellationToken);
+    }
+
     private async Task ClearIndexAsync(string indexName, CancellationToken cancellationToken)
     {
         var response = await client.DeleteByQueryAsync<object>(d => d
@@ -205,7 +259,7 @@ public sealed class OpenSearchMaintenanceService(
 
     private async Task DeleteAllIndicesAsync(CancellationToken cancellationToken)
     {
-        var all = string.Join(",", indexNames.Users, indexNames.Roles, indexNames.Permissions, indexNames.Workspaces, indexNames.Applications, indexNames.ServiceAccounts, indexNames.AuditLogs, indexNames.NotificationTemplates);
+        var all = string.Join(",", indexNames.Users, indexNames.Roles, indexNames.Permissions, indexNames.Workspaces, indexNames.Applications, indexNames.ServiceAccounts, indexNames.AuditLogs, indexNames.NotificationTemplates, indexNames.Sessions);
         await client.Indices.DeleteAsync(all, ct: cancellationToken);
     }
 

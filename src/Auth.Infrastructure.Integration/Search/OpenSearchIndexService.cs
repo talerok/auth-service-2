@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Sessions;
 using OpenSearch.Client;
 using OpenSearch.Net;
 
@@ -120,6 +121,15 @@ public sealed class OpenSearchIndexService(
 
     public Task BulkIndexNotificationTemplatesAsync(IReadOnlyCollection<NotificationTemplateDto> templates, CancellationToken cancellationToken) =>
         BulkIndexAsync(indexNames.NotificationTemplates, templates, x => x.Id, cancellationToken);
+
+    public Task IndexSessionAsync(UserSessionSearchDto session, CancellationToken cancellationToken) =>
+        IndexAsync(indexNames.Sessions, session.Id, session, cancellationToken);
+
+    public Task DeleteSessionAsync(Guid id, CancellationToken cancellationToken) =>
+        DeleteAsync(indexNames.Sessions, id, cancellationToken);
+
+    public Task BulkIndexSessionsAsync(IReadOnlyCollection<UserSessionSearchDto> sessions, CancellationToken cancellationToken) =>
+        BulkIndexAsync(indexNames.Sessions, sessions, x => x.Id, cancellationToken);
 
     private async Task DeleteAsync(string indexName, Guid id, CancellationToken cancellationToken)
     {

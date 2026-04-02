@@ -15,7 +15,8 @@ public enum IndexEntityType
     Workspace,
     Application,
     ServiceAccount,
-    NotificationTemplate
+    NotificationTemplate,
+    Session
 }
 
 public enum IndexOperation

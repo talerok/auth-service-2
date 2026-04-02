@@ -1,3 +1,5 @@
+using Auth.Application.Sessions;
+
 namespace Auth.IntegrationTests.Stubs;
 
 internal sealed class StubSearchService : ISearchService
@@ -25,4 +27,7 @@ internal sealed class StubSearchService : ISearchService
 
     public Task<SearchResponse<NotificationTemplateDto>> SearchNotificationTemplatesAsync(SearchRequest request, CancellationToken cancellationToken)
         => Task.FromResult(new SearchResponse<NotificationTemplateDto>([], request.Page, request.PageSize, 0));
+
+    public Task<SearchResponse<UserSessionSearchDto>> SearchSessionsAsync(SearchRequest request, CancellationToken cancellationToken)
+        => Task.FromResult(new SearchResponse<UserSessionSearchDto>([], request.Page, request.PageSize, 0));
 }

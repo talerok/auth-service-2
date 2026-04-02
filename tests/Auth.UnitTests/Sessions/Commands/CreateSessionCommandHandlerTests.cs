@@ -94,7 +94,7 @@ public sealed class CreateSessionCommandHandlerTests
         {
             Oidc = new OidcOptions { RefreshTokenLifetimeDays = 7 }
         });
-        return new CreateSessionCommandHandler(dbContext, options, new Mock<IAuditService>().Object);
+        return new CreateSessionCommandHandler(dbContext, options, new Mock<IEventBus>().Object, new Mock<IAuditService>().Object);
     }
 
     private static void SeedUser(AuthDbContext dbContext, out Guid userId)

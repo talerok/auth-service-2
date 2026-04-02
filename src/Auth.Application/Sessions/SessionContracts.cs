@@ -15,3 +15,19 @@ public sealed record UserSessionResponse(
     DateTime LastActivityAt,
     DateTime? RevokedAt,
     string? RevokedReason);
+
+public sealed record UserSessionSearchDto(
+    Guid Id,
+    Guid UserId,
+    string Username,
+    Guid? ApplicationId,
+    string? ApplicationName,
+    string IpAddress,
+    string UserAgent,
+    string AuthMethod,
+    bool IsRevoked,
+    DateTime CreatedAt,
+    DateTime ExpiresAt,
+    DateTime LastActivityAt,
+    DateTime? RevokedAt,
+    string? RevokedReason);

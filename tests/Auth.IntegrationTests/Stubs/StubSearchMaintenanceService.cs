@@ -12,4 +12,5 @@ internal sealed class StubSearchMaintenanceService : ISearchMaintenanceService
     public Task ReindexServiceAccountsAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     public Task ReindexAuditLogsAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     public Task ReindexNotificationTemplatesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task ReindexSessionsAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

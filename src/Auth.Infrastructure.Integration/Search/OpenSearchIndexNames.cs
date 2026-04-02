@@ -16,6 +16,7 @@ public sealed class OpenSearchIndexNames
         ServiceAccounts = $"{prefix}-service-accounts";
         AuditLogs = $"{prefix}-audit-logs";
         NotificationTemplates = $"{prefix}-notification-templates";
+        Sessions = $"{prefix}-sessions";
     }
 
     public string Users { get; }
@@ -26,4 +27,5 @@ public sealed class OpenSearchIndexNames
     public string ServiceAccounts { get; }
     public string AuditLogs { get; }
     public string NotificationTemplates { get; }
+    public string Sessions { get; }
 }

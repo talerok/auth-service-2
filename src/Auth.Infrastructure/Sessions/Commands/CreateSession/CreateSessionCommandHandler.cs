@@ -1,4 +1,5 @@
 using Auth.Application;
+using Auth.Application.Messaging.Commands;
 using Auth.Application.Sessions.Commands.CreateSession;
 using Auth.Domain;
 using MediatR;
@@ -10,6 +11,7 @@ namespace Auth.Infrastructure.Sessions.Commands.CreateSession;
 internal sealed class CreateSessionCommandHandler(
     AuthDbContext dbContext,
     IOptions<IntegrationOptions> options,
+    IEventBus eventBus,
     IAuditService auditService) : IRequestHandler<CreateSessionCommand, Guid>
 {
     public async Task<Guid> Handle(CreateSessionCommand command, CancellationToken cancellationToken)
@@ -33,6 +35,7 @@ internal sealed class CreateSessionCommandHandler(
             options.Value.Oidc.RefreshTokenLifetimeDays);
 
         dbContext.UserSessions.Add(session);
+        await eventBus.PublishAsync(new IndexEntityRequested { EntityType = IndexEntityType.Session, EntityId = session.Id, Operation = IndexOperation.Index }, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditService.LogAsync(
