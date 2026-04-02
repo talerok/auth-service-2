@@ -67,6 +67,7 @@ public static class AuthProblemDetailsMapper
             AuthErrorCatalog.SessionNotFound => new AuthProblemDescriptor(StatusCodes.Status404NotFound, NotFound, "Session not found"),
             AuthErrorCatalog.SessionAlreadyRevoked => new AuthProblemDescriptor(StatusCodes.Status409Conflict, Conflict, "Session is already revoked"),
             AuthErrorCatalog.SessionRevoked => new AuthProblemDescriptor(StatusCodes.Status403Forbidden, Forbidden, "Session has been revoked"),
+            AuthErrorCatalog.AccountLockedOut => new AuthProblemDescriptor(StatusCodes.Status403Forbidden, Forbidden, "Account is temporarily locked due to too many failed login attempts"),
             _ => new AuthProblemDescriptor(StatusCodes.Status400BadRequest, BusinessRuleViolation, BusinessRuleViolation)
         };
     }

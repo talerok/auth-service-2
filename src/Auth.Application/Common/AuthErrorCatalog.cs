@@ -52,4 +52,5 @@ public static class AuthErrorCatalog
     public const string SessionNotFound = "AUTH_SESSION_NOT_FOUND";
     public const string SessionAlreadyRevoked = "AUTH_SESSION_ALREADY_REVOKED";
     public const string SessionRevoked = "AUTH_SESSION_REVOKED";
+    public const string AccountLockedOut = "AUTH_ACCOUNT_LOCKED_OUT";
 }

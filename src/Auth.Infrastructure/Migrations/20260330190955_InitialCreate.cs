@@ -254,6 +254,8 @@ namespace Auth.Infrastructure.Migrations
                     Phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     PasswordHash = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    FailedLoginAttempts = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    LockoutEndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsInternalAuthEnabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     MustChangePassword = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     TwoFactorEnabled = table.Column<bool>(type: "boolean", nullable: false),

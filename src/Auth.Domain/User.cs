@@ -17,6 +17,8 @@ public sealed class User : EntityBase
     [Auditable] public bool PhoneVerified { get; set; }
     [Auditable] public int? PasswordMaxAgeDays { get; set; }
     public DateTime? PasswordChangedAt { get; private set; }
+    public int FailedLoginAttempts { get; private set; }
+    public DateTime? LockoutEndTime { get; private set; }
     public ICollection<UserWorkspace> UserWorkspaces { get; private set; } = [];
     public ICollection<TwoFactorChallenge> TwoFactorChallenges { get; private set; } = [];
 
@@ -75,4 +77,25 @@ public sealed class User : EntityBase
     public void VerifyEmail() => EmailVerified = true;
     public void VerifyPhone() => PhoneVerified = true;
 
+    public bool IsLockedOut => LockoutEndTime.HasValue && LockoutEndTime.Value > DateTime.UtcNow;
+
+    public void RegisterFailedLogin(int maxAttempts, int lockoutDurationMinutes)
+    {
+        if (LockoutEndTime.HasValue && LockoutEndTime.Value <= DateTime.UtcNow)
+        {
+            FailedLoginAttempts = 0;
+            LockoutEndTime = null;
+        }
+
+        FailedLoginAttempts++;
+
+        if (FailedLoginAttempts >= maxAttempts)
+            LockoutEndTime = DateTime.UtcNow.AddMinutes(lockoutDurationMinutes);
+    }
+
+    public void ResetFailedLoginAttempts()
+    {
+        FailedLoginAttempts = 0;
+        LockoutEndTime = null;
+    }
 }

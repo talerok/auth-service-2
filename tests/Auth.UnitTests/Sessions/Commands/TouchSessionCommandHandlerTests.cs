@@ -20,7 +20,7 @@ public sealed class TouchSessionCommandHandlerTests
     public async Task Handle_WhenActiveSession_UpdatesLastActivityAtAndExpiresAt()
     {
         await using var dbContext = CreateDbContext();
-        var session = SeedActiveSession(dbContext);
+        var (session, _) = SeedActiveSessionWithUser(dbContext);
         var handler = new TouchSessionCommandHandler(dbContext, CreateOptions(), new Mock<IEventBus>().Object);
 
         await handler.Handle(new TouchSessionCommand(session.Id, session.UserId), CancellationToken.None);
@@ -46,7 +46,7 @@ public sealed class TouchSessionCommandHandlerTests
     public async Task Handle_WhenUserIdMismatch_ThrowsSessionRevoked()
     {
         await using var dbContext = CreateDbContext();
-        var session = SeedActiveSession(dbContext);
+        var (session, _) = SeedActiveSessionWithUser(dbContext);
         var handler = new TouchSessionCommandHandler(dbContext, CreateOptions(), new Mock<IEventBus>().Object);
 
         var act = () => handler.Handle(
@@ -60,7 +60,7 @@ public sealed class TouchSessionCommandHandlerTests
     public async Task Handle_WhenSessionRevoked_ThrowsSessionRevoked()
     {
         await using var dbContext = CreateDbContext();
-        var session = SeedActiveSession(dbContext);
+        var (session, _) = SeedActiveSessionWithUser(dbContext);
         session.Revoke("test");
         await dbContext.SaveChangesAsync();
         var handler = new TouchSessionCommandHandler(dbContext, CreateOptions(), new Mock<IEventBus>().Object);
@@ -76,25 +76,62 @@ public sealed class TouchSessionCommandHandlerTests
     public async Task Handle_WhenSessionExpired_ThrowsSessionRevoked()
     {
         await using var dbContext = CreateDbContext();
-        var userId = Guid.NewGuid();
-        var session = UserSession.Create(userId, "127.0.0.1", "UA", null, "pwd", 7);
+        var user = new User { Username = "alice", Email = "alice@test.com", PasswordHash = "h", IsActive = true };
+        dbContext.Users.Add(user);
+        var session = UserSession.Create(user.Id, "127.0.0.1", "UA", null, "pwd", 7);
         session.ExpiresAt = DateTime.UtcNow.AddDays(-1);
         dbContext.UserSessions.Add(session);
         await dbContext.SaveChangesAsync();
         var handler = new TouchSessionCommandHandler(dbContext, CreateOptions(), new Mock<IEventBus>().Object);
 
         var act = () => handler.Handle(
-            new TouchSessionCommand(session.Id, userId), CancellationToken.None);
+            new TouchSessionCommand(session.Id, user.Id), CancellationToken.None);
 
         await act.Should().ThrowAsync<AuthException>()
             .Where(x => x.Code == AuthErrorCatalog.SessionRevoked);
     }
 
-    private static UserSession SeedActiveSession(AuthDbContext dbContext)
+    [Fact]
+    public async Task Handle_WhenUserDeleted_RevokesSessionAndThrowsSessionRevoked()
     {
+        await using var dbContext = CreateDbContext();
         var session = UserSession.Create(Guid.NewGuid(), "127.0.0.1", "UA", null, "pwd", 7);
         dbContext.UserSessions.Add(session);
+        await dbContext.SaveChangesAsync();
+        var handler = new TouchSessionCommandHandler(dbContext, CreateOptions(), new Mock<IEventBus>().Object);
+
+        var act = () => handler.Handle(
+            new TouchSessionCommand(session.Id, session.UserId), CancellationToken.None);
+
+        await act.Should().ThrowAsync<AuthException>()
+            .Where(x => x.Code == AuthErrorCatalog.SessionRevoked);
+        session.IsRevoked.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Handle_WhenUserLockedOut_RevokesSessionAndThrowsAccountLockedOut()
+    {
+        await using var dbContext = CreateDbContext();
+        var (session, user) = SeedActiveSessionWithUser(dbContext);
+        user.RegisterFailedLogin(1, 15);
+        await dbContext.SaveChangesAsync();
+        var handler = new TouchSessionCommandHandler(dbContext, CreateOptions(), new Mock<IEventBus>().Object);
+
+        var act = () => handler.Handle(
+            new TouchSessionCommand(session.Id, session.UserId), CancellationToken.None);
+
+        await act.Should().ThrowAsync<AuthException>()
+            .Where(x => x.Code == AuthErrorCatalog.AccountLockedOut);
+        session.IsRevoked.Should().BeTrue();
+    }
+
+    private static (UserSession session, User user) SeedActiveSessionWithUser(AuthDbContext dbContext)
+    {
+        var user = new User { Username = "alice", Email = "alice@test.com", PasswordHash = "h", IsActive = true };
+        dbContext.Users.Add(user);
+        var session = UserSession.Create(user.Id, "127.0.0.1", "UA", null, "pwd", 7);
+        dbContext.UserSessions.Add(session);
         dbContext.SaveChanges();
-        return session;
+        return (session, user);
     }
 }

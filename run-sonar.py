@@ -126,7 +126,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
         f"/d:sonar.host.url={host_url}",
         f"/d:sonar.token={token}",
         "/d:sonar.cs.opencover.reportsPaths=**/coverage.opencover.xml",
-        "/d:sonar.exclusions=*.py",
+        "/d:sonar.exclusions=*.py,**/Migrations/**",
     ]
     if args.verbose:
         begin_cmd.append("/d:sonar.verbose=true")

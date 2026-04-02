@@ -20,6 +20,7 @@ public sealed class IntegrationOptions
     public RabbitMqOptions RabbitMq { get; set; } = new();
     public RedisOptions Redis { get; set; } = new();
     public CleanupOptions Cleanup { get; set; } = new();
+    public AccountLockoutOptions AccountLockout { get; set; } = new();
 }
 
 public sealed class PostgreSqlOptions
@@ -138,6 +139,12 @@ public sealed class AuditLogCleanupOptions
     public int IntervalMinutes { get; set; } = 1440;
     public int RetentionDays { get; set; } = 365;
     public int BatchSize { get; set; } = 1000;
+}
+
+public sealed class AccountLockoutOptions
+{
+    public int MaxFailedAttempts { get; set; } = 5;
+    public int LockoutDurationMinutes { get; set; } = 15;
 }
 
 public sealed class OidcOptions
